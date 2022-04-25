@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h2>User</h2>
+<label>Get data by account:
+    <input type="text" name="account" placeholder="account">
+</label>
+<p></p>
+<label>Get base64 by img:
+    <input type="file" id="debug-toBase64-input" accept="image/*">
+</label>
+<p id="toBase64-output"></p>
+<script>
+    const toBase64Input = document.getElementById("debug-toBase64-input");
+    toBase64Input.onchange = () => {
+        let file = toBase64Input.files[0];
+        if (!!file) {
+            let reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+                document.getElementById("toBase64-output").innerHTML = reader.result;
+            }
+        }
+    }
+</script>
+</body>
+</html>

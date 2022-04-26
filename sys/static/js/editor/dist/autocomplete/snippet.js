@@ -125,6 +125,12 @@ const snippetState = StateField.define({
 function fieldSelection(ranges, field) {
     return EditorSelection.create(ranges.filter(r => r.field == field).map(r => EditorSelection.range(r.from, r.to)));
 }
+/**
+ *  Convert a snippet template to a function that can [apply]{@link Completion.apply} it.
+ *  Snippets are written using syntax like this:
+ *  @example
+ *    "for (let ${index} = 0; ${index} < ${end}; ${index}++) {\n\t${}\n}"
+ */
 export function snippet(template) {
     let snippet = Snippet.parse(template);
     return (editor, _completion, from, to) => {
@@ -154,6 +160,7 @@ function moveField(dir) {
         return true;
     };
 }
+/** A command that clears the active snippet, if any. */
 export const clearSnippet = ({ state, dispatch }) => {
     let active = state.field(snippetState, false);
     if (!active)
@@ -161,16 +168,20 @@ export const clearSnippet = ({ state, dispatch }) => {
     dispatch(state.update({ effects: setActive.of(null) }));
     return true;
 };
+/** Move to the next snippet field, if available. */
 export const nextSnippetField = moveField(1);
+/** Move to the previous snippet field, if available. */
 export const prevSnippetField = moveField(-1);
 const defaultSnippetKeymap = [
     { key: "Tab", run: nextSnippetField, shift: prevSnippetField },
     { key: "Escape", run: clearSnippet }
 ];
+/** A facet that can be used to configure the key bindings used by snippets. */
 export const snippetKeymap = Facet.define({
     combine(maps) { return maps.length ? maps[0] : defaultSnippetKeymap; }
 });
 const addSnippetKeymap = Prec.highest(keymap.compute([snippetKeymap], state => state.facet(snippetKeymap)));
+/** Create a completion from a snippet. */
 export function snippetCompletion(template, completion) {
     return Object.assign(Object.assign({}, completion), { apply: snippet(template) });
 }

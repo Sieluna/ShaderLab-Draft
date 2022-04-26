@@ -1,6 +1,7 @@
 import { EditorSelection, countColumn, findColumn } from "../state/index.js";
 import { EditorView } from "./editorview.js";
 import { ViewPlugin } from "./extension.js";
+// Don't compute precise column positions for line offsets above this (since it could get expensive). Assume offset==column for them.
 const MaxOff = 2000;
 function rectangleFor(state, a, b) {
     let startLine = Math.min(a.line, b.line), endLine = Math.max(a.line, b.line);
@@ -33,9 +34,8 @@ function absoluteColumn(view, x) {
 function getPos(view, event) {
     let offset = view.posAtCoords({ x: event.clientX, y: event.clientY }, false);
     let line = view.state.doc.lineAt(offset), off = offset - line.from;
-    let col = off > MaxOff ? -1
-        : off == line.length ? absoluteColumn(view, event.clientX)
-            : countColumn(line.text, view.state.tabSize, offset - line.from);
+    let col = off > MaxOff ? -1 : off == line.length ?
+        absoluteColumn(view, event.clientX) : countColumn(line.text, view.state.tabSize, offset - line.from);
     return { line: line.number, col, off };
 }
 function rectangleSelectionStyle(view, event) {
@@ -65,6 +65,13 @@ function rectangleSelectionStyle(view, event) {
         }
     };
 }
+/**
+ * Create an extension that enables rectangular selections. By default, it will react to left mouse
+ * drag with the Alt key held down. When such a selection occurs, the text within the rectangle
+ * that was dragged over will be selected, as one selection [range]{@link SelectionRange} per line.
+ * @param options.eventFilter A custom predicate function, which takes a `mousedown` event and
+ *                            returns true if it should be used for rectangular selection.
+ */
 export function rectangularSelection(options) {
     let filter = (options === null || options === void 0 ? void 0 : options.eventFilter) || (e => e.altKey && e.button == 0);
     return EditorView.mouseSelectionStyle.of((view, event) => filter(event) ? rectangleSelectionStyle(view, event) : null);
@@ -76,6 +83,11 @@ const keys = {
     Meta: [91, e => e.metaKey]
 };
 const showCrosshair = { style: "cursor: crosshair" };
+/**
+ * Returns an extension that turns the pointer cursor into a crosshair when a given modifier key,
+ * defaulting to Alt, is held down. Can serve as a visual hint that rectangular selection is
+ * going to happen when paired with {@link rectangularSelection}.
+ */
 export function crosshairCursor(options = {}) {
     let [code, getter] = keys[options.key || "Alt"];
     let plugin = ViewPlugin.fromClass(class {

@@ -59,6 +59,10 @@ class MixedParse {
         let inner = this.inner[this.innerDone], done = inner.parse.advance();
         if (done) {
             this.innerDone++;
+            // This is a somewhat dodgy but super helpful hack where we
+            // patch up nodes created by the inner parse (and thus
+            // presumably not aliased anywhere else) to hold the information
+            // about the inner parse.
             let props = Object.assign(Object.create(null), inner.target.props);
             props[NodeProp.mounted.id] = new MountedTree(done, inner.overlay, inner.parser);
             inner.target.props = props;
@@ -103,7 +107,7 @@ class MixedParse {
                 enter = false;
             }
             else if (covered && (isCovered = checkCover(covered.ranges, cursor.from, cursor.to))) {
-                enter = isCovered != 2;
+                enter = isCovered != 2 /* Full */;
             }
             else if (!cursor.type.isAnonymous && cursor.from < cursor.to && (nest = this.nest(cursor, this.input))) {
                 if (!cursor.tree)
@@ -153,21 +157,17 @@ class MixedParse {
         }
     }
 }
-var Cover;
-(function (Cover) {
-    Cover[Cover["None"] = 0] = "None";
-    Cover[Cover["Partial"] = 1] = "Partial";
-    Cover[Cover["Full"] = 2] = "Full";
-})(Cover || (Cover = {}));
 function checkCover(covered, from, to) {
     for (let range of covered) {
         if (range.from >= to)
             break;
         if (range.to > from)
-            return range.from <= from && range.to >= to ? 2 : 1;
+            return range.from <= from && range.to >= to ? 2 /* Full */ : 1 /* Partial */;
     }
-    return 0;
+    return 0 /* None */;
 }
+// Take a piece of buffer and convert it into a stand-alone
+// TreeBuffer.
 function sliceBuf(buf, startI, endI, nodes, positions, off) {
     if (startI < endI) {
         let from = buf.buffer[startI + 1], to = buf.buffer[endI - 2];
@@ -175,12 +175,19 @@ function sliceBuf(buf, startI, endI, nodes, positions, off) {
         positions.push(from - off);
     }
 }
+// This function takes a node that's in a buffer, and converts it, and
+// its parent buffer nodes, into a Tree. This is again acting on the
+// assumption that the trees and buffers have been constructed by the
+// parse that was ran via the mix parser, and thus aren't shared with
+// any other code, making violations of the immutability safe.
 function materialize(cursor) {
     let { node } = cursor, depth = 0;
+    // Scan up to the nearest tree
     do {
         cursor.parent();
         depth++;
     } while (!cursor.tree);
+    // Find the index of the buffer in that tree
     let i = 0, base = cursor.tree, off = 0;
     for (;; i++) {
         off = base.positions[i] + cursor.from;
@@ -188,6 +195,8 @@ function materialize(cursor) {
             break;
     }
     let buf = base.children[i], b = buf.buffer;
+    // Split a level in the buffer, putting the nodes before and after
+    // the child that contains `node` into new buffers.
     function split(startI, endI, type, innerOffset, length) {
         let i = startI;
         while (b[i + 2] + off <= node.from)
@@ -201,8 +210,10 @@ function materialize(cursor) {
         sliceBuf(buf, b[i + 3], endI, children, positions, innerOffset);
         return new Tree(type, children, positions, length);
     }
+    // Overwrite (!) the child at the buffer's index with the split-up tree
     ;
     base.children[i] = split(0, b.length, NodeType.none, 0, buf.length);
+    // Move the cursor back to the target node
     for (let d = 0; d <= depth; d++)
         cursor.childAfter(node.from);
 }
@@ -212,6 +223,7 @@ class StructureCursor {
         this.done = false;
         this.cursor = root.cursor(IterMode.IncludeAnonymous | IterMode.IgnoreMounts);
     }
+    // Move to the first node (in pre-order) that starts at or after `pos`.
     moveTo(pos) {
         let { cursor } = this, p = pos - this.offset;
         while (!this.done && cursor.from < p) {
@@ -352,6 +364,9 @@ function findCoverChanges(a, b, from, to) {
     }
     return result;
 }
+// Given a number of fragments for the outer tree, and a set of ranges
+// to parse, find fragments for inner trees mounted around those
+// ranges, if any.
 function enterFragments(mounts, ranges) {
     let result = [];
     for (let { pos, mount, frag } of mounts) {

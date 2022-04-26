@@ -34,6 +34,9 @@ export function groupAt(state, pos, bias = 1) {
     }
     return EditorSelection.range(from + line.from, to + line.from);
 }
+// Search the DOM for the {node, offset} position closest to the given
+// coordinates. Very inefficient and crude, but can usually be avoided
+// by calling caret(Position|Range)FromPoint instead.
 function getdx(x, rect) {
     return rect.left > x ? rect.left - x : Math.max(0, x - rect.right);
 }
@@ -119,6 +122,8 @@ function domPosInText(node, x, y) {
             if (rect.left - 1 <= x && rect.right + 1 >= x && dy < closestDY) {
                 let right = x >= (rect.left + rect.right) / 2, after = right;
                 if (browser.chrome || browser.gecko) {
+                    // Check for RTL on browsers that support getting client
+                    // rects for empty ranges.
                     let rectBefore = textRange(node, i).getBoundingClientRect();
                     if (rectBefore.left == rect.right)
                         after = !right;
@@ -141,14 +146,18 @@ export function posAtCoords(view, { x, y }, precise, bias = -1) {
         return 0;
     if (yOffset > docHeight)
         return view.state.doc.length;
+    // Scan for a text block near the queried y position
     for (let halfLine = view.defaultLineHeight / 2, bounced = false;;) {
         block = view.elementAtHeight(yOffset);
         if (block.type == BlockType.Text)
             break;
         for (;;) {
+            // Move the y position out of this block
             yOffset = bias > 0 ? block.bottom + halfLine : block.top - halfLine;
             if (yOffset >= 0 && yOffset <= docHeight)
                 break;
+            // If the document consists entirely of replaced widgets, we
+            // won't find a text block, so return 0
             if (bounced)
                 return precise ? null : 0;
             bounced = true;
@@ -157,22 +166,27 @@ export function posAtCoords(view, { x, y }, precise, bias = -1) {
     }
     y = docTop + yOffset;
     let lineStart = block.from;
+    // If this is outside of the rendered viewport, we can't determine a position
     if (lineStart < view.viewport.from)
         return view.viewport.from == 0 ? 0 : precise ? null : posAtCoordsImprecise(view, content, block, x, y);
     if (lineStart > view.viewport.to)
         return view.viewport.to == view.state.doc.length ? view.state.doc.length :
             precise ? null : posAtCoordsImprecise(view, content, block, x, y);
+    // Prefer ShadowRootOrDocument.elementFromPoint if present, fall back to document if not
     let doc = view.dom.ownerDocument;
     let root = view.root.elementFromPoint ? view.root : doc;
     let element = root.elementFromPoint(x, y);
     if (element && !view.contentDOM.contains(element))
         element = null;
+    // If the element is unexpected, clip x at the sides of the content area and try again
     if (!element) {
         x = Math.max(content.left + 1, Math.min(content.right - 1, x));
         element = root.elementFromPoint(x, y);
         if (element && !view.contentDOM.contains(element))
             element = null;
     }
+    // There's visible editor content under the point, so we can try
+    // using caret(Position|Range)FromPoint as a shortcut
     let node, offset = -1;
     if (element && ((_a = view.docView.nearest(element)) === null || _a === void 0 ? void 0 : _a.isEditable) != false) {
         if (doc.caretPositionFromPoint) {
@@ -190,6 +204,7 @@ export function posAtCoords(view, { x, y }, precise, bias = -1) {
             }
         }
     }
+    // No luck, do our own (potentially expensive) search
     if (!node || !view.docView.dom.contains(node)) {
         let line = LineView.find(view.docView, lineStart);
         if (!line)
@@ -207,6 +222,10 @@ function posAtCoordsImprecise(view, contentRect, block, x, y) {
     let content = view.state.sliceDoc(block.from, block.to);
     return block.from + findColumn(content, into, view.state.tabSize);
 }
+// In case of a high line height, Safari's caretRangeFromPoint treats
+// the space between lines as belonging to the last character of the
+// line before. This is used to detect such a result so that it can be
+// ignored (issue #401).
 function isSuspiciousCaretResult(node, offset, x) {
     let len;
     if (node.nodeType != 3 || offset != (len = node.nodeValue.length))

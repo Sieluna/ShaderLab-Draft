@@ -84,6 +84,7 @@ const drawDropCursor = ViewPlugin.fromClass(class {
         }
     }
 });
+/** Draws a cursor at the current drop position when something is dragged over the editor. */
 export function dropCursor() {
     return [dropCursorPos, drawDropCursor];
 }

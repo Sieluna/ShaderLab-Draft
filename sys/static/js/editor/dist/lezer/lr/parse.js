@@ -2,12 +2,10 @@ import { DefaultBufferLength, Tree, NodeSet, NodeType, NodeProp, Parser, IterMod
 import { Stack, StackBufferCursor } from "./stack.js";
 import { TokenGroup, CachedToken, InputStream } from "./token.js";
 import { decodeArray } from "./decode.js";
+// Environment variable used to control console output
+// @ts-ignore
 const verbose = typeof process != "undefined" && /\bparse\b/.test(process.env.LOG);
 let stackIDs = null;
-var Safety;
-(function (Safety) {
-    Safety[Safety["Margin"] = 25] = "Margin";
-})(Safety || (Safety = {}));
 function cutAt(tree, pos, side) {
     let cursor = tree.cursor(IterMode.IncludeAnonymous);
     cursor.moveTo(pos);
@@ -15,8 +13,8 @@ function cutAt(tree, pos, side) {
         if (!(side < 0 ? cursor.childBefore(pos) : cursor.childAfter(pos)))
             for (;;) {
                 if ((side < 0 ? cursor.to < pos : cursor.from > pos) && !cursor.type.isError)
-                    return side < 0 ? Math.max(0, Math.min(cursor.to - 1, pos - 25))
-                        : Math.min(tree.length, Math.max(cursor.from + 1, pos + 25));
+                    return side < 0 ? Math.max(0, Math.min(cursor.to - 1, pos - 25 /* Margin */))
+                        : Math.min(tree.length, Math.max(cursor.from + 1, pos + 25 /* Margin */));
                 if (side < 0 ? cursor.prevSibling() : cursor.nextSibling())
                     break;
                 if (!cursor.parent())
@@ -56,6 +54,7 @@ class FragmentCursor {
             this.nextStart = 1e9;
         }
     }
+    // `pos` must be >= any previously given `pos` for this cursor
     nodeAt(pos) {
         if (pos < this.nextStart)
             return null;
@@ -65,7 +64,7 @@ class FragmentCursor {
             return null;
         for (;;) {
             let last = this.trees.length - 1;
-            if (last < 0) {
+            if (last < 0) { // End of tree
                 this.nextFragment();
                 return null;
             }
@@ -94,7 +93,7 @@ class FragmentCursor {
                     }
                 }
                 this.index[last]++;
-                if (start + next.length >= Math.max(this.safeFrom, pos)) {
+                if (start + next.length >= Math.max(this.safeFrom, pos)) { // Enter this node
                     this.trees.push(next);
                     this.start.push(start);
                     this.index.push(0);
@@ -119,7 +118,7 @@ class TokenCache {
         let actionIndex = 0;
         let main = null;
         let { parser } = stack.p, { tokenizers } = parser;
-        let mask = parser.stateSlot(stack.state, 3);
+        let mask = parser.stateSlot(stack.state, 3 /* TokenizerMask */);
         let context = stack.curContext ? stack.curContext.hash : 0;
         let lookAhead = 0;
         for (let i = 0; i < tokenizers.length; i++) {
@@ -133,9 +132,9 @@ class TokenCache {
                 token.mask = mask;
                 token.context = context;
             }
-            if (token.lookAhead > token.end + 25)
+            if (token.lookAhead > token.end + 25 /* Margin */)
                 lookAhead = Math.max(token.lookAhead, lookAhead);
-            if (token.value != 0) {
+            if (token.value != 0 /* Err */) {
                 let startIndex = actionIndex;
                 if (token.extended > -1)
                     actionIndex = this.addActions(stack, token.extended, token.end, actionIndex);
@@ -166,7 +165,7 @@ class TokenCache {
         let main = new CachedToken, { pos, p } = stack;
         main.start = pos;
         main.end = Math.min(pos + 1, p.stream.end);
-        main.value = pos == p.stream.end ? p.parser.eofTerm : 0;
+        main.value = pos == p.stream.end ? p.parser.eofTerm : 0 /* Err */;
         return main;
     }
     updateCachedToken(token, tokenizer, stack) {
@@ -177,7 +176,7 @@ class TokenCache {
                 if (parser.specialized[i] == token.value) {
                     let result = parser.specializers[i](this.stream.read(token.start, token.end), stack);
                     if (result >= 0 && stack.p.parser.dialect.allows(result >> 1)) {
-                        if ((result & 1) == 0)
+                        if ((result & 1) == 0 /* Specialize */)
                             token.value = result >> 1;
                         else
                             token.extended = result >> 1;
@@ -186,11 +185,12 @@ class TokenCache {
                 }
         }
         else {
-            token.value = 0;
+            token.value = 0 /* Err */;
             token.end = Math.min(stack.p.stream.end, stack.pos + 1);
         }
     }
     putAction(action, token, end, index) {
+        // Don't add duplicate actions
         for (let i = 0; i < index; i += 3)
             if (this.actions[i] == action)
                 return index;
@@ -202,13 +202,13 @@ class TokenCache {
     addActions(stack, token, end, index) {
         let { state } = stack, { parser } = stack.p, { data } = parser;
         for (let set = 0; set < 2; set++) {
-            for (let i = parser.stateSlot(state, set ? 2 : 1);; i += 3) {
-                if (data[i] == 65535) {
-                    if (data[i + 1] == 1) {
+            for (let i = parser.stateSlot(state, set ? 2 /* Skip */ : 1 /* Actions */);; i += 3) {
+                if (data[i] == 65535 /* End */) {
+                    if (data[i + 1] == 1 /* Next */) {
                         i = pair(data, i + 2);
                     }
                     else {
-                        if (index == 0 && data[i + 1] == 2)
+                        if (index == 0 && data[i + 1] == 2 /* Other */)
                             index = this.putAction(pair(data, i + 2), token, end, index);
                         break;
                     }
@@ -220,22 +220,13 @@ class TokenCache {
         return index;
     }
 }
-var Rec;
-(function (Rec) {
-    Rec[Rec["Distance"] = 5] = "Distance";
-    Rec[Rec["MaxRemainingPerStep"] = 3] = "MaxRemainingPerStep";
-    Rec[Rec["MinBufferLengthPrune"] = 500] = "MinBufferLengthPrune";
-    Rec[Rec["ForceReduceLimit"] = 10] = "ForceReduceLimit";
-    Rec[Rec["CutDepth"] = 15000] = "CutDepth";
-    Rec[Rec["CutTo"] = 9000] = "CutTo";
-})(Rec || (Rec = {}));
 export class Parse {
     constructor(parser, input, fragments, ranges) {
         this.parser = parser;
         this.input = input;
         this.ranges = ranges;
         this.recovering = 0;
-        this.nextStackID = 0x2654;
+        this.nextStackID = 0x2654; // ♔, ♕, ♖, ♗, ♘, ♙, ♠, ♡, ♢, ♣, ♤, ♥, ♦, ♧
         this.minStackPos = 0;
         this.reused = [];
         this.stoppedAt = null;
@@ -250,10 +241,20 @@ export class Parse {
     get parsedPos() {
         return this.minStackPos;
     }
+    // Move the parser forward. This will process all parse stacks at
+    // `this.pos` and try to advance them to a further position. If no
+    // stack for such a position is found, it'll start error-recovery.
+    //
+    // When the parse is finished, this will return a syntax tree. When
+    // not, it returns `null`.
     advance() {
         let stacks = this.stacks, pos = this.minStackPos;
+        // This will hold stacks beyond `pos`.
         let newStacks = this.stacks = [];
         let stopped, stoppedTokens;
+        // Keep advancing any stacks at `pos` until they either move
+        // forward or can't be advanced. Gather stacks that can't be
+        // advanced further in `stopped`.
         for (let i = 0; i < stacks.length; i++) {
             let stack = stacks[i];
             for (;;) {
@@ -286,7 +287,7 @@ export class Parse {
                 throw new SyntaxError("No parse at " + pos);
             }
             if (!this.recovering)
-                this.recovering = 5;
+                this.recovering = 5 /* Distance */;
         }
         if (this.recovering && stopped) {
             let finished = this.stoppedAt != null && stopped[0].pos > this.stoppedAt ? stopped[0]
@@ -295,7 +296,7 @@ export class Parse {
                 return this.stackToTree(finished.forceAll());
         }
         if (this.recovering) {
-            let maxRemaining = this.recovering == 1 ? 1 : this.recovering * 3;
+            let maxRemaining = this.recovering == 1 ? 1 : this.recovering * 3 /* MaxRemainingPerStep */;
             if (newStacks.length > maxRemaining) {
                 newStacks.sort((a, b) => b.score - a.score);
                 while (newStacks.length > maxRemaining)
@@ -305,12 +306,15 @@ export class Parse {
                 this.recovering--;
         }
         else if (newStacks.length > 1) {
+            // Prune stacks that are in the same state, or that have been
+            // running without splitting for a while, to avoid getting stuck
+            // with multiple successful stacks running endlessly on.
             outer: for (let i = 0; i < newStacks.length - 1; i++) {
                 let stack = newStacks[i];
                 for (let j = i + 1; j < newStacks.length; j++) {
                     let other = newStacks[j];
                     if (stack.sameState(other) ||
-                        stack.buffer.length > 500 && other.buffer.length > 500) {
+                        stack.buffer.length > 500 /* MinBufferLengthPrune */ && other.buffer.length > 500 /* MinBufferLengthPrune */) {
                         if (((stack.score - other.score) || (stack.buffer.length - other.buffer.length)) > 0) {
                             newStacks.splice(j--, 1);
                         }
@@ -333,6 +337,10 @@ export class Parse {
             throw new RangeError("Can't move stoppedAt forward");
         this.stoppedAt = pos;
     }
+    // Returns an updated version of the given stack, or null if the
+    // stack can't advance normally. When `split` and `stacks` are
+    // given, stacks split off by ambiguous operations will be pushed to
+    // `split`, or added to `stacks` if they move `pos` forward.
     advanceStack(stack, stacks, split) {
         let start = stack.pos, { parser } = this;
         let base = verbose ? this.stackID(stack) + " -> " : "";
@@ -357,15 +365,15 @@ export class Parse {
                     break;
             }
         }
-        let defaultReduce = parser.stateSlot(stack.state, 4);
+        let defaultReduce = parser.stateSlot(stack.state, 4 /* DefaultReduce */);
         if (defaultReduce > 0) {
             stack.reduce(defaultReduce);
             if (verbose)
-                console.log(base + this.stackID(stack) + ` (via always-reduce ${parser.getName(defaultReduce & 65535)})`);
+                console.log(base + this.stackID(stack) + ` (via always-reduce ${parser.getName(defaultReduce & 65535 /* ValueMask */)})`);
             return true;
         }
-        if (stack.stack.length >= 15000) {
-            while (stack.stack.length > 9000 && stack.forceReduce()) { }
+        if (stack.stack.length >= 15000 /* CutDepth */) {
+            while (stack.stack.length > 9000 /* CutTo */ && stack.forceReduce()) { }
         }
         let actions = this.tokens.getActions(stack);
         for (let i = 0; i < actions.length;) {
@@ -374,8 +382,8 @@ export class Parse {
             let localStack = last ? stack : stack.split();
             localStack.apply(action, term, end);
             if (verbose)
-                console.log(base + this.stackID(localStack) + ` (via ${(action & 65536) == 0 ? "shift"
-                    : `reduce of ${parser.getName(action & 65535)}`} for ${parser.getName(term)} @ ${start}${localStack == stack ? "" : ", split"})`);
+                console.log(base + this.stackID(localStack) + ` (via ${(action & 65536 /* ReduceFlag */) == 0 ? "shift"
+                    : `reduce of ${parser.getName(action & 65535 /* ValueMask */)}`} for ${parser.getName(term)} @ ${start}${localStack == stack ? "" : ", split"})`);
             if (last)
                 return true;
             else if (localStack.pos > start)
@@ -385,6 +393,9 @@ export class Parse {
         }
         return false;
     }
+    // Advance a given stack forward as far as it will go. Returns the
+    // (possibly updated) stack if it got stuck, or null if it moved
+    // forward and was given to `pushStackDedup`.
     advanceFully(stack, newStacks) {
         let pos = stack.pos;
         for (;;) {
@@ -413,7 +424,7 @@ export class Parse {
                     continue;
             }
             let force = stack.split(), forceBase = base;
-            for (let j = 0; force.forceReduce() && j < 10; j++) {
+            for (let j = 0; force.forceReduce() && j < 10 /* ForceReduceLimit */; j++) {
                 if (verbose)
                     console.log(forceBase + this.stackID(force) + " (via force-reduce)");
                 let done = this.advanceFully(force, newStacks);
@@ -430,7 +441,7 @@ export class Parse {
             if (this.stream.end > stack.pos) {
                 if (tokenEnd == stack.pos) {
                     tokenEnd++;
-                    token = 0;
+                    token = 0 /* Err */;
                 }
                 stack.recoverByDelete(token, tokenEnd);
                 if (verbose)
@@ -443,6 +454,7 @@ export class Parse {
         }
         return finished;
     }
+    // Convert the stack's buffer to a syntax tree.
     stackToTree(stack) {
         stack.close();
         return Tree.build({ buffer: StackBufferCursor.create(stack),
@@ -492,11 +504,13 @@ export class ContextTracker {
     }
 }
 export class LRParser extends Parser {
+    // @internal
     constructor(spec) {
         super();
+        // @internal
         this.wrappers = [];
-        if (spec.version != 14)
-            throw new RangeError(`Parser version (${spec.version}) doesn't match runtime version (${14})`);
+        if (spec.version != 14 /* Version */)
+            throw new RangeError(`Parser version (${spec.version}) doesn't match runtime version (${14 /* Version */})`);
         let nodeNames = spec.nodeNames.split(" ");
         this.minRepeatTerm = nodeNames.length;
         for (let i = 0; i < spec.repeatNodeCount; i++)
@@ -586,33 +600,36 @@ export class LRParser extends Parser {
     hasAction(state, terminal) {
         let data = this.data;
         for (let set = 0; set < 2; set++) {
-            for (let i = this.stateSlot(state, set ? 2 : 1), next;; i += 3) {
-                if ((next = data[i]) == 65535) {
-                    if (data[i + 1] == 1)
+            for (let i = this.stateSlot(state, set ? 2 /* Skip */ : 1 /* Actions */), next;; i += 3) {
+                if ((next = data[i]) == 65535 /* End */) {
+                    if (data[i + 1] == 1 /* Next */)
                         next = data[i = pair(data, i + 2)];
-                    else if (data[i + 1] == 2)
+                    else if (data[i + 1] == 2 /* Other */)
                         return pair(data, i + 2);
                     else
                         break;
                 }
-                if (next == terminal || next == 0)
+                if (next == terminal || next == 0 /* Err */)
                     return pair(data, i + 1);
             }
         }
         return 0;
     }
+    // @internal
     stateSlot(state, slot) {
-        return this.states[(state * 6) + slot];
+        return this.states[(state * 6 /* Size */) + slot];
     }
+    // @internal
     stateFlag(state, flag) {
-        return (this.stateSlot(state, 0) & flag) > 0;
+        return (this.stateSlot(state, 0 /* Flags */) & flag) > 0;
     }
+    // @internal
     validAction(state, action) {
-        if (action == this.stateSlot(state, 4))
+        if (action == this.stateSlot(state, 4 /* DefaultReduce */))
             return true;
-        for (let i = this.stateSlot(state, 1);; i += 3) {
-            if (this.data[i] == 65535) {
-                if (this.data[i + 1] == 1)
+        for (let i = this.stateSlot(state, 1 /* Actions */);; i += 3) {
+            if (this.data[i] == 65535 /* End */) {
+                if (this.data[i + 1] == 1 /* Next */)
                     i = pair(this.data, i + 2);
                 else
                     return false;
@@ -623,14 +640,14 @@ export class LRParser extends Parser {
     }
     nextStates(state) {
         let result = [];
-        for (let i = this.stateSlot(state, 1);; i += 3) {
-            if (this.data[i] == 65535) {
-                if (this.data[i + 1] == 1)
+        for (let i = this.stateSlot(state, 1 /* Actions */);; i += 3) {
+            if (this.data[i] == 65535 /* End */) {
+                if (this.data[i + 1] == 1 /* Next */)
                     i = pair(this.data, i + 2);
                 else
                     break;
             }
-            if ((this.data[i + 2] & (65536 >> 16)) == 0) {
+            if ((this.data[i + 2] & (65536 /* ReduceFlag */ >> 16)) == 0) {
                 let value = this.data[i + 1];
                 if (!result.some((v, i) => (i & 1) && v == value))
                     result.push(this.data[i], value);
@@ -638,11 +655,14 @@ export class LRParser extends Parser {
         }
         return result;
     }
+    // @internal
     overrides(token, prev) {
         let iPrev = findOffset(this.data, this.tokenPrecTable, prev);
         return iPrev < 0 || findOffset(this.data, this.tokenPrecTable, token) < iPrev;
     }
     configure(config) {
+        // Hideous reflection-based kludge to make it easy to create a
+        // slightly modified copy of a parser.
         let copy = Object.assign(Object.create(LRParser.prototype), this);
         if (config.props)
             copy.nodeSet = this.nodeSet.extend(...config.props);
@@ -677,10 +697,12 @@ export class LRParser extends Parser {
     }
     get eofTerm() { return this.maxNode + 1; }
     get topNode() { return this.nodeSet.types[this.top[1]]; }
+    // @internal
     dynamicPrecedence(term) {
         let prec = this.dynamicPrecedences;
         return prec == null ? 0 : prec[term] || 0;
     }
+    // @internal
     parseDialect(dialect) {
         let values = Object.keys(this.dialects), flags = values.map(() => false);
         if (dialect)
@@ -692,7 +714,7 @@ export class LRParser extends Parser {
         let disabled = null;
         for (let i = 0; i < values.length; i++)
             if (!flags[i]) {
-                for (let j = this.dialects[values[i]], id; (id = this.data[j++]) != 65535;)
+                for (let j = this.dialects[values[i]], id; (id = this.data[j++]) != 65535 /* End */;)
                     (disabled || (disabled = new Uint8Array(this.maxTerm + 1)))[id] = 1;
             }
         return new Dialect(dialect, flags, disabled);
@@ -703,7 +725,7 @@ export class LRParser extends Parser {
 }
 function pair(data, off) { return data[off] | (data[off + 1] << 16); }
 function findOffset(data, start, term) {
-    for (let i = start, next; (next = data[i]) != 65535; i++)
+    for (let i = start, next; (next = data[i]) != 65535 /* End */; i++)
         if (next == term)
             return i - start;
     return -1;
@@ -713,7 +735,7 @@ function findFinished(stacks) {
     for (let stack of stacks) {
         let stopped = stack.p.stoppedAt;
         if ((stack.pos == stack.p.stream.end || stopped != null && stack.pos > stopped) &&
-            stack.p.parser.stateFlag(stack.state, 2) &&
+            stack.p.parser.stateFlag(stack.state, 2 /* Accepting */) &&
             (!best || best.score < stack.score))
             best = stack;
     }

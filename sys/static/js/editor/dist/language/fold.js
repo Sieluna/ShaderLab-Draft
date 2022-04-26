@@ -2,8 +2,22 @@ import { NodeProp } from "../lezer/common/index.js";
 import { combineConfig, StateEffect, Facet, StateField, RangeSet, RangeSetBuilder } from "../state/index.js";
 import { EditorView, Decoration, WidgetType, ViewPlugin, gutter, GutterMarker } from "../view/index.js";
 import { language, syntaxTree } from "./language.js";
+/**
+ * A facet that registers a code folding service. When called with the extent of a line,
+ * such a function should return a foldable range that starts on that line (but continues
+ * beyond it), if one can be found.
+ */
 export const foldService = Facet.define();
+/**
+ * This node prop is used to associate folding information with syntax node types. Given a
+ * syntax node, it should check whether that tree is foldable and return the range that can
+ * be collapsed when it is.
+ */
 export const foldNodeProp = new NodeProp();
+/**
+ * [Fold](#language.foldNodeProp) function that folds everything but the first and the last
+ * child of a syntax node. Useful for nodes that start and end with delimiters.
+ */
 export function foldInside(node) {
     let first = node.firstChild, last = node.lastChild;
     return first && first.to < last.from ? { from: first.to, to: last.type.isError ? node.to : last.from } : null;
@@ -32,6 +46,11 @@ function isUnfinished(node) {
     let ch = node.lastChild;
     return ch && ch.to == node.to && ch.type.isError;
 }
+/**
+ * Check whether the given line is foldable. First asks any fold services registered through
+ * {@link foldService}, and if none of them return a result, tries to query the
+ * [fold node prop]{@link foldNodeProp} of syntax nodes that cover the end of the line.
+ */
 export function foldable(state, lineStart, lineEnd) {
     for (let service of state.facet(foldService)) {
         let result = service(state, lineStart, lineEnd);
@@ -44,7 +63,13 @@ function mapRange(range, mapping) {
     let from = mapping.mapPos(range.from, 1), to = mapping.mapPos(range.to, -1);
     return from >= to ? undefined : { from, to };
 }
+/**
+ * State effect that can be attached to a transaction to fold the given range. (You probably
+ * only need this in exceptional circumstances—usually you'll just want to let
+ * {@link foldCode} and the [fold gutter]{@link foldGutter} create the transactions.)
+ */
 export const foldEffect = StateEffect.define({ map: mapRange });
+/** State effect that unfolds the given range (if it was folded). */
 export const unfoldEffect = StateEffect.define({ map: mapRange });
 function selectedLines(view) {
     let lines = [];
@@ -68,6 +93,7 @@ const foldState = StateField.define({
                 folded = folded.update({ filter: (from, to) => e.value.from != from || e.value.to != to,
                     filterFrom: e.value.from, filterTo: e.value.to });
         }
+        // Clear folded ranges that cover the selection head
         if (tr.selection) {
             let onSelection = false, { head } = tr.selection.main;
             folded.between(head, head, (a, b) => { if (a < head && b > head)
@@ -83,6 +109,7 @@ const foldState = StateField.define({
     },
     provide: f => EditorView.decorations.from(f)
 });
+/** Get a [range set](#state.RangeSet) containing the folded range in the given state. */
 export function foldedRanges(state) {
     return state.field(foldState, false) || RangeSet.empty;
 }
@@ -104,6 +131,7 @@ function foldExists(folded, from, to) {
 function maybeEnable(state, other) {
     return state.field(foldState, false) ? other : other.concat(StateEffect.appendConfig.of(codeFolding()));
 }
+/** Fold the lines that are selected, if possible. */
 export const foldCode = view => {
     for (let line of selectedLines(view)) {
         let range = foldable(view.state, line.from, line.to);
@@ -114,6 +142,7 @@ export const foldCode = view => {
     }
     return false;
 };
+/** Unfold folded ranges on selected lines. */
 export const unfoldCode = view => {
     if (!view.state.field(foldState, false))
         return false;
@@ -131,6 +160,12 @@ function announceFold(view, range, fold = true) {
     let lineFrom = view.state.doc.lineAt(range.from).number, lineTo = view.state.doc.lineAt(range.to).number;
     return EditorView.announce.of(`${view.state.phrase(fold ? "Folded lines" : "Unfolded lines")} ${lineFrom} ${view.state.phrase("to")} ${lineTo}.`);
 }
+/**
+ * Fold all top-level foldable ranges. Note that, in most cases, folding information will depend
+ * on the [syntax tree]{@link syntaxTree}, and folding everything may not work reliably when the
+ * document hasn't been fully parsed (either because the editor state was only just initialized,
+ * or because the document is so big that the parser decided not to parse it entirely).
+ */
 export const foldAll = view => {
     let { state } = view, effects = [];
     for (let pos = 0; pos < state.doc.length;) {
@@ -143,6 +178,7 @@ export const foldAll = view => {
         view.dispatch({ effects: maybeEnable(view.state, effects) });
     return !!effects.length;
 };
+/** Unfold all folded code. */
 export const unfoldAll = view => {
     let field = view.state.field(foldState, false);
     if (!field || !field.size)
@@ -152,6 +188,13 @@ export const unfoldAll = view => {
     view.dispatch({ effects });
     return true;
 };
+/**
+ * Default fold-related key bindings.
+ *  - Ctrl-Shift-[ (Cmd-Alt-[ on macOS): {@link foldCode}.
+ *  - Ctrl-Shift-] (Cmd-Alt-] on macOS): {@link unfoldCode}.
+ *  - Ctrl-Alt-[: {@link foldAll}.
+ *  - Ctrl-Alt-]: {@link unfoldAll}.
+ */
 export const foldKeymap = [
     { key: "Ctrl-Shift-[", mac: "Cmd-Alt-[", run: foldCode },
     { key: "Ctrl-Shift-]", mac: "Cmd-Alt-]", run: unfoldCode },
@@ -165,6 +208,7 @@ const defaultConfig = {
 const foldConfig = Facet.define({
     combine(values) { return combineConfig(values, defaultConfig); }
 });
+/** Create an extension that configures code folding. */
 export function codeFolding(config) {
     let result = [foldState, baseTheme];
     if (config)
@@ -214,6 +258,10 @@ class FoldMarker extends GutterMarker {
         return span;
     }
 }
+/**
+ * Create an extension that registers a fold gutter, which shows a fold status indicator before
+ * foldable lines (which can be clicked to fold or unfold the line).
+ */
 export function foldGutter(config = {}) {
     let fullConfig = Object.assign(Object.assign({}, foldGutterDefaults), config);
     let canFold = new FoldMarker(fullConfig, true), canUnfold = new FoldMarker(fullConfig, false);
@@ -232,8 +280,8 @@ export function foldGutter(config = {}) {
         buildMarkers(view) {
             let builder = new RangeSetBuilder();
             for (let line of view.viewportLineBlocks) {
-                let mark = findFold(view.state, line.from, line.to) ? canUnfold
-                    : foldable(view.state, line.from, line.to) ? canFold : null;
+                let mark = findFold(view.state, line.from, line.to) ? canUnfold :
+                    foldable(view.state, line.from, line.to) ? canFold : null;
                 if (mark)
                     builder.add(line.from, line.from, mark);
             }

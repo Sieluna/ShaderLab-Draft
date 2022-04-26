@@ -251,7 +251,7 @@ function measureRange(view: EditorView, range: SelectionRange): Piece[] {
                     if (spanFrom >= endPos) break
                     if (spanTo > pos)
                         addSpan(Math.max(spanFrom, pos), from == null && spanFrom <= start,
-                            Math.min(spanTo, endPos), to == null && spanTo >= end, span.dir)
+                                Math.min(spanTo, endPos), to == null && spanTo >= end, span.dir)
                 }
                 pos = docLine.to + 1
                 if (pos >= endPos) break

@@ -18,20 +18,15 @@ export function applyDOMChange(view: EditorView, start: number, end: number, typ
         reader.readRange(bounds.startDOM, bounds.endDOM)
 
         let preferredPos = sel.from, preferredSide = null
-        // Prefer anchoring to end when Backspace is pressed (or, on
-        // Android, when something was deleted)
-        if (view.inputState.lastKeyCode === 8 && view.inputState.lastKeyTime > Date.now() - 100 ||
-            browser.android && reader.text.length < to - from) {
+        // Prefer anchoring to end when Backspace is pressed (or, on Android, when something was deleted)
+        if (view.inputState.lastKeyCode === 8 && view.inputState.lastKeyTime > Date.now() - 100 || browser.android && reader.text.length < to - from) {
             preferredPos = sel.to
             preferredSide = "end"
         }
-        let diff = findDiff(view.state.doc.sliceString(from, to, LineBreakPlaceholder), reader.text,
-            preferredPos - from, preferredSide)
+        let diff = findDiff(view.state.doc.sliceString(from, to, LineBreakPlaceholder), reader.text, preferredPos - from, preferredSide)
         if (diff) {
-            // Chrome inserts two newlines when pressing shift-enter at the
-            // end of a line. This drops one of those.
-            if (browser.chrome && view.inputState.lastKeyCode == 13 &&
-                diff.toB == diff.from + 2 && reader.text.slice(diff.from, diff.toB) == LineBreakPlaceholder + LineBreakPlaceholder)
+            // Chrome inserts two newlines when pressing shift-enter at the end of a line. This drops one of those.
+            if (browser.chrome && view.inputState.lastKeyCode == 13 && diff.toB == diff.from + 2 && reader.text.slice(diff.from, diff.toB) == LineBreakPlaceholder + LineBreakPlaceholder)
                 diff.toB--
 
             change = {from: from + diff.from, to: from + diff.toA,
@@ -41,14 +36,12 @@ export function applyDOMChange(view: EditorView, start: number, end: number, typ
     } else if (view.hasFocus || !view.state.facet(editable)) {
         let domSel = view.observer.selectionRange
         let {impreciseHead: iHead, impreciseAnchor: iAnchor} = view.docView
-        let head = iHead && iHead.node == domSel.focusNode && iHead.offset == domSel.focusOffset ||
-        !contains(view.contentDOM, domSel.focusNode)
-            ? view.state.selection.main.head
-            : view.docView.posFromDOM(domSel.focusNode!, domSel.focusOffset)
-        let anchor = iAnchor && iAnchor.node == domSel.anchorNode && iAnchor.offset == domSel.anchorOffset ||
-        !contains(view.contentDOM, domSel.anchorNode)
-            ? view.state.selection.main.anchor
-            : view.docView.posFromDOM(domSel.anchorNode!, domSel.anchorOffset)
+        let head = iHead && iHead.node == domSel.focusNode && iHead.offset == domSel.focusOffset || !contains(view.contentDOM, domSel.focusNode) ?
+            view.state.selection.main.head :
+            view.docView.posFromDOM(domSel.focusNode!, domSel.focusOffset)
+        let anchor = iAnchor && iAnchor.node == domSel.anchorNode && iAnchor.offset == domSel.anchorOffset || !contains(view.contentDOM, domSel.anchorNode) ?
+            view.state.selection.main.anchor :
+            view.docView.posFromDOM(domSel.anchorNode!, domSel.anchorOffset)
         if (head != sel.head || anchor != sel.anchor)
             newSel = EditorSelection.single(anchor, head)
     }
@@ -58,12 +51,10 @@ export function applyDOMChange(view: EditorView, start: number, end: number, typ
     // Heuristic to notice typing over a selected character
     if (!change && typeOver && !sel.empty && newSel && newSel.main.empty)
         change = {from: sel.from, to: sel.to, insert: view.state.doc.slice(sel.from, sel.to)}
-        // If the change is inside the selection and covers most of it,
-        // assume it is a selection replace (with identical characters at
-    // the start/end not included in the diff)
+        // If the change is inside the selection and covers most of it, assume it is a selection replace (with identical characters at the start/end not included in the diff)
     else if (change && change.from >= sel.from && change.to <= sel.to &&
-        (change.from != sel.from || change.to != sel.to) &&
-        (sel.to - sel.from) - (change.to - change.from) <= 4)
+            (change.from != sel.from || change.to != sel.to) &&
+            (sel.to - sel.from) - (change.to - change.from) <= 4)
         change = {
             from: sel.from, to: sel.to,
             insert: view.state.doc.slice(sel.from, change.from).append(change.insert).append(view.state.doc.slice(change.to, sel.to))
@@ -79,8 +70,7 @@ export function applyDOMChange(view: EditorView, start: number, end: number, typ
         // events and the pendingAndroidKey mechanism, but that's not
         // reliable in all situations.)
         if (browser.android &&
-            ((change.from == sel.from && change.to == sel.to &&
-                    change.insert.length == 1 && change.insert.lines == 2 &&
+            ((change.from == sel.from && change.to == sel.to && change.insert.length == 1 && change.insert.lines == 2 &&
                     dispatchKey(view.contentDOM, "Enter", 13)) ||
                 (change.from == sel.from - 1 && change.to == sel.to && change.insert.length == 0 &&
                     dispatchKey(view.contentDOM, "Backspace", 8)) ||
@@ -103,8 +93,7 @@ export function applyDOMChange(view: EditorView, start: number, end: number, typ
                 before + change.insert.sliceString(0, undefined, view.state.lineBreak) + after))
         } else {
             let changes = startState.changes(change)
-            let mainSel = newSel && !startState.selection.main.eq(newSel.main) && newSel.main.to <= changes.newLength
-                ? newSel.main : undefined
+            let mainSel = newSel && !startState.selection.main.eq(newSel.main) && newSel.main.to <= changes.newLength ? newSel.main : undefined
             // Try to apply a composition change to all cursors
             if (startState.selection.ranges.length > 1 && view.inputState.composing >= 0 &&
                 change.to <= sel.to && change.to >= sel.to - 10) {
@@ -155,8 +144,7 @@ export function applyDOMChange(view: EditorView, start: number, end: number, typ
     }
 }
 
-function findDiff(a: string, b: string, preferredPos: number, preferredSide: string | null)
-    : {from: number, toA: number, toB: number} | null {
+function findDiff(a: string, b: string, preferredPos: number, preferredSide: string | null): {from: number, toA: number, toB: number} | null {
     let minLen = Math.min(a.length, b.length)
     let from = 0
     while (from < minLen && a.charCodeAt(from) == b.charCodeAt(from)) from++

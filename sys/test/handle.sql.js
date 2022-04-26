@@ -1,30 +1,33 @@
-const query = require("../handle/sql.js");
+const sequelize = require("../handle/sql.js");
 const expect = require("chai").expect;
 
+const { user } = sequelize.models;
+
 describe("Sql handle test", () => {
-    let code;
-    describe("Insert test", () => {
-        beforeEach(() => query('select max(user_id) as max from users').then(res => query('insert into users (user_name, user_password) values (?, ?)', ["InsertTest" + (res[0].max + 1), "InsertTestPassword"]).then(res => code = res)));
-        it("should return get a object with affect rows > 1", () => {
-            expect(code).to.have.property("affectedRows").equal(1);
+    let code = true;
+    before(() => sequelize.sync({ force: true }).then(() => sequelize.authenticate().catch(error => code = error)));
+    after(async () => await sequelize.drop());
+    it("should return no error", () => {
+        expect(code).to.be.true;
+    });
+    describe("sequelize insert test", () => {
+        beforeEach(() => user.max("user_id").then(id => user.create({ name: "InsertTest" + id + 1, password: "InsertTestPassword"}).then(res => code = res)));
+        it("should return the user data", () => {
+            console.log(code)
+           expect(code).to.have.property("dataValues");
         });
     });
-    describe("Oversize test", () => {
-        beforeEach(() => query('insert into users (user_name, user_password) values (?, ?)', ["tooLongtooLongtooLongtooLongtooLongtooLongtooLongtooLongtooLong", "tooLongtooLongtooLongtooLongtooLongtooLongtooLongtooLongtooLong"]).then(res => code = res));
-        it("should return error code 1406", () => {
-            expect(code).to.be.equal(1406);
+    describe("sequelize insert oversize test", () => {
+        beforeEach(async () => {
+            try {
+                code = await user.create({ name: "123456789123456789", password: "InsertTestPassword"});
+            } catch (error) {
+                code = error;
+            }
         });
-    })
-    describe("Select test", () => {
-       beforeEach(() => query('select * from users').then(res => code = res));
-       it("should return user table", () => {
-           expect(code).length.above(0);
-       });
-    });
-    describe("Inject test", () => {
-        beforeEach(() => query('select * from ?', ["users; drop table users"]).then(res => code = res));
-        it("should return reject because it is a string type", () => {
-           expect(code).to.be.equal(1064);
+        it("should return the user data", () => {
+            console.log(code);
+            expect(code).exist;
         });
     });
-})
+});

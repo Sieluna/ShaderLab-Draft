@@ -11,9 +11,7 @@ export class TextView extends ContentView {
     children!: ContentView[]
     dom!: Text | null
 
-    constructor(public text: string) {
-        super()
-    }
+    constructor(public text: string) { super() }
 
     get length() { return this.text.length }
 

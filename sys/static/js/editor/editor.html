@@ -17,8 +17,9 @@
 </body>
 <script type=module>
     import { EditorState, EditorView, config } from "./loader.js";
-
-    import {glsl} from "./dist/glsl.js"
+    import { javascript } from "./dist/javascript.js";
+    import { glsl } from "./dist/glsl.js";
+    import { HoverRef } from "./hover.js";
 
     let glState = EditorState.create({ doc:
             '#ifdef GL_ES\n' +
@@ -36,6 +37,7 @@
             '}', extensions: [
             config,
             glsl(),
+            HoverRef
         ] });
     window.view = new EditorView({ state: glState, parent: document.querySelector("#glsl-editor") });
 
@@ -44,7 +46,7 @@
             '   console.log(`Hello, ${who}!`)\n' +
             '}', extensions: [
             config,
-            //javascript(),
+            javascript(),
         ] });
     window.view = new EditorView({ state: jsState, parent: document.querySelector("#js-editor") });
 </script>

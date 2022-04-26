@@ -3,11 +3,18 @@ import { EditorView } from "./editorview.js";
 import { ViewPlugin } from "./extension.js";
 import { BlockType } from "./decoration.js";
 import { Direction } from "./bidi.js";
+/**
+ * A gutter marker represents a bit of information attached to a line in a specific gutter.
+ * Your own custom markers have to extend this class.
+ */
 export class GutterMarker extends RangeValue {
+    // @internal
     compare(other) {
         return this == other || this.constructor == other.constructor && this.eq(other);
     }
+    /** Compare this marker to another marker of the same type. */
     eq(other) { return false; }
+    /** Called if the marker has a `toDOM` method and its representation was removed from a gutter. */
     destroy(dom) { }
 }
 GutterMarker.prototype.elementClass = "";
@@ -15,6 +22,11 @@ GutterMarker.prototype.toDOM = undefined;
 GutterMarker.prototype.mapMode = MapMode.TrackBefore;
 GutterMarker.prototype.startSide = GutterMarker.prototype.endSide = -1;
 GutterMarker.prototype.point = true;
+/**
+ * Facet used to add a class to all gutter elements for a given line. Markers given to this facet
+ * should _only_ define an [`elementclass`]{@link GutterMarker.elementClass}, not a
+ * [`toDOM`]{@link GutterMarker.toDOM} (or the marker will appear in all gutters for the line).
+ */
 export const gutterLineClass = Facet.define();
 const defaults = {
     class: "",
@@ -28,16 +40,23 @@ const defaults = {
     domEventHandlers: {}
 };
 const activeGutters = Facet.define();
+/** Define an editor gutter. The order in which the gutters appear is determined by their extension priority. */
 export function gutter(config) {
     return [gutters(), activeGutters.of(Object.assign(Object.assign({}, defaults), config))];
 }
 const unfixGutters = Facet.define({
     combine: values => values.some(x => x)
 });
+/**
+ * The gutter-drawing plugin is automatically enabled when you add a gutter, but you can use
+ * this function to explicitly configure it.
+ *
+ * Unless `fixed` is explicitly set to `false`, the gutters are fixed, meaning they don't scroll
+ * along with the content horizontally (except on Internet Explorer, which doesn't support
+ * CSS [`position: sticky`](https://developer.mozilla.org/en-US/docs/Web/CSS/position#sticky)).
+ */
 export function gutters(config) {
-    let result = [
-        gutterView,
-    ];
+    let result = [gutterView,];
     if (config && config.fixed === false)
         result.push(unfixGutters.of(true));
     return result;
@@ -55,6 +74,9 @@ const gutterView = ViewPlugin.fromClass(class {
             this.dom.appendChild(gutter.dom);
         this.fixed = !view.state.facet(unfixGutters);
         if (this.fixed) {
+            // FIXME IE11 fallback, which doesn't support position: sticky,
+            // by using position: relative + event handlers that realign the
+            // gutter (or just force fixed=false on IE11?)
             this.dom.style.position = "sticky";
         }
         this.syncGutters(false);
@@ -62,6 +84,7 @@ const gutterView = ViewPlugin.fromClass(class {
     }
     update(update) {
         if (this.updateGutters(update)) {
+            // Detach during sync when the viewport changed significantly (such as during scrolling), since for large updates that is faster.
             let vpA = this.prevViewport, vpB = update.view.viewport;
             let vpOverlap = Math.min(vpA.to, vpB.to) - Math.max(vpA.from, vpB.from);
             this.syncGutters(vpOverlap < (vpB.to - vpB.from) * 0.8);
@@ -297,7 +320,7 @@ class GutterElement {
         this.markers = markers;
     }
     destroy() {
-        this.setMarkers(null, []);
+        this.setMarkers(null, []); // First argument not used unless creating markers
     }
 }
 function sameMarkers(a, b) {
@@ -308,6 +331,7 @@ function sameMarkers(a, b) {
             return false;
     return true;
 }
+/** Facet used to provide markers to the line number gutter. */
 export const lineNumberMarkers = Facet.define();
 const lineNumberConfig = Facet.define({
     combine(values) {
@@ -353,6 +377,7 @@ const lineNumberGutter = activeGutters.compute([lineNumberConfig], state => ({
     },
     domEventHandlers: state.facet(lineNumberConfig).domEventHandlers
 }));
+/** Create a line number gutter extension. */
 export function lineNumbers(config = {}) {
     return [
         lineNumberConfig.of(config),
@@ -384,6 +409,10 @@ const activeLineGutterHighlighter = gutterLineClass.compute(["selection"], state
         }
     return RangeSet.of(marks);
 });
+/**
+ * Returns an extension that adds a `cm-activeLineGutter` class to all gutter elements on the [active
+ * line]{@link highlightActiveLine}.
+ */
 export function highlightActiveLineGutter() {
     return activeLineGutterHighlighter;
 }

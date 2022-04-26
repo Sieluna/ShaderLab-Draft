@@ -1,82 +1,134 @@
 import { MapMode, RangeValue, RangeSet } from "../state/index.js";
 import { attrsEq } from "./attributes.js";
+/**
+ * Widgets added to the content are described by subclasses of this class. Using a description
+ * object like that makes it possible to delay creating of the DOM structure for a widget until
+ * it is needed, and to avoid redrawing widgets even if the decorations that define them are
+ * recreated.
+ */
 export class WidgetType {
+    // Compare this instance to another instance of the same type.
+    // (TypeScript can't express this, but only instances of the same
+    // specific class will be passed to this method.) This is used to
+    // avoid redrawing widgets when they are replaced by a new
+    // decoration of the same type. The default implementation just
+    // returns `false`, which will cause new instances of the widget to
+    // always be redrawn.
     eq(widget) { return false; }
+    // Update a DOM element created by a widget of the same type (but
+    // different, non-`eq` content) to reflect this widget. May return
+    // true to indicate that it could update, false to indicate it
+    // couldn't (in which case the widget will be redrawn). The default
+    // implementation just returns false.
     updateDOM(dom) { return false; }
+    // @internal
     compare(other) {
         return this == other || this.constructor == other.constructor && this.eq(other);
     }
+    // The estimated height this widget will have, to be used when
+    // estimating the height of content that hasn't been drawn. May
+    // return -1 to indicate you don't know. The default implementation
+    // returns -1.
     get estimatedHeight() { return -1; }
+    // Can be used to configure which kinds of events inside the widget
+    // should be ignored by the editor. The default is to ignore all
+    // events.
     ignoreEvent(event) { return true; }
+    // @internal
     get customView() { return null; }
+    // This is called when the an instance of the widget is removed
+    // from the editor view.
     destroy(dom) { }
 }
-var Side;
-(function (Side) {
-    Side[Side["NonIncEnd"] = -600000000] = "NonIncEnd";
-    Side[Side["GapStart"] = -500000000] = "GapStart";
-    Side[Side["BlockBefore"] = -400000000] = "BlockBefore";
-    Side[Side["BlockIncStart"] = -300000000] = "BlockIncStart";
-    Side[Side["Line"] = -200000000] = "Line";
-    Side[Side["InlineBefore"] = -100000000] = "InlineBefore";
-    Side[Side["InlineIncStart"] = -1] = "InlineIncStart";
-    Side[Side["InlineIncEnd"] = 1] = "InlineIncEnd";
-    Side[Side["InlineAfter"] = 100000000] = "InlineAfter";
-    Side[Side["BlockIncEnd"] = 200000000] = "BlockIncEnd";
-    Side[Side["BlockAfter"] = 300000000] = "BlockAfter";
-    Side[Side["GapEnd"] = 400000000] = "GapEnd";
-    Side[Side["NonIncStart"] = 500000000] = "NonIncStart";
-})(Side || (Side = {}));
+// The different types of blocks that can occur in an editor view.
 export var BlockType;
 (function (BlockType) {
+    // A line of text.
     BlockType[BlockType["Text"] = 0] = "Text";
+    // A block widget associated with the position after it.
     BlockType[BlockType["WidgetBefore"] = 1] = "WidgetBefore";
+    // A block widget associated with the position before it.
     BlockType[BlockType["WidgetAfter"] = 2] = "WidgetAfter";
+    // A block widget [replacing](#view.Decoration^replace) a range of content.
     BlockType[BlockType["WidgetRange"] = 3] = "WidgetRange";
 })(BlockType || (BlockType = {}));
+// A decoration provides information on how to draw or style a piece
+// of content. You'll usually use it wrapped in a
+// [`Range`](#state.Range), which adds a start and end position.
+// @nonabstract
 export class Decoration extends RangeValue {
-    constructor(startSide, endSide, widget, spec) {
+    // @internal
+    constructor(
+    // @internal
+    startSide, 
+    // @internal
+    endSide, 
+    // @internal
+    widget, 
+    // The config object used to create this decoration. You can
+    // include additional properties in there to store metadata about
+    // your decoration.
+    spec) {
         super();
         this.startSide = startSide;
         this.endSide = endSide;
         this.widget = widget;
         this.spec = spec;
     }
+    // @internal
     get heightRelevant() { return false; }
+    // Create a mark decoration, which influences the styling of the
+    // content in its range. Nested mark decorations will cause nested
+    // DOM elements to be created. Nesting order is determined by
+    // precedence of the [facet](#view.EditorView^decorations), with
+    // the higher-precedence decorations creating the inner DOM nodes.
+    // Such elements are split on line boundaries and on the boundaries
+    // of lower-precedence decorations.
     static mark(spec) {
         return new MarkDecoration(spec);
     }
+    // Create a widget decoration, which displays a DOM element at the
+    // given position.
     static widget(spec) {
         let side = spec.side || 0, block = !!spec.block;
-        side += block ? (side > 0 ? 300000000 : -400000000) : (side > 0 ? 100000000 : -100000000);
+        side += block ? (side > 0 ? 300000000 /* BlockAfter */ : -400000000 /* BlockBefore */) : (side > 0 ? 100000000 /* InlineAfter */ : -100000000 /* InlineBefore */);
         return new PointDecoration(spec, side, side, block, spec.widget || null, false);
     }
+    // Create a replace decoration which replaces the given range with
+    // a widget, or simply hides it.
     static replace(spec) {
         let block = !!spec.block, startSide, endSide;
         if (spec.isBlockGap) {
-            startSide = -500000000;
-            endSide = 400000000;
+            startSide = -500000000 /* GapStart */;
+            endSide = 400000000 /* GapEnd */;
         }
         else {
             let { start, end } = getInclusive(spec, block);
-            startSide = (start ? (block ? -300000000 : -1) : 500000000) - 1;
-            endSide = (end ? (block ? 200000000 : 1) : -600000000) + 1;
+            startSide = (start ? (block ? -300000000 /* BlockIncStart */ : -1 /* InlineIncStart */) : 500000000 /* NonIncStart */) - 1;
+            endSide = (end ? (block ? 200000000 /* BlockIncEnd */ : 1 /* InlineIncEnd */) : -600000000 /* NonIncEnd */) + 1;
         }
         return new PointDecoration(spec, startSide, endSide, block, spec.widget || null, true);
     }
+    // Create a line decoration, which can add DOM attributes to the
+    // line starting at the given position.
     static line(spec) {
         return new LineDecoration(spec);
     }
+    // Build a [`DecorationSet`](#view.DecorationSet) from the given
+    // decorated range or ranges. If the ranges aren't already sorted,
+    // pass `true` for `sort` to make the library sort them for you.
     static set(of, sort = false) {
         return RangeSet.of(of, sort);
     }
+    // @internal
     hasHeight() { return this.widget ? this.widget.estimatedHeight > -1 : false; }
 }
+// The empty set of decorations.
 Decoration.none = RangeSet.empty;
 export class MarkDecoration extends Decoration {
     constructor(spec) {
         let { start, end } = getInclusive(spec);
-        super(start ? -1 : 500000000, end ? 1 : -600000000, null, spec);
+        super(start ? -1 /* InlineIncStart */ : 500000000 /* NonIncStart */, end ? 1 /* InlineIncEnd */ : -600000000 /* NonIncEnd */, null, spec);
         this.tagName = spec.tagName || "span";
         this.class = spec.class || "";
         this.attrs = spec.attributes || null;
@@ -97,7 +149,7 @@ export class MarkDecoration extends Decoration {
 MarkDecoration.prototype.point = false;
 export class LineDecoration extends Decoration {
     constructor(spec) {
-        super(-200000000, -200000000, null, spec);
+        super(-200000000 /* Line */, -200000000 /* Line */, null, spec);
     }
     eq(other) {
         return other instanceof LineDecoration && attrsEq(this.spec.attributes, other.spec.attributes);
@@ -117,6 +169,7 @@ export class PointDecoration extends Decoration {
         this.isReplace = isReplace;
         this.mapMode = !block ? MapMode.TrackDel : startSide <= 0 ? MapMode.TrackBefore : MapMode.TrackAfter;
     }
+    // Only relevant when this.block == true
     get type() {
         return this.startSide < this.endSide ? BlockType.WidgetRange
             : this.startSide <= 0 ? BlockType.WidgetBefore : BlockType.WidgetAfter;

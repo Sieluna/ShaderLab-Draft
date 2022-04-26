@@ -4,7 +4,15 @@
 
 version: 2.0.1
 
+**language Specification**
+
+| Module  | Specification |
+|:-------:|:-------------:|
+| nodeJS  |   commonJS    |
+ | browser | ES 6 Standard |  
+
 https://www.zybuluo.com/mdeditor#1523606
+
 
 ## Login page
 

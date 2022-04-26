@@ -5,9 +5,11 @@
     "dependencies": {
         "express": "latest",
         "mysql2": "latest",
+        "multer": "latest",
         "morgan": "latest",
-        "body-parser": "latest",
-        "multer": "latest"
+        "sequelize": "latest",
+        "jsonwebtoken": "latest",
+        "express-unless": "latest"
     },
     "devDependencies": {
         "mocha": "latest",

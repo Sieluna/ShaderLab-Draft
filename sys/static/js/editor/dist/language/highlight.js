@@ -3,6 +3,7 @@ import { StyleModule } from "../utils/style-mod.js";
 import { EditorView, ViewPlugin, Decoration } from "../view/index.js";
 import { Prec, Facet, RangeSetBuilder } from "../state/index.js";
 import { syntaxTree, Language, languageDataProp } from "./language.js";
+/** A highlight style associates CSS styles with higlighting [tags](https://lezer.codemirror.net/docs/ref#highlight.Tag). */
 export class HighlightStyle {
     constructor(spec, options) {
         let modSpec;
@@ -23,6 +24,20 @@ export class HighlightStyle {
         this.module = modSpec ? new StyleModule(modSpec) : null;
         this.themeType = options.themeType;
     }
+    /**
+     * Create a highlighter style that associates the given styles to
+     * the given tags. The specs must be objects that hold a style tag
+     * or array of tags in their `tag` property, and either a single
+     * `class` property providing a static CSS class (for highlighter
+     * that rely on external styling), or a
+     * [`style-mod`](https://github.com/marijnh/style-mod#documentation)-style
+     * set of CSS properties (which define the styling for those tags).
+     * The CSS rules created for a highlighter will be emitted in the
+     * order of the spec's properties. That means that for elements that
+     * have multiple tags associated with them, styles defined further
+     * down in the list will have a higher CSS precedence than styles
+     * defined earlier.
+     */
     static define(specs, options) {
         return new HighlightStyle(specs, options || {});
     }
@@ -35,6 +50,13 @@ function getHighlighters(state) {
     let main = state.facet(highlighterFacet);
     return main.length ? main : state.facet(fallbackHighlighter);
 }
+/**
+ * Wrap a highlighter in an editor extension that uses it to apply syntax
+ * highlighting to the editor content.
+ *
+ * When multiple (non-fallback) styles are provided, the styling applied is
+ * the union of the classes they emit.
+ */
 export function syntaxHighlighting(highlighter, options) {
     let ext = [treeHighlighter], themeType;
     if (highlighter instanceof HighlightStyle) {
@@ -52,6 +74,11 @@ export function syntaxHighlighting(highlighter, options) {
         ext.push(highlighterFacet.of(highlighter));
     return ext;
 }
+/**
+ * Returns the CSS classes (if any) that the highlighters active in the state would
+ * assign to the given style [tags](https://lezer.codemirror.net/docs/ref#highlight.Tag)
+ * and (optional) language [scope]{@link options.scope}.
+ */
 export function highlightingFor(state, tags, scope) {
     let highlighters = getHighlighters(state);
     let result = null;
@@ -97,6 +124,7 @@ class TreeHighlighter {
 const treeHighlighter = Prec.high(ViewPlugin.fromClass(TreeHighlighter, {
     decorations: v => v.decorations
 }));
+/** A default highlight style (works well with light themes). */
 export const defaultHighlightStyle = HighlightStyle.define([
     { tag: tags.meta,
         color: "#7a757a" },

@@ -2,16 +2,6 @@ import { RangeSet } from "../state/index.js";
 import { PointDecoration, BlockType, WidgetType } from "./decoration.js";
 import { LineView, BlockWidgetView } from "./blockview.js";
 import { WidgetView, TextView, MarkView, WidgetBufferView } from "./inlineview.js";
-var T;
-(function (T) {
-    T[T["Chunk"] = 512] = "Chunk";
-})(T || (T = {}));
-var Buf;
-(function (Buf) {
-    Buf[Buf["No"] = 0] = "No";
-    Buf[Buf["Yes"] = 1] = "Yes";
-    Buf[Buf["IfCursor"] = 2] = "IfCursor";
-})(Buf || (Buf = {}));
 export class ContentBuilder {
     constructor(doc, pos, end, disallowBlockEffectsFor) {
         this.doc = doc;
@@ -21,7 +11,8 @@ export class ContentBuilder {
         this.content = [];
         this.curLine = null;
         this.breakAtStart = 0;
-        this.pendingBuffer = 0;
+        this.pendingBuffer = 0 /* No */;
+        // Set to false directly after a widget that covers the position after it
         this.atCursorPos = true;
         this.openStart = -1;
         this.openEnd = -1;
@@ -46,7 +37,7 @@ export class ContentBuilder {
     flushBuffer(active) {
         if (this.pendingBuffer) {
             this.curLine.append(wrapMarks(new WidgetBufferView(-1), active), active.length);
-            this.pendingBuffer = 0;
+            this.pendingBuffer = 0 /* No */;
         }
     }
     addBlockWidget(view) {
@@ -58,7 +49,7 @@ export class ContentBuilder {
         if (!openEnd)
             this.flushBuffer([]);
         else
-            this.pendingBuffer = 0;
+            this.pendingBuffer = 0 /* No */;
         if (!this.posCovered())
             this.getLine();
     }
@@ -86,7 +77,7 @@ export class ContentBuilder {
                     this.textOff = 0;
                 }
             }
-            let take = Math.min(this.text.length - this.textOff, length, 512);
+            let take = Math.min(this.text.length - this.textOff, length, 512 /* Chunk */);
             this.flushBuffer(active.slice(0, openStart));
             this.getLine().append(wrapMarks(new TextView(this.text.slice(this.textOff, this.textOff + take)), active), openStart);
             this.atCursorPos = true;
@@ -121,8 +112,8 @@ export class ContentBuilder {
                 let cursorBefore = this.atCursorPos && !view.isEditable && openStart <= active.length && (from < to || deco.startSide > 0);
                 let cursorAfter = !view.isEditable && (from < to || deco.startSide <= 0);
                 let line = this.getLine();
-                if (this.pendingBuffer == 2 && !cursorBefore)
-                    this.pendingBuffer = 0;
+                if (this.pendingBuffer == 2 /* IfCursor */ && !cursorBefore)
+                    this.pendingBuffer = 0 /* No */;
                 this.flushBuffer(active);
                 if (cursorBefore) {
                     line.append(wrapMarks(new WidgetBufferView(1), active), openStart);
@@ -130,13 +121,14 @@ export class ContentBuilder {
                 }
                 line.append(wrapMarks(view, active), openStart);
                 this.atCursorPos = cursorAfter;
-                this.pendingBuffer = !cursorAfter ? 0 : from < to ? 1 : 2;
+                this.pendingBuffer = !cursorAfter ? 0 /* No */ : from < to ? 1 /* Yes */ : 2 /* IfCursor */;
             }
         }
-        else if (this.doc.lineAt(this.pos).from == this.pos) {
+        else if (this.doc.lineAt(this.pos).from == this.pos) { // Line decoration
             this.getLine().addLineDeco(deco);
         }
         if (len) {
+            // Advance the iterator past the replaced content
             if (this.textOff + len <= this.text.length) {
                 this.textOff += len;
             }

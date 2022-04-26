@@ -1,8 +1,7 @@
 export function getSelection(root: DocumentOrShadowRoot): Selection {
     let target
-    // Browsers differ on whether shadow roots have a getSelection
-    // method. If it exists, use that, otherwise, call it on the
-    // document.
+    // Browsers differ on whether shadow roots have a getSelection method.
+    // If it exists, use that, otherwise, call it on the document.
     if ((root as any).nodeType == 11) { // Shadow root
         target = (root as any).getSelection ? root as Document : (root as ShadowRoot).ownerDocument
     } else {
@@ -200,8 +199,7 @@ export class DOMSelectionState implements SelectionRange {
     focusOffset: number = 0
 
     eq(domSel: SelectionRange): boolean {
-        return this.anchorNode == domSel.anchorNode && this.anchorOffset == domSel.anchorOffset &&
-            this.focusNode == domSel.focusNode && this.focusOffset == domSel.focusOffset
+        return this.anchorNode == domSel.anchorNode && this.anchorOffset == domSel.anchorOffset && this.focusNode == domSel.focusNode && this.focusOffset == domSel.focusOffset
     }
 
     setRange(range: SelectionRange) {
@@ -215,8 +213,7 @@ export class DOMSelectionState implements SelectionRange {
 }
 
 let preventScrollSupported: null | false | {preventScroll: boolean} = null
-// Feature-detects support for .focus({preventScroll: true}), and uses
-// a fallback kludge when not supported.
+// Feature-detects support for .focus({preventScroll: true}), and uses a fallback kludge when not supported.
 export function focusPreventScroll(dom: HTMLElement) {
     if ((dom as any).setActive) return (dom as any).setActive() // in IE
     if (preventScrollSupported) return dom.focus(preventScrollSupported)

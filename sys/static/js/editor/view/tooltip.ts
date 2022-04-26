@@ -63,7 +63,23 @@ class TooltipViewManager {
     }
 }
 
-/** Creates an extension that configures tooltip behavior. */
+/**
+ * Creates an extension that configures tooltip behavior.
+ * @param [config.position] By default, tooltips use `"fixed"` [positioning](https://developer.mozilla.org/en-US/docs/Web/CSS/position),
+ *              which has the advantage that tooltips don't get cut off by scrollable parent elements.
+ *              However, CSS rules like `contain: layout` can break fixed positioning in child nodes,
+ *              which can be worked about by using `"absolute"` here.
+ *
+ *              On iOS, which at the time of writing still doesn't properly support fixed positioning,
+ *              the library always uses absolute positioning.
+ * @param [config.parent] The element to put the tooltips into. By default, they are put in the editor
+ *              (`cm-editor`) element, and that is usually what you want. But in some layouts that can
+ *              lead to positioning issues, and you need to use a different parent to work around those.
+ * @param [config.tooltipSpace] By default, when figuring out whether there is room for a tooltip at a
+ *              given position, the extension considers the entire space between 0,0 and `innerWidth`,
+ *              `innerHeight` to be available for showing tooltips. You can provide a function here that
+ *              returns an alternative rectangle.
+ */
 export function tooltips(config: {
     position?: "fixed" | "absolute",
     parent?: HTMLElement
@@ -111,8 +127,7 @@ const tooltipPlugin = ViewPlugin.fromClass(class {
         this.measureReq = {read: this.readMeasure.bind(this), write: this.writeMeasure.bind(this), key: this}
         this.manager = new TooltipViewManager(view, showTooltip, t => this.createTooltip(t))
         this.intersectionObserver = typeof IntersectionObserver == "function" ? new IntersectionObserver(entries => {
-            if (Date.now() > this.lastTransaction - 50 &&
-                entries.length > 0 && entries[entries.length - 1].intersectionRatio < 1)
+            if (Date.now() > this.lastTransaction - 50 && entries.length > 0 && entries[entries.length - 1].intersectionRatio < 1)
                 this.measureSoon()
         }, {threshold: [1]}) : null
         this.observeIntersection()
@@ -212,10 +227,8 @@ const tooltipPlugin = ViewPlugin.fromClass(class {
             let tooltip = this.manager.tooltips[i], tView = this.manager.tooltipViews[i], {dom} = tView
             let pos = measured.pos[i], size = measured.size[i]
             // Hide tooltips that are outside of the editor.
-            if (!pos || pos.bottom <= Math.max(editor.top, space.top) ||
-                pos.top >= Math.min(editor.bottom, space.bottom) ||
-                pos.right < Math.max(editor.left, space.left) - .1 ||
-                pos.left > Math.min(editor.right, space.right) + .1) {
+            if (!pos || pos.bottom <= Math.max(editor.top, space.top) || pos.top >= Math.min(editor.bottom, space.bottom) ||
+                        pos.right < Math.max(editor.left, space.left) - .1 || pos.left > Math.min(editor.right, space.right) + .1) {
                 dom.style.top = Outside
                 continue
             }
@@ -223,14 +236,13 @@ const tooltipPlugin = ViewPlugin.fromClass(class {
             let arrowHeight = arrow ? Arrow.Size : 0
             let width = size.right - size.left, height = size.bottom - size.top
             let offset = tView.offset || noOffset, ltr = this.view.textDirection == Direction.LTR
-            let left = size.width > space.right - space.left ? (ltr ? space.left : space.right - size.width)
-                : ltr ? Math.min(pos.left - (arrow ? Arrow.Offset : 0) + offset.x, space.right - width)
-                    : Math.max(space.left, pos.left - width + (arrow ? Arrow.Offset : 0) - offset.x)
+            let left = size.width > space.right - space.left ? (ltr ? space.left : space.right - size.width) :
+                ltr ? Math.min(pos.left - (arrow ? Arrow.Offset : 0) + offset.x, space.right - width) : Math.max(space.left, pos.left - width + (arrow ? Arrow.Offset : 0) - offset.x)
             let above = !!tooltip.above
-            if (!tooltip.strictSide && (above
-                    ? pos.top - (size.bottom - size.top) - offset.y < space.top
-                    : pos.bottom + (size.bottom - size.top) + offset.y > space.bottom) &&
-                above == (space.bottom - pos.bottom > pos.top - space.top))
+            if (!tooltip.strictSide && (above ?
+                    pos.top - (size.bottom - size.top) - offset.y < space.top :
+                    pos.bottom + (size.bottom - size.top) + offset.y > space.bottom) &&
+                        above == (space.bottom - pos.bottom > pos.top - space.top))
                 above = !above
             let top = above ? pos.top - height  - arrowHeight - offset.y : pos.bottom + arrowHeight + offset.y
             let right = left + width
@@ -361,8 +373,23 @@ export interface Tooltip {
 export interface TooltipView {
     /** The DOM element to position over the editor. */
     dom: HTMLElement
+    /**
+     * Adjust the position of the tooltip relative to its anchor position. A positive `x`
+     * value will move the tooltip horizontally along with the text direction (so right in
+     * left-to-right context, left in right-to-left). A positive `y` will move the tooltip
+     * up when it is above its anchor, and down otherwise.
+     */
     offset?: {x: number, y: number}
+    /**
+     * By default, a tooltip's screen position will be based on the text position of
+     * its `pos` property. This method can be provided to make the tooltip view itself
+     * responsible for finding its screen position.
+     */
     getCoords?: (pos: number) => Rect
+    /**
+     * By default, tooltips are moved when they overlap with other tooltips. Set this to
+     * `true` to disable that behavior for this tooltip.
+     */
     overlap?: boolean
     /** Called after the tooltip is added to the DOM for the first time. */
     mount?(view: EditorView): void
@@ -509,8 +536,8 @@ class HoverPlugin {
         let tooltip = this.active
         if (tooltip && !isInTooltip(this.lastMove.target) || this.pending) {
             let {pos} = tooltip || this.pending!, end = tooltip?.end ?? pos
-            if ((pos == end ? this.view.posAtCoords(this.lastMove) != pos
-                : !isOverRange(this.view, pos, end, event.clientX, event.clientY, Hover.MaxDist))) {
+            if ((pos == end ? this.view.posAtCoords(this.lastMove) != pos :
+                !isOverRange(this.view, pos, end, event.clientX, event.clientY, Hover.MaxDist))) {
                 this.view.dispatch({effects: this.setHover.of(null)})
                 this.pending = null
             }
@@ -557,17 +584,18 @@ function isOverRange(view: EditorView, from: number, to: number, x: number, y: n
  * is called when the mouse hovers over the document text. It should, if there is a tooltip associated
  * with position `pos`, return the tooltip description (either directly or in a promise). The `side`
  * argument indicates on which side of the position the pointer is—it will be -1 if the pointer is
- * before the position, 1 if after the position. Note that all hover tooltips are hosted within a single
- * tooltip container element. This allows multiple tooltips over the same range to be "merged" together
- * without overlapping.
+ * before the position, 1 if after the position.
+ *
+ * Note that all hover tooltips are hosted within a single tooltip container element. This allows
+ * multiple tooltips over the same range to be "merged" together without overlapping.
+ * @param options.hideOnChange When enabled (this defaults to false), close the tooltip whenever the document changes.
+ * @param options.hoverTime Hover time after which the tooltip should appear, in milliseconds. Defaults to 300ms.
  */
 export function hoverTooltip(
     source: (view: EditorView, pos: number, side: -1 | 1) => Tooltip | null | Promise<Tooltip | null>,
     options: {
         hideOn?: (tr: Transaction, tooltip: Tooltip) => boolean,
-        /** When enabled (this defaults to false), close the tooltip whenever the document changes. */
         hideOnChange?: boolean | "touch",
-        /** Hover time after which the tooltip should appear, in milliseconds. Defaults to 300ms. */
         hoverTime?: number
     } = {}
 ): Extension {

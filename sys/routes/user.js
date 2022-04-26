@@ -1,68 +1,108 @@
 const express = require("express");
-const router = express.Router();
-
+const path = require("path");
 const multer = require("multer");
-const upload = multer({ dest: "./static/data/user" });
+const upload = multer({ dest: path.join(__dirname, "./static/data/user") });
 
 const userHandle = require("../handle/user.js");
 const state = require("../config/state.js");
+const { getIdParam } = require("./utils.js");
 
-/* why post? password should not show in url */
-router.post("/login", async (req, res, next) => {
-    const user = await userHandle.login({ account: req.body.account, password: req.body.password });
-    switch (user) {
-        case state.OverSize:
-            res.send({ code: 400, msg: "Not valid account or password", data: null });
-            break;
-        case state.NotCorrect:
-            res.send({ code: 400, msg: "Password incorrect!", data: null });
-            break;
-        case state.NotExist:
-            res.send({ code: 400, msg: "Account not exist!", data: null });
-            break;
-        case state.Empty:
-            res.send({ code: 400, msg: "Account or password can not be empty.", data: null });
-            break;
-        default:
-            res.send({ code: 200, msg: "Login success!", data: user });
-            break;
+module.exports = {
+    "getAll": {
+        method: "get",
+        params: "",
+        lambda: async (req, res) => {
+            const users = await userHandle.getAllUsers();
+            res.status(200).json(users);
+        }
+    },
+    "getById": {
+        method: "get",
+        params: ["/:id"],
+        lambda: async (req, res) => {
+            try {
+                const id = getIdParam(req);
+                const user = await userHandle.getUserById(Number.parseInt(req.params.id, 10));
+                user ? res.status(200).json(user) : res.status(404).send("User not found");
+            } catch(error) {
+                console.log(error);
+            }
+        }
+    },
+    "login": {
+        method: "post",
+        params: ["login"],
+        lambda: async (req, res) => {
+            if (req.body.account || req.body.password) res.status(403).send("Error body");
+            const user = await userHandle.login({ account: req.body.account, password: req.body.password });
+            switch (user) {
+                case state.OverSize:
+                    res.status(400).send("Not valid account or password");
+                    break;
+                case state.NotCorrect:
+                    res.status(400).send("Password incorrect!");
+                    break;
+                case state.NotExist:
+                    res.status(400).send("Account not exist!");
+                    break;
+                case state.Empty:
+                    res.status(400).send("Account or password can not be empty.");
+                    break;
+                default:
+                    res.status(200).json({ msg: "Login success!", data: user });
+                    break;
+            }
+        }
+    },
+    "create": {
+        method: "post",
+        params: "",
+        lambda: async (req, res) => {
+            if (req.body.account || req.body.password) res.status(403).send("Error body");
+            const user = await userHandle.register({ account: req.body.account, password: req.body.password });
+            switch (user) {
+                case state.Duplicate:
+                    res.status(400).send("Account already exist");
+                    break;
+                case state.OverSize:
+                    res.status(400).send("Account or password is too long");
+                    break;
+                case state.Empty:
+                    res.status(400).send("Account or password can not be empty.");
+                    break;
+                default:
+                    res.status(200).json({ msg: "Register success!", data: user });
+                    break;
+            }
+        }
+    },
+    "update": {
+        method: "put",
+        params: ["/:id"],
+        lambda: async (req, res) => {
+            try {
+                const id = getIdParam(req);
+                if (req.body.id === id) {
+                    const user = await userHandle.update(id, req.body);
+                } else {
+                    return res.status(400).send(`Bad request: param ID (${id}) does not match body ID (${req.body.id}).`)
+                }
+            } catch(error) {
+                console.log(error);
+            }
+        }
+    },
+    "delete": {
+        method: "delete",
+        params: ["/:id"],
+        lambda: async (req, res) => {
+            try {
+                const id = getIdParam(req);
+                const effect = await userHandle.abort(id);
+                effect ? res.status(200).end() : res.status(404).send("User could not find");
+            } catch(error) {
+                console.log(error);
+            }
+        }
     }
-});
-
-router.post("/register", async (req, res, next) => {
-    const user = await userHandle.register({ account: req.body.account, password: req.body.password });
-    switch (user) {
-        case state.Duplicate:
-            res.send({ code: 400, msg: "Account already exist", data: null });
-            break;
-        case state.OverSize:
-            res.send({ code: 400, msg: "Account or password is too long", data: null });
-            break;
-        case state.Empty:
-            res.send({ code: 400, msg: "Account or password can not be empty.", data: null });
-            break;
-        default:
-            res.send({ code: 200, msg: "Register success!", data: user });
-            break;
-    }
-});
-
-router.post('/update', upload.single("image"), async (req, res, next) => {
-    const user = await userHandle.update({account: req.query.account, password: req.query.password});
-    switch (user) {
-        case state.Duplicate:
-            res.send({ code: 400, msg: "Account already exist", data: null });
-            break;
-        case state.OverSize:
-            res.send({ code: 400, msg: "Account or password is too long", data: null });
-            break;
-        case state.NotCorrect:
-            res.send({ code: 400, msg: "Register fail!", data: null });
-            break;
-        default:
-            res.send({ code: 200, msg: "Register success!", data: user });
-            break;
-    }
-});
-
-module.exports = router;
+}

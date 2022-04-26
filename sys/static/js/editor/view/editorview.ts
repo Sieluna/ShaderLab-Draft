@@ -153,11 +153,9 @@ export class EditorView {
     /**
      * Construct a new view. You'll want to either provide a `parent` option, or put `view.dom`
      * into your document after creating a view, so that the user can see the editor.
+     * @param config Initialization options.
      */
-    constructor(
-        /** Initialization options. */
-        config: EditorConfig = {}
-    ) {
+    constructor(config: EditorConfig = {}) {
         this.contentDOM = document.createElement("div")
 
         this.scrollDOM = document.createElement("div")
@@ -694,14 +692,16 @@ export class EditorView {
     /**
      * Returns an effect that can be [added]{@link TransactionSpec.effects} to a transaction to
      * cause it to scroll the given position or range into view.
+     * @param options.y By default (`"nearest"`) the position will be vertically scrolled only the minimal amount
+     *          required to move the given position into view. You can set this to `"start"` to move it to the top
+     *          of the view, `"end"` to move it to the bottom, or `"center"` to move it to the center.
+     * @param options.x Effect similar to [`y`]{@link scrollIntoView.options.y}, but for the horizontal scroll position.
+     * @param options.yMargin Extra vertical distance to add when moving something into view. Not used with the `"center"` strategy. Defaults to 5.
+     * @param options.xMargin Extra horizontal distance to add. Not used with the `"center"` strategy. Defaults to 5.
      */
     static scrollIntoView(pos: number | SelectionRange, options: {
-        y?: ScrollStrategy,
-        x?: ScrollStrategy,
-        /** Extra vertical distance to add when moving something into view. Not used with the `"center"` strategy. Defaults to 5. */
-        yMargin?: number,
-        /** Extra horizontal distance to add. Not used with the `"center"` strategy. Defaults to 5. */
-        xMargin?: number,
+        y?: ScrollStrategy, x?: ScrollStrategy,
+        yMargin?: number, xMargin?: number,
     } = {}): StateEffect<unknown> {
         return scrollIntoView.of(new ScrollTarget(typeof pos == "number" ? EditorSelection.cursor(pos) : pos,
             options.y, options.x, options.yMargin, options.xMargin))
@@ -709,19 +709,45 @@ export class EditorView {
 
     /**
      * Facet to add a [style module](https://github.com/marijnh/style-mod#documentation) to
-     * an editor view. The view will ensure that the module is mounted in its [document
-     * root]{@link constructor.config.root}.
+     * an editor view. The view will ensure that the module is mounted in its
+     * [document root]{@link root}.
      */
     static styleModule = styleModule
 
+    /**
+     * Returns an extension that can be used to add DOM event handlers. The value should be an
+     * object mapping event names to handler functions. For any given event, such functions are
+     * ordered by extension precedence, and the first handler to return true will be assumed
+     * to have handled that event, and no other handlers or built-in behavior will be activated
+     * for it. These are registered on the [content element]{@link contentDOM}, except for `scroll`
+     * handlers, which will be called any time the editor's [scroll element]{@link scrollDOM}
+     * or one of its parent nodes is scrolled.
+     */
     static domEventHandlers(handlers: DOMEventHandlers<any>): Extension {
         return ViewPlugin.define(() => ({}), {eventHandlers: handlers})
     }
 
+    /**
+     * An input handler can override the way changes to the editable DOM content are handled.
+     * Handlers are passed the document positions between which the change was found, and the
+     * new content. When one returns true, no further input handlers are called and the default
+     * behavior is prevented.
+     */
     static inputHandler = inputHandler
 
+    /**
+     * By default, the editor assumes all its content has the same [text direction]{@link Direction}.
+     * Configure this with a `true` value to make it read and store the text direction of every
+     * (rendered) line separately.
+     */
     static perLineTextDirection = perLineTextDirection
 
+    /**
+     * Allows you to provide a function that should be called when the library catches an exception
+     * from an extension (mostly from view plugins, but may be used by other extensions to route
+     * exceptions from user-code-provided callbacks). This is mostly useful for debugging and logging.
+     * See {@link logException}.
+     */
     static exceptionSink = exceptionSink
 
     /** A facet that can be used to register a function to be called every time the view updates. */

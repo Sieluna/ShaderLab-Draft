@@ -213,6 +213,7 @@ class CompletionTooltip {
         return ul;
     }
 }
+/** We allocate a new function instance every time the completion changes to force redrawing/repositioning of the tooltip */
 export function completionTooltip(stateField) {
     return (view) => new CompletionTooltip(view, stateField);
 }

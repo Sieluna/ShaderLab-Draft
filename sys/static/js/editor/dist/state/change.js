@@ -1,22 +1,33 @@
 import { Text } from "./text.js";
 export const DefaultSplit = /\r\n?|\n/;
+/** Distinguishes different ways in which positions can be mapped. */
 export var MapMode;
 (function (MapMode) {
+    // Map a position to a valid new position, even when its context was deleted.
     MapMode[MapMode["Simple"] = 0] = "Simple";
+    // Return null if deletion happens across the position.
     MapMode[MapMode["TrackDel"] = 1] = "TrackDel";
+    // Return null if the character _before_ the position is deleted.
     MapMode[MapMode["TrackBefore"] = 2] = "TrackBefore";
+    // Return null if the character _after_ the position is deleted.
     MapMode[MapMode["TrackAfter"] = 3] = "TrackAfter";
 })(MapMode || (MapMode = {}));
+/** A change description is a variant of [change set]{@link ChangeSet} that doesn't store the inserted text. As such, it can't be applied, but is cheaper to store and manipulate. */
 export class ChangeDesc {
-    constructor(sections) {
+    // @internal
+    constructor(
+    // @internal
+    sections) {
         this.sections = sections;
     }
+    /** The length of the document before the change. */
     get length() {
         let result = 0;
         for (let i = 0; i < this.sections.length; i += 2)
             result += this.sections[i];
         return result;
     }
+    /** The length of the document after the change. */
     get newLength() {
         let result = 0;
         for (let i = 0; i < this.sections.length; i += 2) {
@@ -25,7 +36,13 @@ export class ChangeDesc {
         }
         return result;
     }
+    /** False when there are actual changes in this set. */
     get empty() { return this.sections.length == 0 || this.sections.length == 2 && this.sections[1] < 0; }
+    /**
+     * Iterate over the unchanged parts left by these changes.
+     * @param func.posA the position of the range in the old document.
+     * @param func.posB the new position in the changed document.
+     */
     iterGaps(func) {
         for (let i = 0, posA = 0, posB = 0; i < this.sections.length;) {
             let len = this.sections[i++], ins = this.sections[i++];
@@ -39,9 +56,11 @@ export class ChangeDesc {
             posA += len;
         }
     }
+    /** Iterate over the ranges changed by these changes. Addition of {@link iterChanges} */
     iterChangedRanges(f, individual = false) {
         iterChanges(this, f, individual);
     }
+    /** Get a description of the inverted form of these changes. */
     get invertedDesc() {
         let sections = [];
         for (let i = 0; i < this.sections.length;) {
@@ -53,7 +72,15 @@ export class ChangeDesc {
         }
         return new ChangeDesc(sections);
     }
+    /** Compute the combined effect of applying another set of changes after this one. The length of the document after this set should match the length before `other`. */
     composeDesc(other) { return this.empty ? other : other.empty ? this : composeSets(this, other); }
+    /**
+     * Map this description, which should start with the same document
+     * as `other`, over another set of changes, so that it can be
+     * applied after it.
+     * @param other
+     * @param before When `before` is true, map as if the changes in `other` happened before the ones in `this`.
+     */
     mapDesc(other, before = false) { return other.empty ? this : mapSet(this, other, before); }
     mapPos(pos, assoc = -1, mode = MapMode.Simple) {
         let posA = 0, posB = 0;
@@ -80,6 +107,7 @@ export class ChangeDesc {
             throw new RangeError(`Position ${pos} is out of range for changeset of length ${posA}`);
         return posB;
     }
+    /** Check whether these changes touch a given range. When one of the changes entirely covers the range, the string `"cover"` is returned. */
     touchesRange(from, to = from) {
         for (let i = 0, pos = 0; i < this.sections.length && pos <= to;) {
             let len = this.sections[i++], ins = this.sections[i++], end = pos + len;
@@ -89,6 +117,7 @@ export class ChangeDesc {
         }
         return false;
     }
+    // @internal
     toString() {
         let result = "";
         for (let i = 0; i < this.sections.length;) {
@@ -97,18 +126,25 @@ export class ChangeDesc {
         }
         return result;
     }
+    /** Serialize this change desc to a JSON-representable value. */
     toJSON() { return this.sections; }
+    /** Create a change desc from its JSON representation (as produced by {@link toJSON}. */
     static fromJSON(json) {
         if (!Array.isArray(json) || json.length % 2 || json.some(a => typeof a != "number"))
             throw new RangeError("Invalid JSON representation of ChangeDesc");
         return new ChangeDesc(json);
     }
 }
+/** A change set represents a group of modifications to a document. It stores the document length, and can only be applied to documents with exactly that length. */
 export class ChangeSet extends ChangeDesc {
-    constructor(sections, inserted) {
+    // @internal
+    constructor(sections, 
+    // @internal
+    inserted) {
         super(sections);
         this.inserted = inserted;
     }
+    /** Apply the changes to a document, returning the modified document. */
     apply(doc) {
         if (this.length != doc.length)
             throw new RangeError("Applying change set to a document with the wrong length");
@@ -116,6 +152,11 @@ export class ChangeSet extends ChangeDesc {
         return doc;
     }
     mapDesc(other, before = false) { return mapSet(this, other, before, true); }
+    /**
+     * Given the document as it existed _before_ the changes, return a change set that represents the inverse
+     * of this set, which could be used to go from the document created by the changes back to the document as
+     * it existed before the changes.
+     */
     invert(doc) {
         let sections = this.sections.slice(), inserted = [];
         for (let i = 0, pos = 0; i < sections.length; i += 2) {
@@ -132,12 +173,30 @@ export class ChangeSet extends ChangeDesc {
         }
         return new ChangeSet(sections, inserted);
     }
+    /**
+     * Combine two subsequent change sets into a single set. `other` must start in the document produced by `this`.
+     * If `this` goes `docA` → `docB` and `other` represents `docB` → `docC`, the returned value will represent
+     * the change `docA` → `docC`.
+     */
     compose(other) { return this.empty ? other : other.empty ? this : composeSets(this, other, true); }
+    /**
+     * Given another change set starting in the same document, maps this change set over the other, producing a
+     * new change set that can be applied to the document produced by applying `other`. When `before` is `true`,
+     * order changes as if `this` comes before `other`, otherwise (the default) treat `other` as coming first.
+     *
+     * Given two changes `A` and `B`, `A.compose(B.map(A))` and `B.compose(A.map(B, true))` will produce the same
+     * document. This provides a basic form of [operational transformation]
+     * (https://en.wikipedia.org/wiki/Operational_transformation),
+     * and can be used for collaborative editing.
+     */
     map(other, before = false) { return other.empty ? this : mapSet(this, other, before, true); }
+    /** Iterate over the changed ranges in the document, calling `func` for each */
     iterChanges(f, individual = false) {
         iterChanges(this, f, individual);
     }
+    /** Get a [change description](#state.ChangeDesc) for this change set. */
     get desc() { return new ChangeDesc(this.sections); }
+    // @internal
     filter(ranges) {
         let resultSections = [], resultInserted = [], filteredSections = [];
         let iter = new SectionIter(this);
@@ -169,6 +228,7 @@ export class ChangeSet extends ChangeDesc {
         return { changes: new ChangeSet(resultSections, resultInserted),
             filtered: new ChangeDesc(filteredSections) };
     }
+    /** Serialize this change set to a JSON-representable value. */
     toJSON() {
         let parts = [];
         for (let i = 0; i < this.sections.length; i += 2) {
@@ -182,6 +242,7 @@ export class ChangeSet extends ChangeDesc {
         }
         return parts;
     }
+    /** Create a change set for the given changes, for a document of the given length, using `lineSep` as line separator. */
     static of(changes, length, lineSep) {
         let sections = [], inserted = [], pos = 0;
         let total = null;
@@ -228,9 +289,11 @@ export class ChangeSet extends ChangeDesc {
         flush(!total);
         return total;
     }
+    /** Create an empty changeset of the given length. */
     static empty(length) {
         return new ChangeSet(length ? [length, -1] : [], []);
     }
+    /** Create a changeset from its JSON representation (as produced by [`toJSON`]{@link ChangeSet.toJSON}. */
     static fromJSON(json) {
         if (!Array.isArray(json))
             throw new RangeError("Invalid JSON representation of ChangeSet");
@@ -373,11 +436,11 @@ function composeSets(setA, setB, mkSet = false) {
         if (a.done && b.done) {
             return insert ? new ChangeSet(sections, insert) : new ChangeDesc(sections);
         }
-        else if (a.ins == 0) {
+        else if (a.ins == 0) { // Deletion in A
             addSection(sections, a.len, 0, open);
             a.next();
         }
-        else if (b.len == 0 && !b.done) {
+        else if (b.len == 0 && !b.done) { // Insertion in B
             addSection(sections, 0, b.ins, open);
             if (insert)
                 addInsert(insert, sections, b.text);

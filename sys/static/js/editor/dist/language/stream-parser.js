@@ -25,6 +25,7 @@ function defaultCopyState(state) {
     }
     return newState;
 }
+/** A [language]{@link Language} class based on a CodeMirror 5-style [streaming parser](#language.StreamParser). */
 export class StreamLanguage extends Language {
     constructor(parser) {
         let data = defineLanguageFacet(parser.languageData);
@@ -41,6 +42,7 @@ export class StreamLanguage extends Language {
         this.stateAfter = new NodeProp({ perNode: true });
         this.tokenTable = parser.tokenTable ? new TokenTable(p.tokenTable) : defaultTokenTable;
     }
+    /** Define a stream language. */
     static define(spec) { return new StreamLanguage(spec); }
     getIndent(cx, pos) {
         let tree = syntaxTree(cx.state), at = tree.resolve(pos);
@@ -57,7 +59,7 @@ export class StreamLanguage extends Language {
             state = this.streamParser.startState(cx.unit);
             statePos = 0;
         }
-        if (pos - statePos > 10000)
+        if (pos - statePos > 10000 /* MaxIndentScanDist */)
             return null;
         while (statePos < pos) {
             let line = cx.state.doc.lineAt(statePos), end = Math.min(pos, line.to);
@@ -115,13 +117,6 @@ function findStartInFragments(lang, fragments, startPos, editorState) {
     }
     return { state: lang.streamParser.startState(editorState ? getIndentUnit(editorState) : 4), tree: Tree.empty };
 }
-var C;
-(function (C) {
-    C[C["ChunkSize"] = 2048] = "ChunkSize";
-    C[C["MaxDistanceBeforeViewport"] = 100000] = "MaxDistanceBeforeViewport";
-    C[C["MaxIndentScanDist"] = 10000] = "MaxIndentScanDist";
-    C[C["MaxLineLength"] = 10000] = "MaxLineLength";
-})(C || (C = {}));
 class Parse {
     constructor(lang, input, fragments, ranges) {
         this.lang = lang;
@@ -143,7 +138,7 @@ class Parse {
             this.chunks.push(tree.children[i]);
             this.chunkPos.push(tree.positions[i]);
         }
-        if (context && this.parsedPos < context.viewport.from - 100000) {
+        if (context && this.parsedPos < context.viewport.from - 100000 /* MaxDistanceBeforeViewport */) {
             this.state = this.lang.streamParser.startState(getIndentUnit(context.state));
             context.skipUntilInView(this.parsedPos, context.viewport.from);
             this.parsedPos = context.viewport.from;
@@ -153,7 +148,7 @@ class Parse {
     advance() {
         let context = ParseContext.get();
         let parseEnd = this.stoppedAt == null ? this.to : Math.min(this.to, this.stoppedAt);
-        let end = Math.min(parseEnd, this.chunkStart + 2048);
+        let end = Math.min(parseEnd, this.chunkStart + 2048 /* ChunkSize */);
         if (context)
             end = Math.min(end, context.viewport.to);
         while (this.parsedPos < end)
@@ -237,7 +232,7 @@ class Parse {
                 let token = readToken(streamParser.token, stream, this.state);
                 if (token)
                     offset = this.emitToken(this.lang.tokenTable.resolve(token), this.parsedPos + stream.start, this.parsedPos + stream.pos, 4, offset);
-                if (stream.start > 10000)
+                if (stream.start > 10000 /* MaxLineLength */)
                     break;
             }
         }
@@ -253,7 +248,7 @@ class Parse {
             length: this.parsedPos - this.chunkStart,
             nodeSet,
             topID: 0,
-            maxBufferLength: 2048,
+            maxBufferLength: 2048 /* ChunkSize */,
             reused: this.chunkReused
         });
         tree = new Tree(tree.type, tree.children, tree.positions, tree.length, [[this.lang.stateAfter, this.lang.streamParser.copyState(this.state)]]);

@@ -1,10 +1,12 @@
 import { NodeProp } from "../common/index.js";
 let nextTagID = 0;
 export class Tag {
+    // @internal
     constructor(set, base, modified) {
         this.set = set;
         this.base = base;
         this.modified = modified;
+        // @internal
         this.id = nextTagID++;
     }
     static define(parent) {
@@ -67,10 +69,10 @@ export function styleTags(spec) {
             tags = [tags];
         for (let part of prop.split(" "))
             if (part) {
-                let pieces = [], mode = 2, rest = part;
+                let pieces = [], mode = 2 /* Normal */, rest = part;
                 for (let pos = 0;;) {
                     if (rest == "..." && pos > 0 && pos + 3 == part.length) {
-                        mode = 1;
+                        mode = 1 /* Inherit */;
                         break;
                     }
                     let m = /^"(?:[^"\\]|\\.)*?"|[^\/!]+/.exec(rest);
@@ -82,7 +84,7 @@ export function styleTags(spec) {
                         break;
                     let next = part[pos++];
                     if (pos == part.length && next == "!") {
-                        mode = 0;
+                        mode = 0 /* Opaque */;
                         break;
                     }
                     if (next != "/")
@@ -99,12 +101,6 @@ export function styleTags(spec) {
     return ruleNodeProp.add(byName);
 }
 const ruleNodeProp = new NodeProp();
-var Mode;
-(function (Mode) {
-    Mode[Mode["Opaque"] = 0] = "Opaque";
-    Mode[Mode["Inherit"] = 1] = "Inherit";
-    Mode[Mode["Normal"] = 2] = "Normal";
-})(Mode || (Mode = {}));
 class Rule {
     constructor(tags, mode, context, next) {
         this.tags = tags;
@@ -197,9 +193,9 @@ class HighlightBuilder {
                     if (cls)
                         cls += " ";
                     cls += tagCls;
-                    if (rule.mode == 1)
+                    if (rule.mode == 1 /* Inherit */)
                         inheritedClass += (inheritedClass ? " " : "") + tagCls;
-                    else if (rule.mode == 0)
+                    else if (rule.mode == 0 /* Opaque */)
                         opaque = true;
                 }
                 break;

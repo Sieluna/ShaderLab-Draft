@@ -16,15 +16,15 @@ export function applyDOMChange(view, start, end, typeOver) {
         let reader = new DOMReader(selPoints, view.state);
         reader.readRange(bounds.startDOM, bounds.endDOM);
         let preferredPos = sel.from, preferredSide = null;
-        if (view.inputState.lastKeyCode === 8 && view.inputState.lastKeyTime > Date.now() - 100 ||
-            browser.android && reader.text.length < to - from) {
+        // Prefer anchoring to end when Backspace is pressed (or, on Android, when something was deleted)
+        if (view.inputState.lastKeyCode === 8 && view.inputState.lastKeyTime > Date.now() - 100 || browser.android && reader.text.length < to - from) {
             preferredPos = sel.to;
             preferredSide = "end";
         }
         let diff = findDiff(view.state.doc.sliceString(from, to, LineBreakPlaceholder), reader.text, preferredPos - from, preferredSide);
         if (diff) {
-            if (browser.chrome && view.inputState.lastKeyCode == 13 &&
-                diff.toB == diff.from + 2 && reader.text.slice(diff.from, diff.toB) == LineBreakPlaceholder + LineBreakPlaceholder)
+            // Chrome inserts two newlines when pressing shift-enter at the end of a line. This drops one of those.
+            if (browser.chrome && view.inputState.lastKeyCode == 13 && diff.toB == diff.from + 2 && reader.text.slice(diff.from, diff.toB) == LineBreakPlaceholder + LineBreakPlaceholder)
                 diff.toB--;
             change = { from: from + diff.from, to: from + diff.toA,
                 insert: Text.of(reader.text.slice(diff.from, diff.toB).split(LineBreakPlaceholder)) };
@@ -34,21 +34,21 @@ export function applyDOMChange(view, start, end, typeOver) {
     else if (view.hasFocus || !view.state.facet(editable)) {
         let domSel = view.observer.selectionRange;
         let { impreciseHead: iHead, impreciseAnchor: iAnchor } = view.docView;
-        let head = iHead && iHead.node == domSel.focusNode && iHead.offset == domSel.focusOffset ||
-            !contains(view.contentDOM, domSel.focusNode)
-            ? view.state.selection.main.head
-            : view.docView.posFromDOM(domSel.focusNode, domSel.focusOffset);
-        let anchor = iAnchor && iAnchor.node == domSel.anchorNode && iAnchor.offset == domSel.anchorOffset ||
-            !contains(view.contentDOM, domSel.anchorNode)
-            ? view.state.selection.main.anchor
-            : view.docView.posFromDOM(domSel.anchorNode, domSel.anchorOffset);
+        let head = iHead && iHead.node == domSel.focusNode && iHead.offset == domSel.focusOffset || !contains(view.contentDOM, domSel.focusNode) ?
+            view.state.selection.main.head :
+            view.docView.posFromDOM(domSel.focusNode, domSel.focusOffset);
+        let anchor = iAnchor && iAnchor.node == domSel.anchorNode && iAnchor.offset == domSel.anchorOffset || !contains(view.contentDOM, domSel.anchorNode) ?
+            view.state.selection.main.anchor :
+            view.docView.posFromDOM(domSel.anchorNode, domSel.anchorOffset);
         if (head != sel.head || anchor != sel.anchor)
             newSel = EditorSelection.single(anchor, head);
     }
     if (!change && !newSel)
         return;
+    // Heuristic to notice typing over a selected character
     if (!change && typeOver && !sel.empty && newSel && newSel.main.empty)
         change = { from: sel.from, to: sel.to, insert: view.state.doc.slice(sel.from, sel.to) };
+    // If the change is inside the selection and covers most of it, assume it is a selection replace (with identical characters at the start/end not included in the diff)
     else if (change && change.from >= sel.from && change.to <= sel.to &&
         (change.from != sel.from || change.to != sel.to) &&
         (sel.to - sel.from) - (change.to - change.from) <= 4)
@@ -60,9 +60,14 @@ export function applyDOMChange(view, start, end, typeOver) {
         let startState = view.state;
         if (browser.ios && view.inputState.flushIOSKey(view))
             return;
+        // Android browsers don't fire reasonable key events for enter,
+        // backspace, or delete. So this detects changes that look like
+        // they're caused by those keys, and reinterprets them as key
+        // events. (Some of these keys are also handled by beforeinput
+        // events and the pendingAndroidKey mechanism, but that's not
+        // reliable in all situations.)
         if (browser.android &&
-            ((change.from == sel.from && change.to == sel.to &&
-                change.insert.length == 1 && change.insert.lines == 2 &&
+            ((change.from == sel.from && change.to == sel.to && change.insert.length == 1 && change.insert.lines == 2 &&
                 dispatchKey(view.contentDOM, "Enter", 13)) ||
                 (change.from == sel.from - 1 && change.to == sel.to && change.insert.length == 0 &&
                     dispatchKey(view.contentDOM, "Backspace", 8)) ||
@@ -84,8 +89,8 @@ export function applyDOMChange(view, start, end, typeOver) {
         }
         else {
             let changes = startState.changes(change);
-            let mainSel = newSel && !startState.selection.main.eq(newSel.main) && newSel.main.to <= changes.newLength
-                ? newSel.main : undefined;
+            let mainSel = newSel && !startState.selection.main.eq(newSel.main) && newSel.main.to <= changes.newLength ? newSel.main : undefined;
+            // Try to apply a composition change to all cursors
             if (startState.selection.ranges.length > 1 && view.inputState.composing >= 0 &&
                 change.to <= sel.to && change.to >= sel.to - 10) {
                 let replaced = view.state.sliceDoc(change.from, change.to);
@@ -96,6 +101,10 @@ export function applyDOMChange(view, start, end, typeOver) {
                         return { changes, range: mainSel || range.map(changes) };
                     let to = range.to - offset, from = to - replaced.length;
                     if (range.to - range.from != size || view.state.sliceDoc(from, to) != replaced ||
+                        // Unfortunately, there's no way to make multiple
+                        // changes in the same node work without aborting
+                        // composition, so cursors in the composition range are
+                        // ignored.
                         compositionRange && range.to >= compositionRange.from && range.from <= compositionRange.to)
                         return { range };
                     let rangeChanges = startState.changes({ from, to, insert: change.insert }), selOff = range.to - sel.to;

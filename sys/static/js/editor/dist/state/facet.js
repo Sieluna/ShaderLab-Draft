@@ -1,29 +1,49 @@
 let nextID = 0;
 export class Facet {
-    constructor(combine, compareInput, compare, isStatic, extensions) {
+    constructor(
+    // @internal
+    combine, 
+    // @internal
+    compareInput, 
+    // @internal
+    compare, isStatic, 
+    // @internal
+    extensions) {
         this.combine = combine;
         this.compareInput = compareInput;
         this.compare = compare;
         this.isStatic = isStatic;
         this.extensions = extensions;
+        // @internal
         this.id = nextID++;
         this.default = combine([]);
     }
+    /** Define a new facet. */
     static define(config = {}) {
         return new Facet(config.combine || ((a) => a), config.compareInput || ((a, b) => a === b), config.compare || (!config.combine ? sameArray : (a, b) => a === b), !!config.static, config.enables);
     }
+    /** Returns an extension that adds the given value to this facet. */
     of(value) {
-        return new FacetProvider([], this, 0, value);
+        return new FacetProvider([], this, 0 /* Static */, value);
     }
+    /**
+     * Create an extension that computes a value for the facet from a state. You must take care to
+     * declare the parts of the state that this value depends on, since your function is only called
+     * again for a new state when one of those parts changed.
+     *
+     * In cases where your value depends only on a single field, you'll want to use the
+     * [`from`]{@link Facet.from} method instead.
+     */
     compute(deps, get) {
         if (this.isStatic)
             throw new Error("Can't compute a static facet");
-        return new FacetProvider(deps, this, 1, get);
+        return new FacetProvider(deps, this, 1 /* Single */, get);
     }
+    /** Create an extension that computes zero or more values for this facet from a state. */
     computeN(deps, get) {
         if (this.isStatic)
             throw new Error("Can't compute a static facet");
-        return new FacetProvider(deps, this, 2, get);
+        return new FacetProvider(deps, this, 2 /* Multi */, get);
     }
     from(field, get) {
         if (!get)
@@ -34,12 +54,6 @@ export class Facet {
 function sameArray(a, b) {
     return a == b || a.length == b.length && a.every((e, i) => e === b[i]);
 }
-var Provider;
-(function (Provider) {
-    Provider[Provider["Static"] = 0] = "Static";
-    Provider[Provider["Single"] = 1] = "Single";
-    Provider[Provider["Multi"] = 2] = "Multi";
-})(Provider || (Provider = {}));
 class FacetProvider {
     constructor(dependencies, facet, type, value) {
         this.dependencies = dependencies;
@@ -52,7 +66,7 @@ class FacetProvider {
         var _a;
         let getter = this.value;
         let compare = this.facet.compareInput;
-        let id = this.id, idx = addresses[id] >> 1, multi = this.type == 2;
+        let id = this.id, idx = addresses[id] >> 1, multi = this.type == 2 /* Multi */;
         let depDoc = false, depSel = false, depAddrs = [];
         for (let dep of this.dependencies) {
             if (dep == "doc")
@@ -65,14 +79,14 @@ class FacetProvider {
         return {
             create(state) {
                 state.values[idx] = getter(state);
-                return 1;
+                return 1 /* Changed */;
             },
             update(state, tr) {
                 if ((depDoc && tr.docChanged) || (depSel && (tr.docChanged || tr.selection)) || ensureAll(state, depAddrs)) {
                     let newVal = getter(state);
                     if (multi ? !compareArray(newVal, state.values[idx], compare) : !compare(newVal, state.values[idx])) {
                         state.values[idx] = newVal;
-                        return 1;
+                        return 1 /* Changed */;
                     }
                 }
                 return 0;
@@ -91,7 +105,7 @@ class FacetProvider {
                     }
                 }
                 state.values[idx] = newVal;
-                return 1;
+                return 1 /* Changed */;
             }
         };
     }
@@ -107,7 +121,7 @@ function compareArray(a, b, compare) {
 function ensureAll(state, addrs) {
     let changed = false;
     for (let addr of addrs)
-        if (ensureAddr(state, addr) & 1)
+        if (ensureAddr(state, addr) & 1 /* Changed */)
             changed = true;
     return changed;
 }
@@ -120,7 +134,7 @@ function dynamicFacetSlot(addresses, facet, providers) {
         let values = [];
         for (let i = 0; i < providerAddrs.length; i++) {
             let value = getAddr(state, providerAddrs[i]);
-            if (providerTypes[i] == 2)
+            if (providerTypes[i] == 2 /* Multi */)
                 for (let val of value)
                     values.push(val);
             else
@@ -133,7 +147,7 @@ function dynamicFacetSlot(addresses, facet, providers) {
             for (let addr of providerAddrs)
                 ensureAddr(state, addr);
             state.values[idx] = get(state);
-            return 1;
+            return 1 /* Changed */;
         },
         update(state, tr) {
             if (!ensureAll(state, dynamic))
@@ -142,7 +156,7 @@ function dynamicFacetSlot(addresses, facet, providers) {
             if (facet.compare(value, state.values[idx]))
                 return 0;
             state.values[idx] = value;
-            return 1;
+            return 1 /* Changed */;
         },
         reconfigure(state, oldState) {
             let depChanged = ensureAll(state, providerAddrs);
@@ -157,20 +171,27 @@ function dynamicFacetSlot(addresses, facet, providers) {
                 return 0;
             }
             state.values[idx] = value;
-            return 1;
+            return 1 /* Changed */;
         }
     };
 }
 const initField = Facet.define({ static: true });
+/** Fields can store additional information in an editor state, and keep it in sync with the rest of the state. */
 export class StateField {
-    constructor(id, createF, updateF, compareF, spec) {
+    constructor(
+    // @internal
+    id, createF, updateF, compareF, 
+    // @internal
+    spec) {
         this.id = id;
         this.createF = createF;
         this.updateF = updateF;
         this.compareF = compareF;
         this.spec = spec;
+        // @internal
         this.provides = undefined;
     }
+    /** Define a state field. */
     static define(config) {
         let field = new StateField(nextID++, config.create, config.update, config.compare || ((a, b) => a === b), config);
         if (config.provide)
@@ -181,12 +202,13 @@ export class StateField {
         let init = state.facet(initField).find(i => i.field == this);
         return ((init === null || init === void 0 ? void 0 : init.create) || this.createF)(state);
     }
+    // @internal
     slot(addresses) {
         let idx = addresses[this.id] >> 1;
         return {
             create: (state) => {
                 state.values[idx] = this.create(state);
-                return 1;
+                return 1 /* Changed */;
             },
             update: (state, tr) => {
                 let oldVal = state.values[idx];
@@ -194,7 +216,7 @@ export class StateField {
                 if (this.compareF(oldVal, value))
                     return 0;
                 state.values[idx] = value;
-                return 1;
+                return 1 /* Changed */;
             },
             reconfigure: (state, oldState) => {
                 if (oldState.config.address[this.id] != null) {
@@ -202,24 +224,42 @@ export class StateField {
                     return 0;
                 }
                 state.values[idx] = this.create(state);
-                return 1;
+                return 1 /* Changed */;
             }
         };
     }
+    /**
+     * Returns an extension that enables this field and overrides the way it is initialized.
+     * Can be useful when you need to provide a non-default starting value for the field.
+     */
     init(create) {
         return [this, initField.of({ field: this, create })];
     }
+    /** State field instances can be used as {@link Extension} values to enable the field in a given state. */
     get extension() { return this; }
 }
 const Prec_ = { lowest: 4, low: 3, default: 2, high: 1, highest: 0 };
 function prec(value) {
     return (ext) => new PrecExtension(ext, value);
 }
+/**
+ * By default extensions are registered in the order they are found in the flattened form of
+ * nested array that was provided. Individual extension values can be assigned a precedence to
+ * override this. Extensions that do not have a precedence set get the precedence of the nearest
+ * parent with a precedence, or [`default`]{@link Prec.default} if there is no such parent. The
+ * final ordering of extensions is determined by first sorting by precedence and then by order
+ * within each precedence.
+ */
 export const Prec = {
+    /** The highest precedence level, for extensions that should end up near the start of the precedence ordering. */
     highest: prec(Prec_.highest),
+    /** A higher-than-default precedence, for extensions that should come before those with default precedence. */
     high: prec(Prec_.high),
+    /** The default precedence, which is also used for extensions without an explicit precedence. */
     default: prec(Prec_.default),
+    /** A lower-than-default precedence. */
     low: prec(Prec_.low),
+    /** The lowest precedence level. Meant for things that should end up near the end of the extension order. */
     lowest: prec(Prec_.lowest)
 };
 class PrecExtension {
@@ -228,11 +268,19 @@ class PrecExtension {
         this.prec = prec;
     }
 }
+/**
+ * Extension compartments can be used to make a configuration dynamic. By [wrapping]{@link Compartment.of}
+ * part of your configuration in a compartment, you can later [replace]{@link Compartment.reconfigure} that
+ * part through a transaction.
+ */
 export class Compartment {
+    /** Create an instance of this compartment to add to your [state configuration]{@link EditorStateConfig.extensions}. */
     of(ext) { return new CompartmentInstance(this, ext); }
+    /** Create an [effect](#state.TransactionSpec.effects) that reconfigures this compartment. */
     reconfigure(content) {
         return Compartment.reconfigure.of({ compartment: this, extension: content });
     }
+    /** Get the current content of the compartment in the state, or `undefined` if it isn't present. */
     get(state) {
         return state.config.compartments.get(this);
     }
@@ -253,7 +301,7 @@ export class Configuration {
         this.facets = facets;
         this.statusTemplate = [];
         while (this.statusTemplate.length < dynamicSlots.length)
-            this.statusTemplate.push(0);
+            this.statusTemplate.push(0 /* Unresolved */);
     }
     staticFacet(facet) {
         let addr = this.address[facet.id];
@@ -280,7 +328,7 @@ export class Configuration {
         for (let id in facets) {
             let providers = facets[id], facet = providers[0].facet;
             let oldProviders = oldFacets && oldFacets[id] || [];
-            if (providers.every(p => p.type == 0)) {
+            if (providers.every(p => p.type == 0 /* Static */)) {
                 address[facet.id] = (staticValues.length << 1) | 1;
                 if (sameArray(oldProviders, providers)) {
                     staticValues.push(oldState.facet(facet));
@@ -292,7 +340,7 @@ export class Configuration {
             }
             else {
                 for (let p of providers) {
-                    if (p.type == 0) {
+                    if (p.type == 0 /* Static */) {
                         address[p.id] = (staticValues.length << 1) | 1;
                         staticValues.push(p.value);
                     }
@@ -358,25 +406,18 @@ function flatten(extension, compartments, newCompartments) {
     inner(extension, Prec_.default);
     return result.reduce((a, b) => a.concat(b));
 }
-export var SlotStatus;
-(function (SlotStatus) {
-    SlotStatus[SlotStatus["Unresolved"] = 0] = "Unresolved";
-    SlotStatus[SlotStatus["Changed"] = 1] = "Changed";
-    SlotStatus[SlotStatus["Computed"] = 2] = "Computed";
-    SlotStatus[SlotStatus["Computing"] = 4] = "Computing";
-})(SlotStatus || (SlotStatus = {}));
 export function ensureAddr(state, addr) {
     if (addr & 1)
-        return 2;
+        return 2 /* Computed */;
     let idx = addr >> 1;
     let status = state.status[idx];
-    if (status == 4)
+    if (status == 4 /* Computing */)
         throw new Error("Cyclic dependency between fields and/or facets");
-    if (status & 2)
+    if (status & 2 /* Computed */)
         return status;
-    state.status[idx] = 4;
+    state.status[idx] = 4 /* Computing */;
     let changed = state.computeSlot(state, state.config.dynamicSlots[idx]);
-    return state.status[idx] = 2 | changed;
+    return state.status[idx] = 2 /* Computed */ | changed;
 }
 export function getAddr(state, addr) {
     return addr & 1 ? state.config.staticValues[addr >> 1] : state.values[addr >> 1];

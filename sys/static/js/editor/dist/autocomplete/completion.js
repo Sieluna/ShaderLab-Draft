@@ -5,6 +5,7 @@ export class CompletionContext {
         this.state = state;
         this.pos = pos;
         this.explicit = explicit;
+        // @internal
         this.abortListeners = [];
     }
     tokenBefore(types) {
@@ -15,6 +16,7 @@ export class CompletionContext {
             text: this.state.sliceDoc(token.from, this.pos),
             type: token.type } : null;
     }
+    /** @return Get the match of ythe given expression directly before the cursor */
     matchBefore(expr) {
         let line = this.state.doc.lineAt(this.pos);
         let start = Math.max(line.from, this.pos - 250);
@@ -55,6 +57,7 @@ export function completeFromList(list) {
         return token || context.explicit ? { from: token ? token.from : context.pos, options, validFor } : null;
     };
 }
+/** Wrap the given completion source so that it will only fire when the cursor is in a syntax node with on of the given names */
 export function ifIn(nodes, source) {
     return (context) => {
         for (let pos = syntaxTree(context.state).resolveInner(context.pos, -1); pos; pos = pos.parent)
@@ -63,6 +66,7 @@ export function ifIn(nodes, source) {
         return null;
     };
 }
+/**  Wrap the given completion source so that it will not fire when the cursor is in a syntax node with one of the given names. */
 export function ifNotIn(nodes, source) {
     return (context) => {
         for (let pos = syntaxTree(context.state).resolveInner(context.pos, -1); pos; pos = pos.parent)

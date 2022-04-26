@@ -1,13 +1,28 @@
 import { MapMode } from "./change.js";
+/** Each range is associated with a value, which must inherit from this class. */
 export class RangeValue {
+    /**
+     * Compare this value with another value. Used when comparing rangesets. The default
+     * implementation compares by identity. Unless you are only creating a fixed number of
+     * unique instances of your value type, it is a good idea to implement this properly.
+     */
     eq(other) { return this == other; }
+    /** Create a [range](#state.Range) with this value. */
     range(from, to = from) { return new Range(from, to, this); }
 }
 RangeValue.prototype.startSide = RangeValue.prototype.endSide = 0;
 RangeValue.prototype.point = false;
 RangeValue.prototype.mapMode = MapMode.TrackDel;
+/** A range associates a value with a range of positions. */
 export class Range {
-    constructor(from, to, value) {
+    // @internal
+    constructor(
+    /** The range's start position. */
+    from, 
+    /** Its end position. */
+    to, 
+    /** The value associated with this range. */
+    value) {
         this.from = from;
         this.to = to;
         this.value = value;
@@ -16,19 +31,21 @@ export class Range {
 function cmpRange(a, b) {
     return a.from - b.from || a.value.startSide - b.value.startSide;
 }
-var C;
-(function (C) {
-    C[C["ChunkSize"] = 250] = "ChunkSize";
-    C[C["Far"] = 1000000000] = "Far";
-})(C || (C = {}));
 class Chunk {
-    constructor(from, to, value, maxPoint) {
+    constructor(from, to, value, 
+    // Chunks are marked with the largest point that occurs
+    // in them (or -1 for no points), so that scans that are
+    // only interested in points (such as the
+    // heightmap-related logic) can skip range-only chunks.
+    maxPoint) {
         this.from = from;
         this.to = to;
         this.value = value;
         this.maxPoint = maxPoint;
     }
     get length() { return this.to[this.to.length - 1]; }
+    // Find the index of the given position and side. Use the ranges'
+    // `from` pos when `end == false`, `to` when `end == true`.
     findIndex(pos, side, end, startAt = 0) {
         let arr = end ? this.to : this.from;
         for (let lo = startAt, hi = arr.length;;) {
@@ -45,7 +62,7 @@ class Chunk {
         }
     }
     between(offset, from, to, f) {
-        for (let i = this.findIndex(from, -1000000000, true), e = this.findIndex(to, 1000000000, false, i); i < e; i++)
+        for (let i = this.findIndex(from, -1000000000 /* Far */, true), e = this.findIndex(to, 1000000000 /* Far */, false, i); i < e; i++)
             if (f(this.from[i] + offset, this.to[i] + offset, this.value[i]) === false)
                 return false;
     }
@@ -83,17 +100,32 @@ class Chunk {
         return { mapped: value.length ? new Chunk(from, to, value, maxPoint) : null, pos: newPos };
     }
 }
+/**
+ * A range set stores a collection of [ranges]{@link Range} in a way that makes them efficient to
+ * [map]{@link map} and [update]{@link update}. This is an immutable data structure.
+ */
 export class RangeSet {
-    constructor(chunkPos, chunk, nextLayer = RangeSet.empty, maxPoint) {
+    // @internal
+    constructor(
+    // @internal
+    chunkPos, 
+    // @internal
+    chunk, 
+    // @internal
+    nextLayer = RangeSet.empty, 
+    // @internal
+    maxPoint) {
         this.chunkPos = chunkPos;
         this.chunk = chunk;
         this.nextLayer = nextLayer;
         this.maxPoint = maxPoint;
     }
+    // @internal
     get length() {
         let last = this.chunk.length - 1;
         return last < 0 ? 0 : Math.max(this.chunkEnd(last), this.nextLayer.length);
     }
+    /** The number of ranges in the set. */
     get size() {
         if (this.isEmpty)
             return 0;
@@ -102,9 +134,11 @@ export class RangeSet {
             size += chunk.value.length;
         return size;
     }
+    // @internal
     chunkEnd(index) {
         return this.chunkPos[index] + this.chunk[index].length;
     }
+    /** Update the range set, optionally adding new ranges or filtering out existing ones. */
     update(updateSpec) {
         let { add = [], sort = false, filterFrom = 0, filterTo = this.length } = updateSpec;
         let filter = updateSpec.filter;
@@ -139,6 +173,7 @@ export class RangeSet {
         return builder.finishInner(this.nextLayer.isEmpty && !spill.length ? RangeSet.empty
             : this.nextLayer.update({ add: spill, filter, filterFrom, filterTo }));
     }
+    /** Map this range set through a set of changes, return the new set. */
     map(changes) {
         if (changes.empty || this.isEmpty)
             return this;
@@ -163,6 +198,11 @@ export class RangeSet {
         let next = this.nextLayer.map(changes);
         return chunks.length == 0 ? next : new RangeSet(chunkPos, chunks, next, maxPoint);
     }
+    /**
+     * Iterate over the ranges that touch the region `from` to `to`, calling `f` for each. There
+     * is no guarantee that the ranges will be reported in any specific order. When the callback
+     * returns `false`, iteration stops.
+     */
     between(from, to, f) {
         if (this.isEmpty)
             return;
@@ -174,14 +214,24 @@ export class RangeSet {
         }
         this.nextLayer.between(from, to, f);
     }
+    /** Iterate over the ranges in this set, in order, including all ranges that end at or after `from`. */
     iter(from = 0) {
         return HeapCursor.from([this]).goto(from);
     }
+    // @internal
     get isEmpty() { return this.nextLayer == this; }
+    /** Iterate over the ranges in a collection of sets, in order, starting from `from`. */
     static iter(sets, from = 0) {
         return HeapCursor.from(sets).goto(from);
     }
-    static compare(oldSets, newSets, textDiff, comparator, minPointSize = -1) {
+    /** Iterate over two groups of sets, calling methods on `comparator` to notify it of possible differences. */
+    static compare(oldSets, newSets, 
+    // This indicates how the underlying data changed between these
+    // ranges, and is needed to synchronize the iteration. `from` and
+    // `to` are coordinates in the _new_ space, after these changes.
+    textDiff, comparator, 
+    // Can be used to ignore all non-point ranges, and points below the given size. When -1, all ranges are compared.
+    minPointSize = -1) {
         let a = oldSets.filter(set => set.maxPoint > 0 || !set.isEmpty && set.maxPoint >= minPointSize);
         let b = newSets.filter(set => set.maxPoint > 0 || !set.isEmpty && set.maxPoint >= minPointSize);
         let sharedChunks = findSharedChunks(a, b, textDiff);
@@ -191,9 +241,10 @@ export class RangeSet {
         if (textDiff.empty && textDiff.length == 0)
             compare(sideA, 0, sideB, 0, 0, comparator);
     }
+    /** Compare the contents of two groups of range sets, returning true if they are equivalent in the given range. */
     static eq(oldSets, newSets, from = 0, to) {
         if (to == null)
-            to = 1000000000;
+            to = 1000000000 /* Far */;
         let a = oldSets.filter(set => !set.isEmpty && newSets.indexOf(set) < 0);
         let b = newSets.filter(set => !set.isEmpty && oldSets.indexOf(set) < 0);
         if (a.length != b.length)
@@ -213,7 +264,14 @@ export class RangeSet {
             sideB.next();
         }
     }
-    static spans(sets, from, to, iterator, minPointSize = -1) {
+    /**
+     * Iterate over a group of range sets at the same time, notifying the iterator about the ranges
+     * covering every given piece of content. Returns the open count (see {@link SpanIterator.span})
+     * at the end of the iteration.
+     */
+    static spans(sets, from, to, iterator, 
+    /** When given and greater than -1, only points of at least this size are taken into account. */
+    minPointSize = -1) {
         let cursor = new SpanCursor(sets, null, minPointSize).goto(from), pos = from;
         let open = cursor.openStart;
         for (;;) {
@@ -233,6 +291,11 @@ export class RangeSet {
         }
         return open;
     }
+    /**
+     * Create a range set for the given range or array of ranges. By default, this expects the
+     * ranges to be _sorted_ (by start position and, if two start at the same position,
+     * `value.startSide`). You can pass `true` as second argument to cause the method to sort them.
+     */
     static of(ranges, sort = false) {
         let build = new RangeSetBuilder();
         for (let range of ranges instanceof Range ? [ranges] : sort ? lazySort(ranges) : ranges)
@@ -240,6 +303,7 @@ export class RangeSet {
         return build.finish();
     }
 }
+/** The empty set of ranges. */
 RangeSet.empty = new RangeSet([], [], null, -1);
 function lazySort(ranges) {
     if (ranges.length > 1)
@@ -251,16 +315,22 @@ function lazySort(ranges) {
         }
     return ranges;
 }
+// Awkward patch-up to create a cyclic structure.
 ;
 RangeSet.empty.nextLayer = RangeSet.empty;
+/**
+ * A range set builder is a data structure that helps build up a [range set]{@link RangeSet}
+ * directly, without first allocating an array of [`Range`]{@link Range} objects.
+ */
 export class RangeSetBuilder {
+    /** Create an empty builder. */
     constructor() {
         this.chunks = [];
         this.chunkPos = [];
         this.chunkStart = -1;
         this.last = null;
-        this.lastFrom = -1000000000;
-        this.lastTo = -1000000000;
+        this.lastFrom = -1000000000 /* Far */;
+        this.lastTo = -1000000000 /* Far */;
         this.from = [];
         this.to = [];
         this.value = [];
@@ -280,17 +350,19 @@ export class RangeSetBuilder {
             this.value = [];
         }
     }
+    /** Add a range. Ranges should be added in sorted (by `from` and `value.startSide`) order. */
     add(from, to, value) {
         if (!this.addInner(from, to, value))
             (this.nextLayer || (this.nextLayer = new RangeSetBuilder)).add(from, to, value);
     }
+    // @internal
     addInner(from, to, value) {
         let diff = from - this.lastTo || value.startSide - this.last.endSide;
         if (diff <= 0 && (from - this.lastFrom || value.startSide - this.last.startSide) < 0)
             throw new Error("Ranges must be added sorted by `from` position and `startSide`");
         if (diff < 0)
             return false;
-        if (this.from.length == 250)
+        if (this.from.length == 250 /* ChunkSize */)
             this.finishChunk(true);
         if (this.chunkStart < 0)
             this.chunkStart = from;
@@ -304,6 +376,7 @@ export class RangeSetBuilder {
             this.maxPoint = Math.max(this.maxPoint, to - from);
         return true;
     }
+    // @internal
     addChunk(from, chunk) {
         if ((from - this.lastTo || chunk.value[0].startSide - this.last.endSide) < 0)
             return false;
@@ -318,14 +391,16 @@ export class RangeSetBuilder {
         this.lastTo = chunk.to[last] + from;
         return true;
     }
+    /** Finish the range set. Returns the new set. The builder can't be used anymore after this has been called. */
     finish() { return this.finishInner(RangeSet.empty); }
+    // @internal
     finishInner(next) {
         if (this.from.length)
             this.finishChunk(false);
         if (this.chunks.length == 0)
             return next;
         let result = new RangeSet(this.chunkPos, this.chunks, this.nextLayer ? this.nextLayer.finishInner(next) : next, this.setMaxPoint);
-        this.from = null;
+        this.from = null; // Make sure further `add` calls produce errors
         return result;
     }
 }
@@ -354,7 +429,7 @@ class LayerCursor {
     }
     get startSide() { return this.value ? this.value.startSide : 0; }
     get endSide() { return this.value ? this.value.endSide : 0; }
-    goto(pos, side = -1000000000) {
+    goto(pos, side = -1000000000 /* Far */) {
         this.chunkIndex = this.rangeIndex = 0;
         this.gotoInner(pos, side, false);
         return this;
@@ -383,7 +458,7 @@ class LayerCursor {
     next() {
         for (;;) {
             if (this.chunkIndex == this.layer.chunk.length) {
-                this.from = this.to = 1000000000;
+                this.from = this.to = 1000000000 /* Far */;
                 this.value = null;
                 break;
             }
@@ -437,7 +512,7 @@ class HeapCursor {
         return heap.length == 1 ? heap[0] : new HeapCursor(heap);
     }
     get startSide() { return this.value ? this.value.startSide : 0; }
-    goto(pos, side = -1000000000) {
+    goto(pos, side = -1000000000 /* Far */) {
         for (let cur of this.heap)
             cur.goto(pos, side);
         for (let i = this.heap.length >> 1; i >= 0; i--)
@@ -455,7 +530,7 @@ class HeapCursor {
     }
     next() {
         if (this.heap.length == 0) {
-            this.from = this.to = 1000000000;
+            this.from = this.to = 1000000000 /* Far */;
             this.value = null;
             this.rank = -1;
         }
@@ -495,15 +570,16 @@ class SpanCursor {
         this.activeTo = [];
         this.activeRank = [];
         this.minActive = -1;
+        // A currently active point range, if any
         this.point = null;
         this.pointFrom = 0;
         this.pointRank = 0;
-        this.to = -1000000000;
+        this.to = -1000000000 /* Far */;
         this.endSide = 0;
         this.openStart = -1;
         this.cursor = HeapCursor.from(sets, skip, minPoint);
     }
-    goto(pos, side = -1000000000) {
+    goto(pos, side = -1000000000 /* Far */) {
         this.cursor.goto(pos, side);
         this.active.length = this.activeTo.length = this.activeRank.length = 0;
         this.minActive = -1;
@@ -535,6 +611,8 @@ class SpanCursor {
             insert(trackOpen, i, this.cursor.from);
         this.minActive = findMinIndex(this.active, this.activeTo);
     }
+    // After calling this, if `this.point` != null, the next range is a
+    // point. Otherwise, it's a regular range, covered by `this.active`.
     next() {
         let from = this.to, wasPoint = this.point;
         this.point = null;
@@ -552,7 +630,7 @@ class SpanCursor {
                     remove(trackOpen, a);
             }
             else if (!this.cursor.value) {
-                this.to = this.endSide = 1000000000;
+                this.to = this.endSide = 1000000000 /* Far */;
                 break;
             }
             else if (this.cursor.from > from) {
@@ -562,14 +640,15 @@ class SpanCursor {
             }
             else {
                 let nextVal = this.cursor.value;
-                if (!nextVal.point) {
+                if (!nextVal.point) { // Opening a range
                     this.addActive(trackOpen);
                     this.cursor.next();
                 }
                 else if (wasPoint && this.cursor.to == this.to && this.cursor.from < this.cursor.to) {
+                    // Ignore any non-empty points that end precisely at the end of the prev point
                     this.cursor.next();
                 }
-                else {
+                else { // New point
                     this.point = nextVal;
                     this.pointFrom = this.cursor.from;
                     this.pointRank = this.cursor.rank;
@@ -654,7 +733,7 @@ function insert(array, index, value) {
     array[index] = value;
 }
 function findMinIndex(value, array) {
-    let found = -1, foundPos = 1000000000;
+    let found = -1, foundPos = 1000000000 /* Far */;
     for (let i = 0; i < array.length; i++)
         if ((array[i] - foundPos || value[i].endSide - value[found].endSide) < 0) {
             found = i;

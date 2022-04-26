@@ -11,9 +11,14 @@ const panelConfig = Facet.define({
         return { topContainer, bottomContainer };
     }
 });
+/** Configures the panel-managing extension. */
 export function panels(config) {
     return config ? [panelConfig.of(config)] : [];
 }
+/**
+ * Get the active panel created by the given constructor, if any. This can be useful when
+ * you need access to your panels' DOM structure.
+ */
 export function getPanel(view, panel) {
     let plugin = view.plugin(panelPlugin);
     let index = plugin ? plugin.specs.indexOf(panel) : -1;
@@ -138,10 +143,9 @@ class PanelGroup {
             curDOM = rm(curDOM);
     }
     scrollMargin() {
-        return !this.dom || this.container ? 0
-            : Math.max(0, this.top ?
-                this.dom.getBoundingClientRect().bottom - Math.max(0, this.view.scrollDOM.getBoundingClientRect().top) :
-                Math.min(innerHeight, this.view.scrollDOM.getBoundingClientRect().bottom) - this.dom.getBoundingClientRect().top);
+        return !this.dom || this.container ? 0 : Math.max(0, this.top ?
+            this.dom.getBoundingClientRect().bottom - Math.max(0, this.view.scrollDOM.getBoundingClientRect().top) :
+            Math.min(innerHeight, this.view.scrollDOM.getBoundingClientRect().bottom) - this.dom.getBoundingClientRect().top);
     }
     syncClasses() {
         if (!this.container || this.classes == this.view.themeClasses)
@@ -159,6 +163,10 @@ function rm(node) {
     node.remove();
     return next;
 }
+/**
+ * Opening a panel is done by providing a constructor function for the panel through this facet.
+ * (The panel is closed again when its constructor is no longer provided.) Values of `null` are ignored.
+ */
 export const showPanel = Facet.define({
     enables: panelPlugin
 });

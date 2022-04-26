@@ -4,6 +4,7 @@ import { Option, cur, asSource, ensureAnchor, CompletionContext } from "./comple
 import { FuzzyMatcher } from "./filter.js";
 import { completionTooltip } from "./tooltip.js";
 import { completionConfig } from "./config.js";
+// Used to pick a preferred option when two options with the same label occur in the result.
 function score(option) {
     return (option.boost || 0) * 100 + (option.apply ? 10 : 0) + (option.info ? 5 : 0) +
         (option.type ? 1 : 0);
@@ -88,7 +89,7 @@ export class CompletionState {
             state.languageDataAt("autocomplete", cur(state)).map(asSource);
         let active = sources.map(source => {
             let value = this.active.find(s => s.source == source) ||
-                new ActiveSource(source, this.active.some(a => a.state != 0) ? 1 : 0);
+                new ActiveSource(source, this.active.some(a => a.state != 0 /* Inactive */) ? 1 /* Pending */ : 0 /* Inactive */);
             return value.update(tr, conf);
         });
         if (active.length == this.active.length && active.every((a, i) => a == this.active[i]))
@@ -96,8 +97,8 @@ export class CompletionState {
         let open = tr.selection || active.some(a => a.hasResult() && tr.changes.touchesRange(a.from, a.to)) ||
             !sameResults(active, this.active) ? CompletionDialog.build(active, state, this.id, this.open, conf)
             : this.open && tr.docChanged ? this.open.map(tr.changes) : this.open;
-        if (!open && active.every(a => a.state != 1) && active.some(a => a.hasResult()))
-            active = active.map(a => a.hasResult() ? new ActiveSource(a.source, 0) : a);
+        if (!open && active.every(a => a.state != 1 /* Pending */) && active.some(a => a.hasResult()))
+            active = active.map(a => a.hasResult() ? new ActiveSource(a.source, 0 /* Inactive */) : a);
         for (let effect of tr.effects)
             if (effect.is(setSelectedEffect))
                 open = open && open.setSelected(effect.value, this.id);
@@ -139,12 +140,6 @@ function cmpOption(a, b) {
         return dScore;
     return a.completion.label.localeCompare(b.completion.label);
 }
-export var State;
-(function (State) {
-    State[State["Inactive"] = 0] = "Inactive";
-    State[State["Pending"] = 1] = "Pending";
-    State[State["Result"] = 2] = "Result";
-})(State || (State = {}));
 export function getUserEvent(tr) {
     return tr.isUserEvent("input.type") ? "input" : tr.isUserEvent("delete.backward") ? "delete" : null;
 }
@@ -161,13 +156,13 @@ export class ActiveSource {
             value = value.handleUserEvent(tr, event, conf);
         else if (tr.docChanged)
             value = value.handleChange(tr);
-        else if (tr.selection && value.state != 0)
-            value = new ActiveSource(value.source, 0);
+        else if (tr.selection && value.state != 0 /* Inactive */)
+            value = new ActiveSource(value.source, 0 /* Inactive */);
         for (let effect of tr.effects) {
             if (effect.is(startCompletionEffect))
-                value = new ActiveSource(value.source, 1, effect.value ? cur(tr.state) : -1);
+                value = new ActiveSource(value.source, 1 /* Pending */, effect.value ? cur(tr.state) : -1);
             else if (effect.is(closeCompletionEffect))
-                value = new ActiveSource(value.source, 0);
+                value = new ActiveSource(value.source, 0 /* Inactive */);
             else if (effect.is(setActiveEffect))
                 for (let active of effect.value)
                     if (active.source == value.source)
@@ -176,10 +171,10 @@ export class ActiveSource {
         return value;
     }
     handleUserEvent(tr, type, conf) {
-        return type == "delete" || !conf.activateOnTyping ? this.map(tr.changes) : new ActiveSource(this.source, 1);
+        return type == "delete" || !conf.activateOnTyping ? this.map(tr.changes) : new ActiveSource(this.source, 1 /* Pending */);
     }
     handleChange(tr) {
-        return tr.changes.touchesRange(cur(tr.startState)) ? new ActiveSource(this.source, 0) : this.map(tr.changes);
+        return tr.changes.touchesRange(cur(tr.startState)) ? new ActiveSource(this.source, 0 /* Inactive */) : this.map(tr.changes);
     }
     map(changes) {
         return changes.empty || this.explicitPos < 0 ? this : new ActiveSource(this.source, this.state, changes.mapPos(this.explicitPos));
@@ -187,7 +182,7 @@ export class ActiveSource {
 }
 export class ActiveResult extends ActiveSource {
     constructor(source, explicitPos, result, from, to) {
-        super(source, 2, explicitPos);
+        super(source, 2 /* Result */, explicitPos);
         this.result = result;
         this.from = from;
         this.to = to;
@@ -200,17 +195,17 @@ export class ActiveResult extends ActiveSource {
         if ((this.explicitPos < 0 ? pos <= from : pos < this.from) ||
             pos > to ||
             type == "delete" && cur(tr.startState) == this.from)
-            return new ActiveSource(this.source, type == "input" && conf.activateOnTyping ? 1 : 0);
+            return new ActiveSource(this.source, type == "input" && conf.activateOnTyping ? 1 /* Pending */ : 0 /* Inactive */);
         let explicitPos = this.explicitPos < 0 ? -1 : tr.changes.mapPos(this.explicitPos), updated;
         if (checkValid(this.result.validFor, tr.state, from, to))
             return new ActiveResult(this.source, explicitPos, this.result, from, to);
         if (this.result.update &&
             (updated = this.result.update(this.result, from, to, new CompletionContext(tr.state, pos, explicitPos >= 0))))
             return new ActiveResult(this.source, explicitPos, updated, updated.from, (_a = updated.to) !== null && _a !== void 0 ? _a : cur(tr.state));
-        return new ActiveSource(this.source, 1, explicitPos);
+        return new ActiveSource(this.source, 1 /* Pending */, explicitPos);
     }
     handleChange(tr) {
-        return tr.changes.touchesRange(this.from, this.to) ? new ActiveSource(this.source, 0) : this.map(tr.changes);
+        return tr.changes.touchesRange(this.from, this.to) ? new ActiveSource(this.source, 0 /* Inactive */) : this.map(tr.changes);
     }
     map(mapping) {
         return mapping.empty ? this :

@@ -18,4 +18,5 @@ export { lineNumbers, highlightActiveLineGutter, gutter, gutters, GutterMarker, 
 import { HeightMap, HeightOracle, MeasuredHeights, QueryType } from "./heightmap.js";
 import { ChangedRange } from "./extension.js";
 import { computeOrder, moveVisually } from "./bidi.js";
+// @internal
 export const __test = { HeightMap, HeightOracle, MeasuredHeights, QueryType, ChangedRange, computeOrder, moveVisually };

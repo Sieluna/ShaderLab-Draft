@@ -1,62 +1,63 @@
 import { EditorSelection, findClusterBreak } from "../state/index.js";
+/** Used to indicate [text direction]{@link EditorView.textDirection}. */
 export var Direction;
 (function (Direction) {
+    /** Left-to-right. */
     Direction[Direction["LTR"] = 0] = "LTR";
+    /** Right-to-left. */
     Direction[Direction["RTL"] = 1] = "RTL";
 })(Direction || (Direction = {}));
 const LTR = Direction.LTR, RTL = Direction.RTL;
-var T;
-(function (T) {
-    T[T["L"] = 1] = "L";
-    T[T["R"] = 2] = "R";
-    T[T["AL"] = 4] = "AL";
-    T[T["EN"] = 8] = "EN";
-    T[T["AN"] = 16] = "AN";
-    T[T["ET"] = 64] = "ET";
-    T[T["CS"] = 128] = "CS";
-    T[T["NI"] = 256] = "NI";
-    T[T["NSM"] = 512] = "NSM";
-    T[T["Strong"] = 7] = "Strong";
-    T[T["Num"] = 24] = "Num";
-})(T || (T = {}));
+/** Decode a string with each type encoded as log2(type) */
 function dec(str) {
     let result = [];
     for (let i = 0; i < str.length; i++)
         result.push(1 << +str[i]);
     return result;
 }
+// Character types for codepoints 0 to 0xf8
 const LowTypes = dec("88888888888888888888888888888888888666888888787833333333337888888000000000000000000000000008888880000000000000000000000000088888888888888888888888888888888888887866668888088888663380888308888800000000000000000000000800000000000000000000000000000008");
+// Character types for codepoints 0x600 to 0x6f9
 const ArabicTypes = dec("4444448826627288999999999992222222222222222222222222222222222222222222222229999999999999999999994444444444644222822222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222999999949999999229989999223333333333");
 const Brackets = Object.create(null), BracketStack = [];
+// There's a lot more in https://www.unicode.org/Public/UCD/latest/ucd/BidiBrackets.txt
 for (let p of ["()", "[]", "{}"]) {
     let l = p.charCodeAt(0), r = p.charCodeAt(1);
     Brackets[l] = r;
     Brackets[r] = -l;
 }
-var Bracketed;
-(function (Bracketed) {
-    Bracketed[Bracketed["OppositeBefore"] = 1] = "OppositeBefore";
-    Bracketed[Bracketed["EmbedInside"] = 2] = "EmbedInside";
-    Bracketed[Bracketed["OppositeInside"] = 4] = "OppositeInside";
-    Bracketed[Bracketed["MaxDepth"] = 189] = "MaxDepth";
-})(Bracketed || (Bracketed = {}));
 function charType(ch) {
     return ch <= 0xf7 ? LowTypes[ch] :
-        0x590 <= ch && ch <= 0x5f4 ? 2 :
+        0x590 <= ch && ch <= 0x5f4 ? 2 /* R */ :
             0x600 <= ch && ch <= 0x6f9 ? ArabicTypes[ch - 0x600] :
-                0x6ee <= ch && ch <= 0x8ac ? 4 :
-                    0x2000 <= ch && ch <= 0x200b ? 256 :
-                        ch == 0x200c ? 256 : 1;
+                0x6ee <= ch && ch <= 0x8ac ? 4 /* AL */ :
+                    0x2000 <= ch && ch <= 0x200b ? 256 /* NI */ :
+                        ch == 0x200c ? 256 /* NI */ : 1 /* L */;
 }
 const BidiRE = /[\u0590-\u05f4\u0600-\u06ff\u0700-\u08ac]/;
+/** Represents a contiguous range of text that has a single direction (as in left-to-right or right-to-left). */
 export class BidiSpan {
-    constructor(from, to, level) {
+    // @internal
+    constructor(
+    /** The start of the span (relative to the start of the line). */
+    from, 
+    /** The end of the span. */
+    to, 
+    /**
+     * The ["bidi level"](https://unicode.org/reports/tr9/#Basic_Display_Algorithm) of the span
+     * (in this context, 0 means left-to-right, 1 means right-to-left, 2 means left-to-right
+     * number inside right-to-left text).
+     */
+    level) {
         this.from = from;
         this.to = to;
         this.level = level;
     }
+    /** The direction of this span. */
     get dir() { return this.level % 2 ? RTL : LTR; }
+    // @internal
     side(end, dir) { return (this.dir == dir) == end ? this.to : this.from; }
+    // @internal
     static find(order, index, level, assoc) {
         let maybe = -1;
         for (let i = 0; i < order.length; i++) {
@@ -64,6 +65,7 @@ export class BidiSpan {
             if (span.from <= index && span.to >= index) {
                 if (span.level == level)
                     return i;
+                // When multiple spans match, if assoc != 0, take the one that covers that side, otherwise take the one with the minimum level.
                 if (maybe < 0 || (assoc != 0 ? (assoc < 0 ? span.from < index : span.to > index) : order[maybe].level > span.level))
                     maybe = i;
             }
@@ -73,55 +75,79 @@ export class BidiSpan {
         return maybe;
     }
 }
+// Reused array of character types
 const types = [];
 export function computeOrder(line, direction) {
-    let len = line.length, outerType = direction == LTR ? 1 : 2, oppositeType = direction == LTR ? 2 : 1;
-    if (!line || outerType == 1 && !BidiRE.test(line))
+    let len = line.length, outerType = direction == LTR ? 1 /* L */ : 2 /* R */, oppositeType = direction == LTR ? 2 /* R */ : 1 /* L */;
+    if (!line || outerType == 1 /* L */ && !BidiRE.test(line))
         return trivialOrder(len);
+    // W1. Examine each non-spacing mark (NSM) in the level run, and
+    // change the type of the NSM to the type of the previous
+    // character. If the NSM is at the start of the level run, it will
+    // get the type of sor.
+    // W2. Search backwards from each instance of a European number
+    // until the first strong type (R, L, AL, or sor) is found. If an
+    // AL is found, change the type of the European number to Arabic
+    // number.
+    // W3. Change all ALs to R.
+    // (Left after this: L, R, EN, AN, ET, CS, NI)
     for (let i = 0, prev = outerType, prevStrong = outerType; i < len; i++) {
         let type = charType(line.charCodeAt(i));
-        if (type == 512)
+        if (type == 512 /* NSM */)
             type = prev;
-        else if (type == 8 && prevStrong == 4)
-            type = 16;
-        types[i] = type == 4 ? 2 : type;
-        if (type & 7)
+        else if (type == 8 /* EN */ && prevStrong == 4 /* AL */)
+            type = 16 /* AN */;
+        types[i] = type == 4 /* AL */ ? 2 /* R */ : type;
+        if (type & 7 /* Strong */)
             prevStrong = type;
         prev = type;
     }
+    // W5. A sequence of European terminators adjacent to European
+    // numbers changes to all European numbers.
+    // W6. Otherwise, separators and terminators change to Other
+    // Neutral.
+    // W7. Search backwards from each instance of a European number
+    // until the first strong type (R, L, or sor) is found. If an L is
+    // found, then change the type of the European number to L.
+    // (Left after this: L, R, EN+AN, NI)
     for (let i = 0, prev = outerType, prevStrong = outerType; i < len; i++) {
         let type = types[i];
-        if (type == 128) {
-            if (i < len - 1 && prev == types[i + 1] && (prev & 24))
+        if (type == 128 /* CS */) {
+            if (i < len - 1 && prev == types[i + 1] && (prev & 24 /* Num */))
                 type = types[i] = prev;
             else
-                types[i] = 256;
+                types[i] = 256 /* NI */;
         }
-        else if (type == 64) {
+        else if (type == 64 /* ET */) {
             let end = i + 1;
-            while (end < len && types[end] == 64)
+            while (end < len && types[end] == 64 /* ET */)
                 end++;
-            let replace = (i && prev == 8) || (end < len && types[end] == 8) ? (prevStrong == 1 ? 1 : 8) : 256;
+            let replace = (i && prev == 8 /* EN */) || (end < len && types[end] == 8 /* EN */) ? (prevStrong == 1 /* L */ ? 1 /* L */ : 8 /* EN */) : 256 /* NI */;
             for (let j = i; j < end; j++)
                 types[j] = replace;
             i = end - 1;
         }
-        else if (type == 8 && prevStrong == 1) {
-            types[i] = 1;
+        else if (type == 8 /* EN */ && prevStrong == 1 /* L */) {
+            types[i] = 1 /* L */;
         }
         prev = type;
-        if (type & 7)
+        if (type & 7 /* Strong */)
             prevStrong = type;
     }
+    // N0. Process bracket pairs in an isolating run sequence
+    // sequentially in the logical order of the text positions of the
+    // opening paired brackets using the logic given below. Within this
+    // scope, bidirectional types EN and AN are treated as R.
     for (let i = 0, sI = 0, context = 0, ch, br, type; i < len; i++) {
+        // Keeps [startIndex, type, strongSeen] triples for each open bracket on BracketStack.
         if (br = Brackets[ch = line.charCodeAt(i)]) {
-            if (br < 0) {
+            if (br < 0) { // Closing bracket
                 for (let sJ = sI - 3; sJ >= 0; sJ -= 3) {
                     if (BracketStack[sJ + 1] == -br) {
                         let flags = BracketStack[sJ + 2];
-                        let type = (flags & 2) ? outerType :
-                            !(flags & 4) ? 0 :
-                                (flags & 1) ? oppositeType : outerType;
+                        let type = (flags & 2 /* EmbedInside */) ? outerType :
+                            !(flags & 4 /* OppositeInside */) ? 0 :
+                                (flags & 1 /* OppositeBefore */) ? oppositeType : outerType;
                         if (type)
                             types[i] = types[BracketStack[sJ]] = type;
                         sI = sJ;
@@ -129,7 +155,7 @@ export function computeOrder(line, direction) {
                     }
                 }
             }
-            else if (BracketStack.length == 189) {
+            else if (BracketStack.length == 189 /* MaxDepth */) {
                 break;
             }
             else {
@@ -138,47 +164,59 @@ export function computeOrder(line, direction) {
                 BracketStack[sI++] = context;
             }
         }
-        else if ((type = types[i]) == 2 || type == 1) {
+        else if ((type = types[i]) == 2 /* R */ || type == 1 /* L */) {
             let embed = type == outerType;
-            context = embed ? 0 : 1;
+            context = embed ? 0 : 1 /* OppositeBefore */;
             for (let sJ = sI - 3; sJ >= 0; sJ -= 3) {
                 let cur = BracketStack[sJ + 2];
-                if (cur & 2)
+                if (cur & 2 /* EmbedInside */)
                     break;
                 if (embed) {
-                    BracketStack[sJ + 2] |= 2;
+                    BracketStack[sJ + 2] |= 2 /* EmbedInside */;
                 }
                 else {
-                    if (cur & 4)
+                    if (cur & 4 /* OppositeInside */)
                         break;
-                    BracketStack[sJ + 2] |= 4;
+                    BracketStack[sJ + 2] |= 4 /* OppositeInside */;
                 }
             }
         }
     }
+    // N1. A sequence of neutrals takes the direction of the
+    // surrounding strong text if the text on both sides has the same
+    // direction. European and Arabic numbers act as if they were R in
+    // terms of their influence on neutrals. Start-of-level-run (sor)
+    // and end-of-level-run (eor) are used at level run boundaries.
+    // N2. Any remaining neutrals take the embedding direction.
+    // (Left after this: L, R, EN+AN)
     for (let i = 0; i < len; i++) {
-        if (types[i] == 256) {
+        if (types[i] == 256 /* NI */) {
             let end = i + 1;
-            while (end < len && types[end] == 256)
+            while (end < len && types[end] == 256 /* NI */)
                 end++;
-            let beforeL = (i ? types[i - 1] : outerType) == 1;
-            let afterL = (end < len ? types[end] : outerType) == 1;
-            let replace = beforeL == afterL ? (beforeL ? 1 : 2) : outerType;
+            let beforeL = (i ? types[i - 1] : outerType) == 1 /* L */;
+            let afterL = (end < len ? types[end] : outerType) == 1 /* L */;
+            let replace = beforeL == afterL ? (beforeL ? 1 /* L */ : 2 /* R */) : outerType;
             for (let j = i; j < end; j++)
                 types[j] = replace;
             i = end - 1;
         }
     }
+    // Here we depart from the documented algorithm, in order to avoid
+    // building up an actual levels array. Since there are only three
+    // levels (0, 1, 2) in an implementation that doesn't take
+    // explicit embedding into account, we can build up the order on
+    // the fly, without following the level-based algorithm.
     let order = [];
-    if (outerType == 1) {
+    if (outerType == 1 /* L */) {
         for (let i = 0; i < len;) {
-            let start = i, rtl = types[i++] != 1;
-            while (i < len && rtl == (types[i] != 1))
+            let start = i, rtl = types[i++] != 1 /* L */;
+            while (i < len && rtl == (types[i] != 1 /* L */))
                 i++;
             if (rtl) {
                 for (let j = i; j > start;) {
-                    let end = j, l = types[--j] != 2;
-                    while (j > start && l == (types[j - 1] != 2))
+                    let end = j, l = types[--j] != 2 /* R */;
+                    while (j > start && l == (types[j - 1] != 2 /* R */))
                         j--;
                     order.push(new BidiSpan(j, end, l ? 2 : 1));
                 }
@@ -190,8 +228,8 @@ export function computeOrder(line, direction) {
     }
     else {
         for (let i = 0; i < len;) {
-            let start = i, rtl = types[i++] == 2;
-            while (i < len && rtl == (types[i] == 2))
+            let start = i, rtl = types[i++] == 2 /* R */;
+            while (i < len && rtl == (types[i] == 2 /* R */))
                 i++;
             order.push(new BidiSpan(start, i, rtl ? 1 : 2));
         }
@@ -225,6 +263,7 @@ export function moveVisually(line, order, dir, start, forward) {
     if (spanI < 0)
         spanI = BidiSpan.find(order, startIndex, (_a = start.bidiLevel) !== null && _a !== void 0 ? _a : -1, start.assoc);
     let span = order[spanI];
+    // End of span. (But not end of line--that was checked for above.)
     if (startIndex == span.side(forward, dir)) {
         span = order[spanI += forward ? 1 : -1];
         startIndex = span.side(!forward, dir);

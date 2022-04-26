@@ -16,12 +16,23 @@ export class DocView extends ContentView {
         this.compositionDeco = Decoration.none;
         this.decorations = [];
         this.dynamicDecorationMap = [];
+        // Track a minimum width for the editor. When measuring sizes in
+        // measureVisibleLineHeights, this is updated to point at the width
+        // of a given element and its extent in the document. When a change
+        // happens in that range, these are reset. That way, once we've seen
+        // a line/element of a given length, we keep the editor wide enough
+        // to fit at least that element, until it is changed, at which point
+        // we forget it again.
         this.minWidth = 0;
         this.minWidthFrom = 0;
         this.minWidthTo = 0;
+        // Track whether the DOM selection was set in a lossy way, so that
+        // we don't mess it up when reading it back it
         this.impreciseAnchor = null;
         this.impreciseHead = null;
         this.forceSelection = false;
+        // Used by the resize observer to ignore resizes that we caused
+        // ourselves
         this.lastUpdate = Date.now();
         this.setDOM(view.contentDOM);
         this.children = [new LineView];
@@ -32,6 +43,10 @@ export class DocView extends ContentView {
     get root() { return this.view.root; }
     get editorView() { return this.view; }
     get length() { return this.view.state.doc.length; }
+    // Update the document view to a given state. scrollIntoView can be
+    // used as a hint to compute a new viewport that includes that
+    // position, if we know the editor is going to scroll that position
+    // into view.
     update(update) {
         let changedRanges = update.changedRanges;
         if (this.minWidth > 0 && changedRanges.length) {
@@ -47,13 +62,18 @@ export class DocView extends ContentView {
             this.compositionDeco = Decoration.none;
         else if (update.transactions.length || this.dirty)
             this.compositionDeco = computeCompositionDeco(this.view, update.changes);
+        // When the DOM nodes around the selection are moved to another
+        // parent, Chrome sometimes reports a different selection through
+        // getSelection than the one that it actually shows to the user.
+        // This forces a selection update when lines are joined to work
+        // around that. Issue #54
         if ((browser.ie || browser.chrome) && !this.compositionDeco.size && update &&
             update.state.doc.lines != update.startState.doc.lines)
             this.forceSelection = true;
         let prevDeco = this.decorations, deco = this.updateDeco();
         let decoDiff = findChangedDeco(prevDeco, deco, update.changes);
         changedRanges = ChangedRange.extendWithRanges(changedRanges, decoDiff);
-        if (this.dirty == 0 && changedRanges.length == 0) {
+        if (this.dirty == 0 /* Not */ && changedRanges.length == 0) {
             return false;
         }
         else {
@@ -63,16 +83,26 @@ export class DocView extends ContentView {
             return true;
         }
     }
+    // Used by update and the constructor do perform the actual DOM
+    // update
     updateInner(changes, oldLength) {
         this.view.viewState.mustMeasureContent = true;
         this.updateChildren(changes, oldLength);
         let { observer } = this.view;
         observer.ignore(() => {
+            // Lock the height during redrawing, since Chrome sometimes
+            // messes with the scroll position during DOM mutation (though
+            // no relayout is triggered and I cannot imagine how it can
+            // recompute the scroll position without a layout)
             this.dom.style.height = this.view.viewState.contentHeight + "px";
             this.dom.style.minWidth = this.minWidth ? this.minWidth + "px" : "";
+            // Chrome will sometimes, when DOM mutations occur directly
+            // around the selection, get confused and report a different
+            // selection from the one it displays (issue #218). This tries
+            // to detect that situation.
             let track = browser.chrome || browser.ios ? { node: observer.selectionRange.focusNode, written: false } : undefined;
             this.sync(track);
-            this.dirty = 0;
+            this.dirty = 0 /* Not */;
             if (track && (track.written || observer.selectionRange.focusNode != track.node))
                 this.forceSelection = true;
             this.dom.style.height = "";
@@ -97,6 +127,7 @@ export class DocView extends ContentView {
             replaceRange(this, fromI, fromOff, toI, toOff, content, breakAtStart, openStart, openEnd);
         }
     }
+    // Sync the DOM selection to this.state.selection
     updateSelection(mustRead = false, fromPointer = false) {
         if (mustRead)
             this.view.observer.readSelectionRange();
@@ -106,8 +137,11 @@ export class DocView extends ContentView {
         let force = this.forceSelection;
         this.forceSelection = false;
         let main = this.view.state.selection.main;
+        // FIXME need to handle the case where the selection falls inside a block range
         let anchor = this.domAtPos(main.anchor);
         let head = main.empty ? anchor : this.domAtPos(main.head);
+        // Always reset on Firefox when next to an uneditable node to
+        // avoid invisible cursor bugs (#111)
         if (browser.gecko && main.empty && betweenUneditable(anchor)) {
             let dummy = document.createTextNode("");
             this.view.observer.ignore(() => anchor.node.insertBefore(dummy, anchor.node.childNodes[anchor.offset] || null));
@@ -115,10 +149,15 @@ export class DocView extends ContentView {
             force = true;
         }
         let domSel = this.view.observer.selectionRange;
+        // If the selection is already here, or in an equivalent position, don't touch it
         if (force || !domSel.focusNode ||
             !isEquivalentPosition(anchor.node, anchor.offset, domSel.anchorNode, domSel.anchorOffset) ||
             !isEquivalentPosition(head.node, head.offset, domSel.focusNode, domSel.focusOffset)) {
             this.view.observer.ignore(() => {
+                // Chrome Android will hide the virtual keyboard when tapping
+                // inside an uneditable node, and not bring it back when we
+                // move the cursor to its proper position. This tries to
+                // restore the keyboard by cycling focus.
                 if (browser.android && browser.chrome && this.dom.contains(domSel.focusNode) &&
                     inUneditable(domSel.focusNode, this.dom)) {
                     this.dom.blur();
@@ -126,12 +165,13 @@ export class DocView extends ContentView {
                 }
                 let rawSel = getSelection(this.root);
                 if (main.empty) {
+                    // Work around https://bugzilla.mozilla.org/show_bug.cgi?id=1612076
                     if (browser.gecko) {
                         let nextTo = nextToUneditable(anchor.node, anchor.offset);
-                        if (nextTo && nextTo != (1 | 2)) {
-                            let text = nearbyTextNode(anchor.node, anchor.offset, nextTo == 1 ? 1 : -1);
+                        if (nextTo && nextTo != (1 /* Before */ | 2 /* After */)) {
+                            let text = nearbyTextNode(anchor.node, anchor.offset, nextTo == 1 /* Before */ ? 1 : -1);
                             if (text)
-                                anchor = new DOMPos(text, nextTo == 1 ? 0 : text.nodeValue.length);
+                                anchor = new DOMPos(text, nextTo == 1 /* Before */ ? 0 : text.nodeValue.length);
                         }
                     }
                     rawSel.collapse(anchor.node, anchor.offset);
@@ -139,10 +179,14 @@ export class DocView extends ContentView {
                         domSel.cursorBidiLevel = main.bidiLevel;
                 }
                 else if (rawSel.extend) {
+                    // Selection.extend can be used to create an 'inverted' selection
+                    // (one where the focus is before the anchor), but not all
+                    // browsers support it yet.
                     rawSel.collapse(anchor.node, anchor.offset);
                     rawSel.extend(head.node, head.offset);
                 }
                 else {
+                    // Primitive (IE) way
                     let range = document.createRange();
                     if (main.anchor > main.head)
                         [anchor, head] = [head, anchor];
@@ -261,6 +305,7 @@ export class DocView extends ContentView {
                     return measure;
             }
         }
+        // If no workable line exists, force a layout of a measurable element
         let dummy = document.createElement("div"), lineHeight, charWidth;
         dummy.className = "cm-line";
         dummy.textContent = "abc def ghi jkl mno pqr stu";
@@ -274,6 +319,9 @@ export class DocView extends ContentView {
         return { lineHeight, charWidth };
     }
     childCursor(pos = this.length) {
+        // Move back to start of last element when possible, so that
+        // `ChildCursor.findPos` doesn't have to deal with the edge case
+        // of being after the last element.
         let i = this.children.length;
         if (i)
             pos -= this.children[--i].length;
@@ -449,16 +497,11 @@ function nearbyTextNode(node, offset, side) {
         }
     }
 }
-var NextTo;
-(function (NextTo) {
-    NextTo[NextTo["Before"] = 1] = "Before";
-    NextTo[NextTo["After"] = 2] = "After";
-})(NextTo || (NextTo = {}));
 function nextToUneditable(node, offset) {
     if (node.nodeType != 1)
         return 0;
-    return (offset && node.childNodes[offset - 1].contentEditable == "false" ? 1 : 0) |
-        (offset < node.childNodes.length && node.childNodes[offset].contentEditable == "false" ? 2 : 0);
+    return (offset && node.childNodes[offset - 1].contentEditable == "false" ? 1 /* Before */ : 0) |
+        (offset < node.childNodes.length && node.childNodes[offset].contentEditable == "false" ? 2 /* After */ : 0);
 }
 class DecorationComparator {
     constructor() {

@@ -1,5 +1,6 @@
 import { ViewPlugin } from "./extension.js";
 import { Decoration } from "./decoration.js";
+/** Mark lines that have a cursor on them with the `"cm-activeLine"` DOM class. */
 export function highlightActiveLine() {
     return activeLineHighlighter;
 }

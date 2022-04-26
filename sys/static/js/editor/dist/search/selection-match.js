@@ -16,6 +16,10 @@ const highlightConfig = Facet.define({
         });
     }
 });
+/**
+ * This extension highlights text that matches the selection. It uses the `"cm-selectionMatch"` class for the highlighting.
+ * When `highlightWordAroundCursor` is enabled, the word at the cursor itself will be highlighted with `"cm-selectionMatch-main"`.
+ */
 export function highlightSelectionMatches(options) {
     let ext = [defaultTheme, matchHighlighter];
     if (options)
@@ -24,10 +28,12 @@ export function highlightSelectionMatches(options) {
 }
 const matchDeco = Decoration.mark({ class: "cm-selectionMatch" });
 const mainMatchDeco = Decoration.mark({ class: "cm-selectionMatch cm-selectionMatch-main" });
+// Whether the characters directly outside the given positions are non-word characters
 function insideWordBoundaries(check, state, from, to) {
     return (from == 0 || check(state.sliceDoc(from - 1, from)) != CharCategory.Word) &&
         (to == state.doc.length || check(state.sliceDoc(to, to + 1)) != CharCategory.Word);
 }
+// Whether the characters directly at the given positions are word characters
 function insideWord(check, state, from, to) {
     return check(state.sliceDoc(from, from + 1)) == CharCategory.Word
         && check(state.sliceDoc(to - 1, to)) == CharCategory.Word;
@@ -60,7 +66,7 @@ const matchHighlighter = ViewPlugin.fromClass(class {
             if (len < conf.minSelectionLength || len > 200)
                 return Decoration.none;
             if (conf.wholeWords) {
-                query = state.sliceDoc(range.from, range.to);
+                query = state.sliceDoc(range.from, range.to); // TODO: allow and include leading/trailing space?
                 check = state.charCategorizer(range.head);
                 if (!(insideWordBoundaries(check, state, range.from, range.to)
                     && insideWord(check, state, range.from, range.to)))
@@ -96,6 +102,7 @@ const defaultTheme = EditorView.baseTheme({
     ".cm-selectionMatch": { backgroundColor: "#99ff7780" },
     ".cm-searchMatch .cm-selectionMatch": { backgroundColor: "transparent" }
 });
+// Select the words around the cursors.
 const selectWord = ({ state, dispatch }) => {
     let { selection } = state;
     let newSel = EditorSelection.create(selection.ranges.map(range => state.wordAt(range.head) || EditorSelection.cursor(range.head)), selection.mainIndex);
@@ -104,6 +111,8 @@ const selectWord = ({ state, dispatch }) => {
     dispatch(state.update({ selection: newSel }));
     return true;
 };
+// Find next occurrence of query relative to last cursor. Wrap around
+// the document if there are no more matches.
 function findNextOccurrence(state, query) {
     let { main, ranges } = state.selection;
     let word = state.wordAt(main.head), fullWord = word && word.from == main.from && word.to == main.to;
@@ -127,6 +136,7 @@ function findNextOccurrence(state, query) {
         }
     }
 }
+/** Select next occurrence of the current selection. Expand selection to the surrounding word when the selection is empty. */
 export const selectNextOccurrence = ({ state, dispatch }) => {
     let { ranges } = state.selection;
     if (ranges.some(sel => sel.from === sel.to))

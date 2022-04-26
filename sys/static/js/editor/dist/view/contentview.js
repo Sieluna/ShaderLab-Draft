@@ -1,11 +1,4 @@
 import { maxOffset, domIndex } from "./dom.js";
-export var Dirty;
-(function (Dirty) {
-    Dirty[Dirty["Not"] = 0] = "Not";
-    Dirty[Dirty["Child"] = 1] = "Child";
-    Dirty[Dirty["Node"] = 2] = "Node";
-    Dirty[Dirty["Attrs"] = 4] = "Attrs";
-})(Dirty || (Dirty = {}));
 export class DOMPos {
     constructor(node, offset, precise = true) {
         this.node = node;
@@ -20,7 +13,7 @@ export class ContentView {
     constructor() {
         this.parent = null;
         this.dom = null;
-        this.dirty = 2;
+        this.dirty = 2 /* Node */;
     }
     get editorView() {
         if (!this.parent)
@@ -46,9 +39,11 @@ export class ContentView {
     posAfter(view) {
         return this.posBefore(view) + view.length;
     }
+    // Will return a rectangle directly before (when side < 0), after (side > 0) or directly on (when
+    // the browser supports it) the given position.
     coordsAt(_pos, _side) { return null; }
     sync(track) {
-        if (this.dirty & 2) {
+        if (this.dirty & 2 /* Node */) {
             let parent = this.dom;
             let prev = null, next;
             for (let child of this.children) {
@@ -59,7 +54,7 @@ export class ContentView {
                             child.reuseDOM(next);
                     }
                     child.sync(track);
-                    child.dirty = 0;
+                    child.dirty = 0 /* Not */;
                 }
                 next = prev ? prev.nextSibling : parent.firstChild;
                 if (track && !track.written && track.node == parent && next != child.dom)
@@ -79,11 +74,11 @@ export class ContentView {
             while (next)
                 next = rm(next);
         }
-        else if (this.dirty & 1) {
+        else if (this.dirty & 1 /* Child */) {
             for (let child of this.children)
                 if (child.dirty) {
                     child.sync(track);
-                    child.dirty = 0;
+                    child.dirty = 0 /* Not */;
                 }
         }
     }
@@ -148,16 +143,16 @@ export class ContentView {
             endDOM: toI < this.children.length && toI >= 0 ? this.children[toI].dom : null };
     }
     markDirty(andParent = false) {
-        this.dirty |= 2;
+        this.dirty |= 2 /* Node */;
         this.markParentsDirty(andParent);
     }
     markParentsDirty(childList) {
         for (let parent = this.parent; parent; parent = parent.parent) {
             if (childList)
-                parent.dirty |= 2;
-            if (parent.dirty & 1)
+                parent.dirty |= 2 /* Node */;
+            if (parent.dirty & 1 /* Child */)
                 return;
-            parent.dirty |= 1;
+            parent.dirty |= 1 /* Child */;
             childList = false;
         }
     }
@@ -213,12 +208,16 @@ export class ContentView {
         return false;
     }
     become(other) { return false; }
+    // When this is a zero-length view with a side, this should return a
+    // number <= 0 to indicate it is before its position, or a
+    // number > 0 when after its position.
     getSide() { return 0; }
     destroy() {
         this.parent = null;
     }
 }
 ContentView.prototype.breakAfter = 0;
+// Remove a DOM node and return its next sibling.
 function rm(dom) {
     let next = dom.nextSibling;
     dom.parentNode.removeChild(dom);
@@ -248,31 +247,38 @@ export function replaceRange(parent, fromI, fromOff, toI, toOff, insert, breakAt
     let before = children.length ? children[fromI] : null;
     let last = insert.length ? insert[insert.length - 1] : null;
     let breakAtEnd = last ? last.breakAfter : breakAtStart;
+    // Change within a single child
     if (fromI == toI && before && !breakAtStart && !breakAtEnd && insert.length < 2 &&
         before.merge(fromOff, toOff, insert.length ? last : null, fromOff == 0, openStart, openEnd))
         return;
     if (toI < children.length) {
         let after = children[toI];
+        // Make sure the end of the child after the update is preserved in `after`
         if (after && toOff < after.length) {
+            // If we're splitting a child, separate part of it to avoid that being mangled when updating the child before the update.
             if (fromI == toI) {
                 after = after.split(toOff);
                 toOff = 0;
             }
+            // If the element after the replacement should be merged with the last replacing element, update `content`
             if (!breakAtEnd && last && after.merge(0, toOff, last, true, 0, openEnd)) {
                 insert[insert.length - 1] = after;
             }
             else {
+                // Remove the start of the after element, if necessary, and add it to `content`.
                 if (toOff)
                     after.merge(0, toOff, null, false, 0, openEnd);
                 insert.push(after);
             }
         }
         else if (after === null || after === void 0 ? void 0 : after.breakAfter) {
+            // The element at `toI` is entirely covered by this range. Preserve its line break, if any.
             if (last)
                 last.breakAfter = 1;
             else
                 breakAtStart = 1;
         }
+        // Since we've handled the next element from the current elements now, make sure `toI` points after that.
         toI++;
     }
     if (before) {
@@ -287,6 +293,7 @@ export function replaceRange(parent, fromI, fromOff, toI, toOff, insert, breakAt
             fromI++;
         }
     }
+    // Try to merge widgets on the boundaries of the replacement
     while (fromI < toI && insert.length) {
         if (children[toI - 1].become(insert[insert.length - 1])) {
             toI--;

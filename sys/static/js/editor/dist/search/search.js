@@ -15,10 +15,23 @@ const searchConfigFacet = Facet.define({
         };
     }
 });
+/**
+ * Add search state to the editor configuration, and optionally configure the search extension.
+ * ({@link openSearchPanel} will automatically enable this if it isn't already on).
+ */
 export function search(config) {
     return config ? [searchConfigFacet.of(config), searchExtensions] : searchExtensions;
 }
+/** A search query. Part of the editor's search state. */
 export class SearchQuery {
+    /**
+     * Create a query object.
+     * @param config.search The search string.
+     * @param [config.cassSensitive] Controls whether the search should be case-sensitive.
+     * @param [config.literal] When true, interpret the search string as a literal sequence of characters.
+     * @param [config.regexp] When true, interpret the search string as a regular expression.
+     * @param [config.replace] The replace text.
+     */
     constructor(config) {
         this.search = config.search;
         this.caseSensitive = !!config.caseSensitive;
@@ -27,13 +40,16 @@ export class SearchQuery {
         this.valid = !!this.search && (!this.regexp || validRegExp(this.search));
         this.unquoted = config.literal ? this.search : this.search.replace(/\\([nrt\\])/g, (_, ch) => ch == "n" ? "\n" : ch == "r" ? "\r" : ch == "t" ? "\t" : "\\");
     }
+    /** Compare this query to another query. */
     eq(other) {
         return this.search == other.search && this.replace == other.replace &&
             this.caseSensitive == other.caseSensitive && this.regexp == other.regexp;
     }
+    // @internal
     create() {
         return this.regexp ? new RegExpQuery(this) : new StringQuery(this);
     }
+    /** Get a search cursor for this query, searching through the given range in the given document. */
     getCursor(doc, from = 0, to = doc.length) {
         return this.regexp ? regexpCursor(this, doc, from, to) : stringCursor(this, doc, from, to);
     }
@@ -43,10 +59,6 @@ class QueryType {
         this.spec = spec;
     }
 }
-var FindPrev;
-(function (FindPrev) {
-    FindPrev[FindPrev["ChunkSize"] = 10000] = "ChunkSize";
-})(FindPrev || (FindPrev = {}));
 function stringCursor(spec, doc, from, to) {
     return new SearchCursor(doc, spec.unquoted, from, to, spec.caseSensitive ? undefined : x => x.toLowerCase());
 }
@@ -60,9 +72,10 @@ class StringQuery extends QueryType {
             cursor = stringCursor(this.spec, doc, 0, curFrom).nextOverlapping();
         return cursor.done ? null : cursor.value;
     }
+    // Searching in reverse is, rather than implementing inverted search cursor, done by scanning chunk after chunk forward.
     prevMatchInRange(doc, from, to) {
         for (let pos = to;;) {
-            let start = Math.max(from, pos - 10000 - this.spec.unquoted.length);
+            let start = Math.max(from, pos - 10000 /* ChunkSize */ - this.spec.unquoted.length);
             let cursor = stringCursor(this.spec, doc, start, pos), range = null;
             while (!cursor.nextOverlapping().done)
                 range = cursor.value;
@@ -70,7 +83,7 @@ class StringQuery extends QueryType {
                 return range;
             if (start == from)
                 return null;
-            pos -= 10000;
+            pos -= 10000 /* ChunkSize */;
         }
     }
     prevMatch(doc, curFrom, curTo) {
@@ -93,10 +106,6 @@ class StringQuery extends QueryType {
             add(cursor.value.from, cursor.value.to);
     }
 }
-var RegExp;
-(function (RegExp) {
-    RegExp[RegExp["HighlightMargin"] = 250] = "HighlightMargin";
-})(RegExp || (RegExp = {}));
 function regexpCursor(spec, doc, from, to) {
     return new RegExpCursor(doc, spec.search, spec.caseSensitive ? undefined : { ignoreCase: true }, from, to);
 }
@@ -109,7 +118,7 @@ class RegExpQuery extends QueryType {
     }
     prevMatchInRange(doc, from, to) {
         for (let size = 1;; size++) {
-            let start = Math.max(from, to - size * 10000);
+            let start = Math.max(from, to - size * 10000 /* ChunkSize */);
             let cursor = regexpCursor(this.spec, doc, start, to), range = null;
             while (!cursor.next().done)
                 range = cursor.value;
@@ -139,11 +148,16 @@ class RegExpQuery extends QueryType {
         return ranges;
     }
     highlight(doc, from, to, add) {
-        let cursor = regexpCursor(this.spec, doc, Math.max(0, from - 250), Math.min(to + 250, doc.length));
+        let cursor = regexpCursor(this.spec, doc, Math.max(0, from - 250 /* HighlightMargin */), Math.min(to + 250 /* HighlightMargin */, doc.length));
         while (!cursor.next().done)
             add(cursor.value.from, cursor.value.to);
     }
 }
+/**
+ * A state effect that updates the current search query. Note that this only has an effect if the search
+ * state has been initialized (by including {@link search} in your configuration or by running
+ * {@link openSearchPanel} at least once).
+ */
 export const setSearchQuery = StateEffect.define();
 const togglePanel = StateEffect.define();
 const searchState = StateField.define({
@@ -161,6 +175,7 @@ const searchState = StateField.define({
     },
     provide: f => showPanel.from(f, val => val.panel)
 });
+/** Get the current search query from an editor state. */
 export function getSearchQuery(state) {
     let curState = state.field(searchState, false);
     return curState ? curState.query.spec : defaultQuery(state);
@@ -189,7 +204,7 @@ const searchHighlighter = ViewPlugin.fromClass(class {
         let builder = new RangeSetBuilder();
         for (let i = 0, ranges = view.visibleRanges, l = ranges.length; i < l; i++) {
             let { from, to } = ranges[i];
-            while (i < l - 1 && to > ranges[i + 1].from - 2 * 250)
+            while (i < l - 1 && to > ranges[i + 1].from - 2 * 250 /* HighlightMargin */)
                 to = ranges[++i].to;
             query.highlight(view.state.doc, from, to, (from, to) => {
                 let selected = view.state.selection.ranges.some(r => r.from == from && r.to == to);
@@ -207,6 +222,11 @@ function searchCommand(f) {
         return state && state.query.spec.valid ? f(view, state) : openSearchPanel(view);
     };
 }
+/**
+ * Open the search panel if it isn't already open, and move the selection to the first match
+ * after the current main selection. Will wrap around to the start of the document when it
+ * reaches the end.
+ */
 export const findNext = searchCommand((view, { query }) => {
     let { from, to } = view.state.selection.main;
     let next = query.nextMatch(view.state.doc, from, to);
@@ -220,6 +240,10 @@ export const findNext = searchCommand((view, { query }) => {
     });
     return true;
 });
+/**
+ * Move the selection to the previous instance of the search query, before the current main selection.
+ * Will wrap past the start of the document to start searching at the end again.
+ */
 export const findPrevious = searchCommand((view, { query }) => {
     let { state } = view, { from, to } = state.selection.main;
     let range = query.prevMatch(state.doc, from, to);
@@ -233,6 +257,7 @@ export const findPrevious = searchCommand((view, { query }) => {
     });
     return true;
 });
+/** Select all instances of the search query. */
 export const selectMatches = searchCommand((view, { query }) => {
     let ranges = query.matchAll(view.state.doc, 1000);
     if (!ranges || !ranges.length)
@@ -243,6 +268,7 @@ export const selectMatches = searchCommand((view, { query }) => {
     });
     return true;
 });
+/** Select all instances of the currently selected text. */
 export const selectSelectionMatches = ({ state, dispatch }) => {
     let sel = state.selection;
     if (sel.ranges.length > 1 || sel.main.empty)
@@ -262,6 +288,7 @@ export const selectSelectionMatches = ({ state, dispatch }) => {
     }));
     return true;
 };
+/** Replace the current match of the search query. */
 export const replaceNext = searchCommand((view, { query }) => {
     let { state } = view, { from, to } = state.selection.main;
     if (state.readOnly)
@@ -287,6 +314,7 @@ export const replaceNext = searchCommand((view, { query }) => {
     });
     return true;
 });
+/** Replace all instances of the search query with the given replacement. */
 export const replaceAll = searchCommand((view, { query }) => {
     if (view.state.readOnly)
         return false;
@@ -312,6 +340,7 @@ function defaultQuery(state, fallback) {
     let caseSensitive = (_a = fallback === null || fallback === void 0 ? void 0 : fallback.caseSensitive) !== null && _a !== void 0 ? _a : state.facet(searchConfigFacet).caseSensitive;
     return fallback && !selText ? fallback : new SearchQuery({ search: selText.replace(/\n/g, "\\n"), caseSensitive });
 }
+/** Make sure the search panel is open and focused. */
 export const openSearchPanel = view => {
     let state = view.state.field(searchState, false);
     if (state && state.panel) {
@@ -335,6 +364,7 @@ export const openSearchPanel = view => {
     }
     return true;
 };
+/** Close the search panel. */
 export const closeSearchPanel = view => {
     let state = view.state.field(searchState, false);
     if (!state || !state.panel)
@@ -345,6 +375,15 @@ export const closeSearchPanel = view => {
     view.dispatch({ effects: togglePanel.of(false) });
     return true;
 };
+/**
+ * Default search-related key bindings.
+ *
+ *  - Mod-f: {@link openSearchPanel}
+ *  - F3, Mod-g: {@link findNext}
+ *  - Shift-F3, Shift-Mod-g: {@link findPrevious}
+ *  - Alt-g: {@link gotoLine}
+ *  - Mod-d: {@link selectNextOccurrence}
+ */
 export const searchKeymap = [
     { key: "Mod-f", run: openSearchPanel, scope: "editor search-panel" },
     { key: "F3", run: findNext, shift: findPrevious, scope: "editor search-panel", preventDefault: true },

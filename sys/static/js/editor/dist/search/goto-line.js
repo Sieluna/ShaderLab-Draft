@@ -6,12 +6,12 @@ function createLineDialog(view) {
     let dom = elt("form", {
         class: "cm-gotoLine",
         onkeydown: (event) => {
-            if (event.keyCode == 27) {
+            if (event.keyCode == 27) { // Escape
                 event.preventDefault();
                 view.dispatch({ effects: dialogEffect.of(false) });
                 view.focus();
             }
-            else if (event.keyCode == 13) {
+            else if (event.keyCode == 13) { // Enter
                 event.preventDefault();
                 go();
             }
@@ -59,6 +59,14 @@ const dialogField = StateField.define({
     },
     provide: f => showPanel.from(f, val => val ? createLineDialog : null)
 });
+/**
+ * Command that shows a dialog asking the user for a line number, and when a valid position is provided, moves the cursor to that line.
+ *
+ * Supports line numbers, relative line offsets prefixed with `+` or `-`, document percentages suffixed with `%`, and an optional
+ * column position by adding `:` and a second number after the line number.
+ *
+ * The dialog can be styled with the `panel.gotoLine` theme selector.
+ */
 export const gotoLine = view => {
     let panel = getPanel(view, createLineDialog);
     if (!panel) {

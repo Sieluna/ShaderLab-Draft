@@ -4,11 +4,7 @@ import { ViewPlugin } from "./extension.js";
 import { EditorView } from "./editorview.js";
 import { Direction } from "./bidi.js";
 import browser from "./browser.js";
-const CanHidePrimary = !browser.ios;
-var C;
-(function (C) {
-    C[C["Epsilon"] = 0.01] = "Epsilon";
-})(C || (C = {}));
+const CanHidePrimary = !browser.ios; // FIXME test IE
 const selectionConfig = Facet.define({
     combine(configs) {
         return combineConfig(configs, {
@@ -20,6 +16,20 @@ const selectionConfig = Facet.define({
         });
     }
 });
+/**
+ * Returns an extension that hides the browser's native selection and cursor, replacing the selection
+ * with a background behind the text (with the `cm-selectionBackground` class), and the cursors with
+ * elements overlaid over the code (using `cm-cursor-primary` and `cm-cursor-secondary`).
+ *
+ * This allows the editor to display secondary selection ranges, and tends to produce a type of
+ * selection more in line with that users expect in a text editor (the native selection styling will
+ * often leave gaps between lines and won't fill the horizontal space after a line when the selection
+ * continues past it).
+ *
+ * It does have a performance cost, in that it requires an extra DOM layout cycle for many updates
+ * (the selection is drawn based on DOM layout information that's only available after laying out the
+ * content).
+ */
 export function drawSelection(config = {}) {
     return [
         selectionConfig.of(config),
@@ -180,7 +190,7 @@ function measureRange(view, range) {
         return pieces(top).concat(between).concat(pieces(bottom));
     }
     function piece(left, top, right, bottom) {
-        return new Piece(left - base.left, top - base.top - 0.01, right - left, bottom - top + 0.01, "cm-selectionBackground");
+        return new Piece(left - base.left, top - base.top - 0.01 /* Epsilon */, right - left, bottom - top + 0.01 /* Epsilon */, "cm-selectionBackground");
     }
     function pieces({ top, bottom, horizontal }) {
         let pieces = [];
@@ -188,9 +198,14 @@ function measureRange(view, range) {
             pieces.push(piece(horizontal[i], top, horizontal[i + 1], bottom));
         return pieces;
     }
+    // Gets passed from/to in line-local positions
     function drawForLine(from, to, line) {
         let top = 1e9, bottom = -1e9, horizontal = [];
         function addSpan(from, fromOpen, to, toOpen, dir) {
+            // Passing 2/-2 is a kludge to force the view to return
+            // coordinates on the proper side of block widgets, since
+            // normalizing the side there, though appropriate for most
+            // coordsAtPos queries, would break selection drawing.
             let fromCoords = view.coordsAtPos(from, (from == line.to ? -2 : 2));
             let toCoords = view.coordsAtPos(to, (to == line.from ? 2 : -2));
             top = Math.min(fromCoords.top, toCoords.top, top);
@@ -201,6 +216,7 @@ function measureRange(view, range) {
                 horizontal.push(!ltr && toOpen ? leftSide : toCoords.left, !ltr && fromOpen ? rightSide : fromCoords.right);
         }
         let start = from !== null && from !== void 0 ? from : line.from, end = to !== null && to !== void 0 ? to : line.to;
+        // Split the range by visible range and document line
         for (let r of view.visibleRanges)
             if (r.to > start && r.from < end) {
                 for (let pos = Math.max(r.from, start), endPos = Math.min(r.to, end);;) {

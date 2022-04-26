@@ -1,12 +1,20 @@
 import { combineConfig, Transaction, StateField, StateEffect, Facet, Annotation, ChangeSet, ChangeDesc, EditorSelection } from "../state/index.js";
 import { EditorView } from "../view/index.js";
-var BranchName;
-(function (BranchName) {
-    BranchName[BranchName["Done"] = 0] = "Done";
-    BranchName[BranchName["Undone"] = 1] = "Undone";
-})(BranchName || (BranchName = {}));
 const fromHistory = Annotation.define();
+/**
+ * Transaction annotation that will prevent that transaction from being combined with other transactions in
+ * the undo history.
+ *
+ * With `"before"`, it'll prevent merging with previous transactions.
+ * With `"after"`, subsequent transactions won't be combined with this one.
+ * With `"full"`, the transaction is isolated on both sides.
+ */
 export const isolateHistory = Annotation.define();
+/**
+ * This facet provides a way to register functions that, given a transaction, provide a set of effects that the
+ * history should store when inverting the transaction. This can be used to integrate some kinds of effects in
+ * the history, so that they can be undone (and redone again).
+ */
 export const invertedEffects = Facet.define();
 const historyConfig = Facet.define({
     combine(configs) {
@@ -31,12 +39,12 @@ const historyField_ = StateField.define({
         if (fromHist) {
             let selection = tr.docChanged ? EditorSelection.single(changeEnd(tr.changes)) : undefined;
             let item = HistEvent.fromTransaction(tr, selection), from = fromHist.side;
-            let other = from == 0 ? state.undone : state.done;
+            let other = from == 0 /* Done */ ? state.undone : state.done;
             if (item)
                 other = updateBranch(other, other.length, config.minDepth, item);
             else
                 other = addSelection(other, tr.startState.selection);
-            return new HistoryState(from == 0 ? fromHist.rest : other, from == 0 ? other : fromHist.rest);
+            return new HistoryState(from == 0 /* Done */ ? fromHist.rest : other, from == 0 /* Done */ ? other : fromHist.rest);
         }
         let isolate = tr.annotation(isolateHistory);
         if (isolate == "full" || isolate == "before")
@@ -60,6 +68,7 @@ const historyField_ = StateField.define({
         return new HistoryState(json.done.map(HistEvent.fromJSON), json.undone.map(HistEvent.fromJSON));
     }
 });
+/** Create a history extension with the given configuration. */
 export function history(config = {}) {
     return [
         historyField_,
@@ -75,6 +84,11 @@ export function history(config = {}) {
         })
     ];
 }
+/**
+ * The state field used to store the history data. Should probably only be used when you want to
+ * [serialize]{@link EditorState.toJSON} or [deserialize]{@link EditorState.fromJSON} state objects in a way
+ * that preserves history.
+ */
 export const historyField = historyField_;
 function cmd(side, selection) {
     return function ({ state, dispatch }) {
@@ -90,23 +104,38 @@ function cmd(side, selection) {
         return true;
     };
 }
-export const undo = cmd(0, false);
-export const redo = cmd(1, false);
-export const undoSelection = cmd(0, true);
-export const redoSelection = cmd(1, true);
+/** Undo a single group of history events. Returns false if no group was available. */
+export const undo = cmd(0 /* Done */, false);
+/** Redo a group of history events. Returns false if no group was available. */
+export const redo = cmd(1 /* Undone */, false);
+/** Undo a change or selection change. */
+export const undoSelection = cmd(0 /* Done */, true);
+/** Redo a change or selection change. */
+export const redoSelection = cmd(1 /* Undone */, true);
 function depth(side) {
     return function (state) {
         let histState = state.field(historyField_, false);
         if (!histState)
             return 0;
-        let branch = side == 0 ? histState.done : histState.undone;
+        let branch = side == 0 /* Done */ ? histState.done : histState.undone;
         return branch.length - (branch.length && !branch[0].changes ? 1 : 0);
     };
 }
-export const undoDepth = depth(0);
-export const redoDepth = depth(1);
+/** The amount of undoable change events available in a given state. */
+export const undoDepth = depth(0 /* Done */);
+/** The amount of redoable change events available in a given state. */
+export const redoDepth = depth(1 /* Undone */);
+/** History events store groups of changes or effects that need to be undone/redone together. */
 class HistEvent {
-    constructor(changes, effects, mapped, startSelection, selectionsAfter) {
+    constructor(
+    // The changes in this event.
+    changes, 
+    // The effects associated with this event
+    effects, mapped, 
+    // The selection before this event
+    startSelection, 
+    // Stores selection changes after this event, to be used for selection undo/redo.
+    selectionsAfter) {
         this.changes = changes;
         this.effects = effects;
         this.mapped = mapped;
@@ -128,6 +157,8 @@ class HistEvent {
     static fromJSON(json) {
         return new HistEvent(json.changes && ChangeSet.fromJSON(json.changes), [], json.mapped && ChangeDesc.fromJSON(json.mapped), json.startSelection && EditorSelection.fromJSON(json.startSelection), json.selectionsAfter.map(EditorSelection.fromJSON));
     }
+    // This does not check `addToHistory` and such, it assumes the transaction needs to be converted to an item.
+    // Returns null when there are no changes or effects in the transaction.
     static fromTransaction(tr, selection) {
         let effects = none;
         for (let invert of tr.startState.facet(invertedEffects)) {
@@ -183,24 +214,26 @@ function addSelection(branch, selection) {
         return updateBranch(branch, branch.length - 1, 1e9, lastEvent.setSelAfter(sels));
     }
 }
+/** Assumes the top item has one or more selectionAfter values */
 function popSelection(branch) {
     let last = branch[branch.length - 1];
     let newBranch = branch.slice();
     newBranch[branch.length - 1] = last.setSelAfter(last.selectionsAfter.slice(0, last.selectionsAfter.length - 1));
     return newBranch;
 }
+/** Add a mapping to the top event in the given branch. If this maps away all the changes and effects in that item, drop it and propagate the mapping to the next item. */
 function addMappingToBranch(branch, mapping) {
     if (!branch.length)
         return branch;
     let length = branch.length, selections = none;
     while (length) {
         let event = mapEvent(branch[length - 1], mapping, selections);
-        if (event.changes && !event.changes.empty || event.effects.length) {
+        if (event.changes && !event.changes.empty || event.effects.length) { // Event survived mapping
             let result = branch.slice(0, length);
             result[length - 1] = event;
             return result;
         }
-        else {
+        else { // Drop this event, since there's no changes or effects left
             mapping = event.mapped;
             length--;
             selections = event.selectionsAfter;
@@ -210,6 +243,7 @@ function addMappingToBranch(branch, mapping) {
 }
 function mapEvent(event, mapping, extraSelections) {
     let selections = conc(event.selectionsAfter.length ? event.selectionsAfter.map(s => s.map(mapping)) : none, extraSelections);
+    // Change-less events don't store mappings (they are always the last event in a branch)
     if (!event.changes)
         return HistEvent.selection(selections);
     let mappedChanges = event.changes.map(mapping), before = mapping.mapDesc(event.changes, true);
@@ -234,6 +268,7 @@ class HistoryState {
             ((!lastEvent.selectionsAfter.length &&
                 time - this.prevTime < newGroupDelay &&
                 isAdjacent(lastEvent.changes, event.changes)) ||
+                // For compose (but not compose.start) events, always join with previous event
                 userEvent == "input.type.compose")) {
             done = updateBranch(done, done.length - 1, maxLen, new HistEvent(event.changes.compose(lastEvent.changes), conc(event.effects, lastEvent.effects), lastEvent.mapped, lastEvent.startSelection, none));
         }
@@ -255,7 +290,7 @@ class HistoryState {
         return new HistoryState(addMappingToBranch(this.done, mapping), addMappingToBranch(this.undone, mapping), this.prevTime, this.prevUserEvent);
     }
     pop(side, state, selection) {
-        let branch = side == 0 ? this.done : this.undone;
+        let branch = side == 0 /* Done */ ? this.done : this.undone;
         if (branch.length == 0)
             return null;
         let event = branch[branch.length - 1];
@@ -263,7 +298,7 @@ class HistoryState {
             return state.update({
                 selection: event.selectionsAfter[event.selectionsAfter.length - 1],
                 annotations: fromHistory.of({ side, rest: popSelection(branch) }),
-                userEvent: side == 0 ? "select.undo" : "select.redo",
+                userEvent: side == 0 /* Done */ ? "select.undo" : "select.redo",
                 scrollIntoView: true
             });
         }
@@ -280,13 +315,21 @@ class HistoryState {
                 effects: event.effects,
                 annotations: fromHistory.of({ side, rest }),
                 filter: false,
-                userEvent: side == 0 ? "undo" : "redo",
+                userEvent: side == 0 /* Done */ ? "undo" : "redo",
                 scrollIntoView: true
             });
         }
     }
 }
 HistoryState.empty = new HistoryState(none, none);
+/**
+ * Default key bindings for the undo history.
+ *
+ *  - Mod-z: {@link undo}.
+ *  - Mod-y (Mod-Shift-z on macOS): {@link redo}.
+ *  - Mod-u: {@link undoSelection}.
+ *  - Alt-u (Mod-Shift-u on macOS): {@link redoSelection}.
+ */
 export const historyKeymap = [
     { key: "Mod-z", run: undo, preventDefault: true },
     { key: "Mod-y", mac: "Mod-Shift-z", run: redo, preventDefault: true },

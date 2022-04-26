@@ -6,8 +6,6 @@
         "target": "es6",
         "module": "es2022",
         "moduleResolution": "node",
-        "preserveConstEnums": true,
-        "removeComments": true,
         "paths": {
             "lezer/common": ["./lezer/common/index.ts"],
             "lezer/highlight": ["./lezer/highlight/index.ts"],

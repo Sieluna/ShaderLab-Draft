@@ -5,10 +5,13 @@ import { clickAddsSelectionRange, dragMovesSelection as dragBehavior, logExcepti
 import browser from "./browser.js";
 import { groupAt } from "./cursor.js";
 import { getSelection, focusPreventScroll, dispatchKey } from "./dom.js";
+/** This will also be where dragging info and such goes */
 export class InputState {
     constructor(view) {
         this.lastKeyCode = 0;
         this.lastKeyTime = 0;
+        // On iOS, some keys need to have their default behavior happen (after which we retroactively
+        // handle them and reset the DOM) to avoid messing up the virtual keyboard state.
         this.pendingIOSKey = undefined;
         this.lastSelectionOrigin = null;
         this.lastSelectionTime = 0;
@@ -17,7 +20,17 @@ export class InputState {
         this.scrollHandlers = [];
         this.registeredEvents = [];
         this.customHandlers = [];
+        /**
+         * -1 means not in a composition. Otherwise, this counts the number of changes made during the
+         * composition. The count is used to avoid treating the start state of the composition, before
+         * any changes have been made, as part of the composition.
+         */
         this.composing = -1;
+        /**
+         * Tracks whether the next change should be marked as starting the composition (null means no
+         * composition, true means next is the first, false means first has already been marked for this
+         * composition)
+         */
         this.compositionFirstChange = null;
         this.compositionEndedAt = 0;
         this.rapidCompositionStart = false;
@@ -93,6 +106,7 @@ export class InputState {
         }
     }
     keydown(view, event) {
+        // Must always run, even if a custom handler handled the event
         this.lastKeyCode = event.keyCode;
         this.lastKeyTime = Date.now();
         if (event.keyCode == 9 && Date.now() < this.lastEscPress + 2000)
@@ -154,6 +168,7 @@ const PendingKeys = [
     { key: "Enter", keyCode: 13, inputType: "insertParagraph" },
     { key: "Delete", keyCode: 46, inputType: "deleteContentForward" }
 ];
+/** Key codes for modifier keys */
 export const modifierCodes = [16, 17, 18, 20, 91, 92, 224, 225];
 class MouseSelection {
     constructor(view, startEvent, style, mustSelect) {
@@ -168,6 +183,7 @@ class MouseSelection {
         this.multiple = view.state.facet(EditorState.allowMultipleSelections) && addsSelectionRange(view, startEvent);
         this.dragMove = dragMovesSelection(view, startEvent);
         this.dragging = isInPrimarySelection(view, startEvent) && getClickType(startEvent) == 1 ? null : false;
+        // When clicking outside of the selection, immediately apply the effect of starting the selection
         if (this.dragging === false) {
             startEvent.preventDefault();
             this.select(startEvent);
@@ -223,6 +239,7 @@ function isInPrimarySelection(view, event) {
     let { main } = view.state.selection;
     if (main.empty)
         return false;
+    // On boundary clicks, check whether the coordinates are inside the selection's client rectangles
     let sel = getSelection(view.root);
     if (sel.rangeCount == 0)
         return true;
@@ -246,8 +263,7 @@ function eventBelongsToEditor(view, event) {
     return true;
 }
 const handlers = Object.create(null);
-const brokenClipboardAPI = (browser.ie && browser.ie_version < 15) ||
-    (browser.ios && browser.webkit_version < 604);
+const brokenClipboardAPI = (browser.ie && browser.ie_version < 15) || (browser.ios && browser.webkit_version < 604);
 function capturePaste(view) {
     let parent = view.dom.parentNode;
     if (!parent)
@@ -310,7 +326,7 @@ handlers.touchmove = view => {
 handlers.mousedown = (view, event) => {
     view.observer.flush();
     if (lastTouch > Date.now() - 2000 && getClickType(event) == 1)
-        return;
+        return; // Ignore touch interaction
     let style = null;
     for (let makeStyle of view.state.facet(mouseSelectionStyle)) {
         style = makeStyle(view, event);
@@ -327,13 +343,13 @@ handlers.mousedown = (view, event) => {
     }
 };
 function rangeForClick(view, pos, bias, type) {
-    if (type == 1) {
+    if (type == 1) { // Single click
         return EditorSelection.cursor(pos, bias);
     }
-    else if (type == 2) {
+    else if (type == 2) { // Double click
         return groupAt(view.state, pos, bias);
     }
-    else {
+    else { // Triple click
         let visual = LineView.find(view.docView, pos), line = view.state.doc.lineAt(visual ? visual.posAtEnd : pos);
         let from = visual ? visual.posAtStart : line.from, to = visual ? visual.posAtEnd : line.to;
         if (to < view.state.doc.length && to == line.to)
@@ -343,21 +359,28 @@ function rangeForClick(view, pos, bias, type) {
 }
 let insideY = (y, rect) => y >= rect.top && y <= rect.bottom;
 let inside = (x, y, rect) => insideY(y, rect) && x >= rect.left && x <= rect.right;
+/**
+ * Try to determine, for the given coordinates, associated with the given position, whether they are
+ * related to the element before or the element after the position.
+ */
 function findPositionSide(view, pos, x, y) {
     let line = LineView.find(view.docView, pos);
     if (!line)
         return 1;
     let off = pos - line.posAtStart;
+    // Line boundaries point into the line
     if (off == 0)
         return 1;
     if (off == line.length)
         return -1;
+    // Positions on top of an element point at that element
     let before = line.coordsAt(off, -1);
     if (before && inside(x, y, before))
         return -1;
     let after = line.coordsAt(off, 1);
     if (after && inside(x, y, after))
         return 1;
+    // This is probably a line wrap point. Pick before if the point is beside it.
     return before && insideY(y, before) ? -1 : 1;
 }
 function queryPos(view, event) {
@@ -446,7 +469,7 @@ handlers.drop = (view, event) => {
     if (view.state.readOnly)
         return event.preventDefault();
     let files = event.dataTransfer.files;
-    if (files && files.length) {
+    if (files && files.length) { // For a file drop, read the file's text.
         event.preventDefault();
         let text = Array(files.length), read = 0;
         let finishFile = () => {
@@ -482,6 +505,7 @@ handlers.paste = (view, event) => {
     }
 };
 function captureCopy(view, text) {
+    // The extra wrapper is somehow necessary on IE/Edge to prevent the content from being mangled when it is put onto the clipboard
     let parent = view.dom.parentNode;
     if (!parent)
         return;
@@ -504,6 +528,7 @@ function copiedRange(state) {
             ranges.push(range);
         }
     if (!content.length) {
+        // Nothing selected, do a line-wise copy
         let upto = -1;
         for (let { from } of state.selection.ranges) {
             let line = state.doc.lineAt(from);
@@ -560,6 +585,7 @@ handlers.compositionstart = handlers.compositionupdate = view => {
     if (view.inputState.compositionFirstChange == null)
         view.inputState.compositionFirstChange = true;
     if (view.inputState.composing < 0) {
+        // FIXME possibly set a timeout to clear it again on Android
         view.inputState.composing = 0;
         if (view.docView.compositionDeco.size) {
             view.observer.flush();

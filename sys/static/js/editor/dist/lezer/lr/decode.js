@@ -6,23 +6,23 @@ export function decodeArray(input, Type = Uint16Array) {
         let value = 0;
         for (;;) {
             let next = input.charCodeAt(pos++), stop = false;
-            if (next == 126) {
-                value = 65535;
+            if (next == 126 /* BigValCode */) {
+                value = 65535 /* BigVal */;
                 break;
             }
-            if (next >= 92)
+            if (next >= 92 /* Gap2 */)
                 next--;
-            if (next >= 34)
+            if (next >= 34 /* Gap1 */)
                 next--;
-            let digit = next - 32;
-            if (digit >= 46) {
-                digit -= 46;
+            let digit = next - 32 /* Start */;
+            if (digit >= 46 /* Base */) {
+                digit -= 46 /* Base */;
                 stop = true;
             }
             value += digit;
             if (stop)
                 break;
-            value *= 46;
+            value *= 46 /* Base */;
         }
         if (array)
             array[out++] = value;

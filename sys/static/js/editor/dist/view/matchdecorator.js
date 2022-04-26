@@ -1,16 +1,15 @@
 import { RangeSetBuilder } from "../state/index.js";
-function iterMatches(doc, re, from, to, f) {
+function iterMatches(doc, re, from, to, func) {
     re.lastIndex = 0;
     for (let cursor = doc.iterRange(from, to), pos = from, m; !cursor.next().done; pos += cursor.value.length) {
         if (!cursor.lineBreak)
             while (m = re.exec(cursor.value))
-                f(pos + m.index, pos + m.index + m[0].length, m);
+                func(pos + m.index, pos + m.index + m[0].length, m);
     }
 }
 function matchRanges(view, maxLength) {
     let visible = view.visibleRanges;
-    if (visible.length == 1 && visible[0].from == view.viewport.from &&
-        visible[0].to == view.viewport.to)
+    if (visible.length == 1 && visible[0].from == view.viewport.from && visible[0].to == view.viewport.to)
         return visible;
     let result = [];
     for (let { from, to } of visible) {
@@ -23,7 +22,26 @@ function matchRanges(view, maxLength) {
     }
     return result;
 }
+/**
+ * Helper class used to make it easier to maintain decorations on visible code that matches a
+ * given regular expression. To be used in a [view plugin]{@link ViewPlugin}. Instances of this
+ * object represent a matching configuration.
+ */
 export class MatchDecorator {
+    /**
+     * Create a decorator.
+     * @param config.regexp The regular expression to match against the content. Will only be matched
+     *                      inside lines (not across them). Should have its 'g' flag set.
+     * @param config.decoration The decoration to apply to matches, either directly or as a function
+     *                      of the match.
+     * @param config.boundary By default, changed lines are re-matched entirely. You can provide a
+     *                      boundary expression,which should match single character strings that can
+     *                      never occur in `regexp`, to reducethe amount of re-matching.
+     * @param config.maxLength Matching happens by line, by default, but when lines are folded or very
+     *                      long lines are onlypartially drawn, the decorator may avoid matching part
+     *                      of them for speed. This controls howmuch additional invisible content it
+     *                      should include in its matches. Defaults to 1000.
+     */
     constructor(config) {
         let { regexp, decoration, boundary, maxLength = 1000 } = config;
         if (!regexp.global)
@@ -33,12 +51,20 @@ export class MatchDecorator {
         this.boundary = boundary;
         this.maxLength = maxLength;
     }
+    /**
+     * Compute the full set of decorations for matches in the given view's viewport. You'll want to call
+     * this when initializing your plugin.
+     */
     createDeco(view) {
         let build = new RangeSetBuilder();
         for (let { from, to } of matchRanges(view, this.maxLength))
             iterMatches(view.state.doc, this.regexp, from, to, (a, b, m) => build.add(a, b, this.getDeco(m, view, a)));
         return build.finish();
     }
+    /**
+     * Update a set of decorations for a view update. `deco` _must_ be the set of decorations produced by
+     * _this_ `MatchDecorator` for the view state before the update.
+     */
     updateDeco(update, deco) {
         let changeFrom = 1e9, changeTo = -1;
         if (update.docChanged)

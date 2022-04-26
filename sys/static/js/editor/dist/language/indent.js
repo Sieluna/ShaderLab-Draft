@@ -38,7 +38,9 @@ export function getIndentation(context, pos) {
     return tree ? syntaxIndentation(context, tree, pos) : null;
 }
 export class IndentContext {
-    constructor(state, options = {}) {
+    constructor(state, 
+    // @internal
+    options = {}) {
         this.state = state;
         this.options = options;
         this.unit = getIndentUnit(state);
@@ -88,6 +90,7 @@ export class IndentContext {
     }
 }
 export const indentNodeProp = new NodeProp();
+// Compute the indentation for a given position from the syntax tree.
 function syntaxIndentation(cx, ast, pos) {
     return indentFrom(ast.resolveInner(pos).enterUnfinishedNodesBefore(pos), pos, cx);
 }
@@ -115,6 +118,7 @@ function indentFrom(node, pos, base) {
 }
 function topIndent() { return 0; }
 export class TreeIndentContext extends IndentContext {
+    // @internal
     constructor(base, pos, node) {
         super(base.state, base.options);
         this.base = base;
@@ -126,6 +130,7 @@ export class TreeIndentContext extends IndentContext {
     }
     get baseIndent() {
         let line = this.state.doc.lineAt(this.node.from);
+        // Skip line starts that are covered by a sibling (or cousin, etc)
         for (;;) {
             let atBreak = this.node.resolve(line.from);
             while (atBreak.parent && atBreak.parent.from == atBreak.from)
@@ -147,6 +152,9 @@ function isParent(parent, of) {
             return true;
     return false;
 }
+// Check whether a delimited node is aligned (meaning there are
+// non-skipped nodes on the same line as the opening delimiter). And
+// if so, return the opening token.
 function bracketedAligned(context) {
     let tree = context.node;
     let openToken = tree.childAfter(tree.from), last = tree.lastChild;
@@ -183,6 +191,16 @@ export function continuedIndent({ except, units = 1 } = {}) {
     };
 }
 const DontIndentBeyond = 200;
+/**
+ * Enables reindentation on input. When a language defines an `indentOnInput` field in its
+ * [language data]{@link EditorState.languageDataAt}, which must hold a regular expression,
+ * the line at the cursor will be reindented whenever new text is typed and the input from
+ * the start of the line up to the cursor matches that regexp.
+ *
+ * To avoid unneccesary reindents, it is recommended to start the regexp with `^` (usually followed by
+ * `\s*`), and end it with `$`. For example, `/^\s*\}$/` will reindent when a closing brace is added at
+ * the start of a line.
+ */
 export function indentOnInput() {
     return EditorState.transactionFilter.of(tr => {
         if (!tr.docChanged || !tr.isUserEvent("input.type") && !tr.isUserEvent("input.complete"))

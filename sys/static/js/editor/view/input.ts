@@ -426,7 +426,7 @@ function getClickType(event: MouseEvent) {
     lastMouseDown = event
     lastMouseDownTime = Date.now()
     return lastMouseDownCount = !last || (lastTime > Date.now() - 400 && Math.abs(last.clientX - event.clientX) < 2 &&
-        Math.abs(last.clientY - event.clientY) < 2) ? (lastMouseDownCount + 1) % 3 : 1
+                                            Math.abs(last.clientY - event.clientY) < 2) ? (lastMouseDownCount + 1) % 3 : 1
 }
 
 function basicMouseSelection(view: EditorView, event: MouseEvent) {

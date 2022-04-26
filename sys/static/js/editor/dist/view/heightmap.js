@@ -9,6 +9,7 @@ export class HeightOracle {
         this.lineHeight = 14;
         this.charWidth = 7;
         this.lineLength = 30;
+        // Used to track, during updateHeight, if any actual heights changed
         this.heightChanged = false;
     }
     heightForGap(from, to) {
@@ -34,7 +35,7 @@ export class HeightOracle {
             if (h < 0) {
                 i++;
             }
-            else if (!this.heightSamples[Math.floor(h * 10)]) {
+            else if (!this.heightSamples[Math.floor(h * 10)]) { // Round to .1 pixels
                 newHeight = true;
                 this.heightSamples[Math.floor(h * 10)] = true;
             }
@@ -61,6 +62,10 @@ export class HeightOracle {
         return changed;
     }
 }
+/**
+ * This object is used by `updateHeight` to make DOM measurements arrive at the right nides.
+ * The `heights` array is a sequence of block heights, starting from position `from`.
+ */
 export class MeasuredHeights {
     constructor(from, heights) {
         this.from = from;
@@ -69,7 +74,17 @@ export class MeasuredHeights {
     }
     get more() { return this.index < this.heights.length; }
 }
+/** Record used to represent information about a block-level element in the editor view. */
 export class BlockInfo {
+    /**
+     * @param from The start of the element in the document.
+     * @param length The length of the element.
+     * @param top The top position of the element (relative to the top of the document).
+     * @param height Its height.
+     * @param type The type of element this is. When querying lines, this may be an array of all the
+     *              blocks that make up the line.
+     */
+    // @internal
     constructor(from, length, top, height, type) {
         this.from = from;
         this.length = length;
@@ -77,11 +92,13 @@ export class BlockInfo {
         this.height = height;
         this.type = type;
     }
+    /** The end of the element as a document position. */
     get to() { return this.from + this.length; }
+    /** The bottom position of the element. */
     get bottom() { return this.top + this.height; }
+    // @internal
     join(other) {
-        let detail = (Array.isArray(this.type) ? this.type : [this])
-            .concat(Array.isArray(other.type) ? other.type : [other]);
+        let detail = (Array.isArray(this.type) ? this.type : [this]).concat(Array.isArray(other.type) ? other.type : [other]);
         return new BlockInfo(this.from, this.length + other.length, this.top, this.height + other.height, detail);
     }
 }
@@ -91,21 +108,17 @@ export var QueryType;
     QueryType[QueryType["ByHeight"] = 1] = "ByHeight";
     QueryType[QueryType["ByPosNoHeight"] = 2] = "ByPosNoHeight";
 })(QueryType || (QueryType = {}));
-var Flag;
-(function (Flag) {
-    Flag[Flag["Break"] = 1] = "Break";
-    Flag[Flag["Outdated"] = 2] = "Outdated";
-    Flag[Flag["SingleLine"] = 4] = "SingleLine";
-})(Flag || (Flag = {}));
 const Epsilon = 1e-3;
 export class HeightMap {
-    constructor(length, height, flags = 2) {
+    constructor(length, // The number of characters covered
+    height, // Height of this part of the document
+    flags = 2 /* Outdated */) {
         this.length = length;
         this.height = height;
         this.flags = flags;
     }
-    get outdated() { return (this.flags & 2) > 0; }
-    set outdated(value) { this.flags = (value ? 2 : 0) | (this.flags & ~2); }
+    get outdated() { return (this.flags & 2 /* Outdated */) > 0; }
+    set outdated(value) { this.flags = (value ? 2 /* Outdated */ : 0) | (this.flags & ~2 /* Outdated */); }
     setHeight(oracle, height) {
         if (this.height != height) {
             if (Math.abs(this.height - height) > Epsilon)
@@ -113,9 +126,14 @@ export class HeightMap {
             this.height = height;
         }
     }
+    /**
+     * Base case is to replace a leaf node, which simply builds a tree from the new nodes and
+     * returns that (HeightMapBranch and HeightMapGap override this to actually use from/to)
+     */
     replace(_from, _to, nodes) {
         return HeightMap.of(nodes);
     }
+    /** Again, these are base cases, and are overridden for branch and gap nodes. */
     decomposeLeft(_to, result) { result.push(this); }
     decomposeRight(_from, result) { result.push(this); }
     applyChanges(decorations, oldDoc, oracle, changes) {
@@ -141,6 +159,11 @@ export class HeightMap {
         return me.updateHeight(oracle, 0);
     }
     static empty() { return new HeightMapText(0, 0); }
+    /**
+     * nodes uses null values to indicate the position of line breaks. There are never line breaks
+     * at the start or end of the array, or two line breaks next to each other, and the array isn't
+     * allowed to be empty (same restrictions as return value from the builder).
+     */
     static of(nodes) {
         if (nodes.length == 1)
             return nodes[0];
@@ -219,12 +242,12 @@ class HeightMapBlock extends HeightMap {
 class HeightMapText extends HeightMapBlock {
     constructor(length, height) {
         super(length, height, BlockType.Text);
-        this.collapsed = 0;
-        this.widgetHeight = 0;
+        this.collapsed = 0; // Amount of collapsed content in the line
+        this.widgetHeight = 0; // Maximum inline widget height
     }
     replace(_from, _to, nodes) {
         let node = nodes[0];
-        if (nodes.length == 1 && (node instanceof HeightMapText || node instanceof HeightMapGap && (node.flags & 4)) &&
+        if (nodes.length == 1 && (node instanceof HeightMapText || node instanceof HeightMapGap && (node.flags & 4 /* SingleLine */)) &&
             Math.abs(this.length - node.length) < 10) {
             if (node instanceof HeightMapGap)
                 node = new HeightMapText(node.length, this.height);
@@ -346,22 +369,22 @@ class HeightMapGap extends HeightMap {
 }
 class HeightMapBranch extends HeightMap {
     constructor(left, brk, right) {
-        super(left.length + brk + right.length, left.height + right.height, brk | (left.outdated || right.outdated ? 2 : 0));
+        super(left.length + brk + right.length, left.height + right.height, brk | (left.outdated || right.outdated ? 2 /* Outdated */ : 0));
         this.left = left;
         this.right = right;
         this.size = left.size + right.size;
     }
-    get break() { return this.flags & 1; }
+    get break() { return this.flags & 1 /* Break */; }
     blockAt(height, doc, top, offset) {
         let mid = top + this.left.height;
-        return height < mid ? this.left.blockAt(height, doc, top, offset)
-            : this.right.blockAt(height, doc, mid, offset + this.left.length + this.break);
+        return height < mid ? this.left.blockAt(height, doc, top, offset) :
+            this.right.blockAt(height, doc, mid, offset + this.left.length + this.break);
     }
     lineAt(value, type, doc, top, offset) {
         let rightTop = top + this.left.height, rightOffset = offset + this.left.length + this.break;
         let left = type == QueryType.ByHeight ? value < rightTop : value < rightOffset;
-        let base = left ? this.left.lineAt(value, type, doc, top, offset)
-            : this.right.lineAt(value, type, doc, rightTop, rightOffset);
+        let base = left ? this.left.lineAt(value, type, doc, top, offset) :
+            this.right.lineAt(value, type, doc, rightTop, rightOffset);
         if (this.break || (left ? base.to < rightOffset : base.from > rightOffset))
             return base;
         let subQuery = type == QueryType.ByPosNoHeight ? QueryType.ByPosNoHeight : QueryType.ByPos;
@@ -535,7 +558,7 @@ class NodeBuilder {
     blankContent(from, to) {
         let gap = new HeightMapGap(to - from);
         if (this.oracle.doc.lineAt(from).to == to)
-            gap.flags |= 4;
+            gap.flags |= 4 /* SingleLine */;
         return gap;
     }
     ensureLine() {
@@ -577,6 +600,11 @@ class NodeBuilder {
         }
         return this.nodes;
     }
+    /**
+     * Always called with a region that on both sides either stretches to a line break or
+     * the end of the document. The returned array uses null to indicate line breaks, but
+     * never starts or ends in a line break, or has multiple line breaks next to each other.
+     */
     static build(oracle, decorations, from, to) {
         let builder = new NodeBuilder(from, oracle);
         RangeSet.spans(decorations, from, to, builder, 0);

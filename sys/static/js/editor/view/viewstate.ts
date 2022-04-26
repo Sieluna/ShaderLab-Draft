@@ -32,13 +32,13 @@ function visiblePixelRange(dom: HTMLElement, paddingTop: number): Rect {
     }
 
     return {left: left - rect.left, right: Math.max(left, right) - rect.left,
-        top: top - (rect.top + paddingTop), bottom: Math.max(top, bottom) - (rect.top + paddingTop)}
+            top: top - (rect.top + paddingTop), bottom: Math.max(top, bottom) - (rect.top + paddingTop)}
 }
 
 function fullPixelRange(dom: HTMLElement, paddingTop: number): Rect {
     let rect = dom.getBoundingClientRect()
     return {left: 0, right: rect.right - rect.left,
-        top: paddingTop, bottom: rect.bottom - (rect.top + paddingTop)}
+            top: paddingTop, bottom: rect.bottom - (rect.top + paddingTop)}
 }
 
 const enum VP {
@@ -73,8 +73,7 @@ export class LineGap {
 }
 
 class LineGapWidget extends WidgetType {
-    constructor(readonly size: number,
-                readonly vertical: boolean) { super() }
+    constructor(readonly size: number, readonly vertical: boolean) { super() }
 
     eq(other: LineGapWidget) { return other.size == this.size && other.vertical == this.vertical }
 
@@ -120,8 +119,7 @@ export class ViewState {
     scrollTarget: ScrollTarget | null = null
     // Briefly set to true when printing, to disable viewport limiting
     printing = false
-    // Flag set when editor content was redrawn, so that the next
-    // measure stage knows it must read DOM layout
+    // Flag set when editor content was redrawn, so that the next measure stage knows it must read DOM layout
     mustMeasureContent = true
 
     stateDeco: readonly DecorationSet[]
@@ -582,5 +580,5 @@ function scaleBlock(block: BlockInfo, scaler: YScaler): BlockInfo {
     if (scaler.scale == 1) return block
     let bTop = scaler.toDOM(block.top), bBottom = scaler.toDOM(block.bottom)
     return new BlockInfo(block.from, block.length, bTop, bBottom - bTop,
-        Array.isArray(block.type) ? block.type.map(b => scaleBlock(b, scaler)) : block.type)
+                    Array.isArray(block.type) ? block.type.map(b => scaleBlock(b, scaler)) : block.type)
 }

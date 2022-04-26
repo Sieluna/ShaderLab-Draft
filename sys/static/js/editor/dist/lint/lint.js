@@ -16,6 +16,7 @@ class LintState {
     }
     static init(diagnostics, panel, state) {
         let ranges = Decoration.set(diagnostics.map((d) => {
+            // For zero-length ranges or ranges covering only a line break, create a widget
             return d.from == d.to || (d.from == d.to - 1 && state.doc.lineAt(d.from).to == d.from)
                 ? Decoration.widget({
                     widget: new DiagnosticWidget(d),
@@ -55,11 +56,16 @@ function maybeEnableLint(state, effects) {
         baseTheme
     ]));
 }
+/** Returns a transaction spec which updates the current set of diagnostics, and enables the lint extension if if wasn't already active. */
 export function setDiagnostics(state, diagnostics) {
     return {
         effects: maybeEnableLint(state, [setDiagnosticsEffect.of(diagnostics)])
     };
 }
+/**
+ * The state effect that updates the set of active diagnostics. Can
+ * be useful when writing an extension that needs to track these.
+ */
 export const setDiagnosticsEffect = StateEffect.define();
 const togglePanel = StateEffect.define();
 const movePanelSelection = StateEffect.define();
@@ -92,6 +98,7 @@ const lintState = StateField.define({
     provide: f => [showPanel.from(f, val => val.panel),
         EditorView.decorations.from(f, s => s.diagnostics)]
 });
+/** Returns the number of active lint diagnostics in the given state. */
 export function diagnosticCount(state) {
     let lint = state.field(lintState, false);
     return lint ? lint.diagnostics.size : 0;
@@ -122,6 +129,7 @@ function lintTooltip(view, pos, side) {
 function diagnosticsTooltip(view, diagnostics) {
     return elt("ul", { class: "cm-tooltip-lint" }, diagnostics.map(d => renderDiagnostic(view, d, false)));
 }
+/** Command to open and focus the lint panel. */
 export const openLintPanel = (view) => {
     let field = view.state.field(lintState, false);
     if (!field || !field.panel)
@@ -131,6 +139,7 @@ export const openLintPanel = (view) => {
         panel.dom.querySelector(".cm-panel-lint ul").focus();
     return true;
 };
+/** Command to close the lint panel, when open. */
 export const closeLintPanel = (view) => {
     let field = view.state.field(lintState, false);
     if (!field || !field.panel)
@@ -138,6 +147,7 @@ export const closeLintPanel = (view) => {
     view.dispatch({ effects: togglePanel.of(false) });
     return true;
 };
+/** Move the selection to the next diagnostic. */
 export const nextDiagnostic = (view) => {
     let field = view.state.field(lintState, false);
     if (!field)
@@ -151,6 +161,12 @@ export const nextDiagnostic = (view) => {
     view.dispatch({ selection: { anchor: next.from, head: next.to }, scrollIntoView: true });
     return true;
 };
+/**
+ *  A set of default key bindings for the lint functionality.
+ *
+ * - Ctrl-Shift-m (Cmd-Shift-m on macOS): {@link openLintPanel}
+ * - F8: {@link nextDiagnostic}
+ */
 export const lintKeymap = [
     { key: "Mod-Shift-m", run: openLintPanel },
     { key: "F8", run: nextDiagnostic }
@@ -206,10 +222,16 @@ const lintSource = Facet.define({
     },
     enables: lintPlugin
 });
+/**
+ *  Given a diagnostic source, this function returns an extension that
+ *  enables linting with that source. It will be called whenever the
+ *  editor is idle (after its content changed).
+ */
 export function linter(source, config = {}) {
     var _a;
     return lintSource.of({ source, delay: (_a = config.delay) !== null && _a !== void 0 ? _a : 750 });
 }
+/** Forces any linters [configured]{@link linter} to run when the editor is idle to run right away. */
 export function forceLinting(view) {
     let plugin = view.plugin(lintPlugin);
     if (plugin)
@@ -277,26 +299,26 @@ class LintPanel {
         this.view = view;
         this.items = [];
         let onkeydown = (event) => {
-            if (event.keyCode == 27) {
+            if (event.keyCode == 27) { // Escape
                 closeLintPanel(this.view);
                 this.view.focus();
             }
-            else if (event.keyCode == 38 || event.keyCode == 33) {
+            else if (event.keyCode == 38 || event.keyCode == 33) { // ArrowUp, PageUp
                 this.moveSelection((this.selectedIndex - 1 + this.items.length) % this.items.length);
             }
-            else if (event.keyCode == 40 || event.keyCode == 34) {
+            else if (event.keyCode == 40 || event.keyCode == 34) { // ArrowDown, PageDown
                 this.moveSelection((this.selectedIndex + 1) % this.items.length);
             }
-            else if (event.keyCode == 36) {
+            else if (event.keyCode == 36) { // Home
                 this.moveSelection(0);
             }
-            else if (event.keyCode == 35) {
+            else if (event.keyCode == 35) { // End
                 this.moveSelection(this.items.length - 1);
             }
-            else if (event.keyCode == 13) {
+            else if (event.keyCode == 13) { // Enter
                 this.view.focus();
             }
-            else if (event.keyCode >= 65 && event.keyCode <= 90 && this.selectedIndex >= 0) {
+            else if (event.keyCode >= 65 && event.keyCode <= 90 && this.selectedIndex >= 0) { // A-Z
                 let { diagnostic } = this.items[this.selectedIndex], keys = assignKeys(diagnostic.actions);
                 for (let i = 0; i < keys.length; i++)
                     if (keys[i].toUpperCase().charCodeAt(0) == event.keyCode) {
@@ -546,16 +568,11 @@ class LintGutterMarker extends GutterMarker {
         return elt;
     }
 }
-var Hover;
-(function (Hover) {
-    Hover[Hover["Time"] = 300] = "Time";
-    Hover[Hover["Margin"] = 10] = "Margin";
-})(Hover || (Hover = {}));
 function trackHoverOn(view, marker) {
     let mousemove = (event) => {
         let rect = marker.getBoundingClientRect();
-        if (event.clientX > rect.left - 10 && event.clientX < rect.right + 10 &&
-            event.clientY > rect.top - 10 && event.clientY < rect.bottom + 10)
+        if (event.clientX > rect.left - 10 /* Margin */ && event.clientX < rect.right + 10 /* Margin */ &&
+            event.clientY > rect.top - 10 /* Margin */ && event.clientY < rect.bottom + 10 /* Margin */)
             return;
         for (let target = event.target; target; target = target.parentNode) {
             if (target.nodeType == 1 && target.classList.contains("cm-tooltip-lint"))
@@ -660,10 +677,11 @@ const lintGutterTheme = EditorView.baseTheme({
 const lintGutterConfig = Facet.define({
     combine(configs) {
         return combineConfig(configs, {
-            hoverTime: 300,
+            hoverTime: 300 /* Time */,
         });
     }
 });
+/** Returns an extension that installs a gutter showing markers for each line that has diagnostics, which can be hovered over to see the diagnostics. */
 export function lintGutter(config = {}) {
     return [lintGutterConfig.of(config), lintGutterMarkers, lintGutterExtension, lintGutterTheme, lintGutterTooltip];
 }

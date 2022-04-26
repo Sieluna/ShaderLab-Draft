@@ -9,6 +9,7 @@ export { CompletionContext, pickedCompletion, completeFromList, ifIn, ifNotIn } 
 export { startCompletion, closeCompletion, acceptCompletion, moveCompletionSelection } from "./view.js";
 export { completeAnyWord } from "./word.js";
 export { closeBrackets, closeBracketsKeymap, deleteBracketPair, insertBracket } from "./closebrackets.js";
+/** @return Returns an extension that enables autocompletion. */
 export function autocompletion(config = {}) {
     return [
         completionState,
@@ -18,6 +19,17 @@ export function autocompletion(config = {}) {
         baseTheme
     ];
 }
+/**
+ * Basic keybindings for autocompletion.
+ *
+ *  - Ctrl-Space: {@link startCompletion}
+ *  - Escape: {@link closeCompletion}
+ *  - ArrowDown: {@link moveCompletionSelection}`(true)`
+ *  - ArrowUp: {@link moveCompletionSelection}`(false)`
+ *  - PageDown: {@link moveCompletionSelection}`(true, "page")`
+ *  - PageDown: {@link moveCompletionSelection}`(true, "page")`
+ *  - Enter: {@link acceptCompletion}
+ */
 export const completionKeymap = [
     { key: "Ctrl-Space", run: startCompletion },
     { key: "Escape", run: closeCompletion },
@@ -28,12 +40,19 @@ export const completionKeymap = [
     { key: "Enter", run: acceptCompletion }
 ];
 const completionKeymapExt = Prec.highest(keymap.computeN([completionConfig], state => state.facet(completionConfig).defaultKeymap ? [completionKeymap] : []));
+/**
+ * Get the current completion status.
+ *
+ * @return When completions are available, this will return `"active"`.
+ *         When completions are pending (in the process of being queried), this returns `"pending"`. Otherwise, it returns `null`.
+ */
 export function completionStatus(state) {
     let cState = state.field(completionState, false);
-    return cState && cState.active.some(a => a.state == 1) ? "pending" :
-        cState && cState.active.some(a => a.state != 0) ? "active" : null;
+    return cState && cState.active.some(a => a.state == 1 /* Pending */) ? "pending" :
+        cState && cState.active.some(a => a.state != 0 /* Inactive */) ? "active" : null;
 }
 const completionArrayCache = new WeakMap;
+/** Returns the available completions as an array. */
 export function currentCompletions(state) {
     var _a;
     let open = (_a = state.field(completionState, false)) === null || _a === void 0 ? void 0 : _a.open;
@@ -44,16 +63,19 @@ export function currentCompletions(state) {
         completionArrayCache.set(open.options, completions = open.options.map(o => o.completion));
     return completions;
 }
+/** Return the currently selected completion, if any. */
 export function selectedCompletion(state) {
     var _a;
     let open = (_a = state.field(completionState, false)) === null || _a === void 0 ? void 0 : _a.open;
     return open ? open.options[open.selected].completion : null;
 }
+/** Returns the currently selected position in the active completion list, or null if no completions are active. */
 export function selectedCompletionIndex(state) {
     var _a;
     let open = (_a = state.field(completionState, false)) === null || _a === void 0 ? void 0 : _a.open;
     return open ? open.selected : null;
 }
+/** Create an effect that can be attached to a transaction to change the currently selected completion. */
 export function setSelectedCompletion(index) {
     return setSelectedEffect.of(index);
 }

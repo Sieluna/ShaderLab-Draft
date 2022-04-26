@@ -63,7 +63,7 @@ const specialCharConfig = Facet.define<SpecialCharConfig, Required<SpecialCharCo
             addSpecialChars: null
         })
 
-        if (config.replaceTabs = !supportsTabSize())
+        if ((config.replaceTabs = !supportsTabSize()))
             config.specialChars = new RegExp("\t|" + config.specialChars.source, UnicodeRegexpSupport)
 
         if (config.addSpecialChars)
@@ -73,9 +73,11 @@ const specialCharConfig = Facet.define<SpecialCharConfig, Required<SpecialCharCo
     }
 })
 
-/** Returns an extension that installs highlighting of special characters. */
+/**
+ * Returns an extension that installs highlighting of special characters.
+ * @param config Configuration options.
+ */
 export function highlightSpecialChars(
-    /** Configuration options. */
     config: SpecialCharConfig = {}
 ): Extension {
     return [specialCharConfig.of(config), specialCharPlugin()]

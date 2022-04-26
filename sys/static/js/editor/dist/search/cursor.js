@@ -1,9 +1,20 @@
 import { codePointAt, codePointSize, fromCodePoint } from "../state/index.js";
 const basicNormalize = typeof String.prototype.normalize == "function"
     ? x => x.normalize("NFKD") : x => x;
+/** A search cursor provides an iterator over text matches in a document. */
 export class SearchCursor {
+    /**
+     * Create a text cursor. The query is the search string, `from` to `to` provides the region to search.
+     *
+     * When `normalize` is given, it will be called, on both the query string and the content it is matched against, before comparing.
+     * You can, for example, create a case-insensitive search by passing `s => s.toLowerCase()`.
+     *
+     * Text is always normalized with [`.normalize("NFKD")`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/normalize) (when supported).
+     */
     constructor(text, query, from = 0, to = text.length, normalize) {
+        /** The current match (only holds a meaningful value after [`next`]{@link SearchCursor.next} has been called and when `done` is false). */
         this.value = { from: 0, to: 0 };
+        /** Whether the end of the iterated region has been reached. */
         this.done = false;
         this.matches = [];
         this.buffer = "";
@@ -24,11 +35,16 @@ export class SearchCursor {
         }
         return codePointAt(this.buffer, this.bufferPos);
     }
+    /**
+     * Look for the next match. Updates the iterator's [`value`]{@link SearchCursor.value} and [`done`]{@link SearchCursor.done}
+     * properties. Should be called at least once before using the cursor.
+     */
     next() {
         while (this.matches.length)
             this.matches.pop();
         return this.nextOverlapping();
     }
+    /** The `next` method will ignore matches that partially overlap a previous match. This method behaves like `next`, but includes such matches. */
     nextOverlapping() {
         for (;;) {
             let next = this.peek();

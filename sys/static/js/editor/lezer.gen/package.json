@@ -16,6 +16,7 @@
     "scripts": {
         "glsl-generate": "lezer-generator lang/glsl/glsl.grammar -o lang/glsl/parser && rollup lang/glsl/parser.js --file ../dist/glsl.js",
         "wgsl-generate": "lezer-generator lang/wgsl/wgsl.grammar -o lang/wgsl/parser && rollup lang/wgsl/parser.js --file ../dist/wgsl.js",
+        "js-generate": "lezer-generator lang/javascript/javascript.grammar -o lang/javascript/parser && rollup lang/javascript/parser.js --file ../dist/javascript.js",
         "translate": "node translater.js"
     }
 }

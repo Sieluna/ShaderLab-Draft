@@ -4,11 +4,6 @@ import { ViewPlugin, logException } from "./extension.js";
 import { Direction } from "./bidi.js";
 import browser from "./browser.js";
 const Outside = "-10000px";
-var Arrow;
-(function (Arrow) {
-    Arrow[Arrow["Size"] = 7] = "Size";
-    Arrow[Arrow["Offset"] = 14] = "Offset";
-})(Arrow || (Arrow = {}));
 class TooltipViewManager {
     constructor(view, facet, createTooltipView) {
         this.facet = facet;
@@ -54,6 +49,23 @@ class TooltipViewManager {
         return true;
     }
 }
+/**
+ * Creates an extension that configures tooltip behavior.
+ * @param [config.position] By default, tooltips use `"fixed"` [positioning](https://developer.mozilla.org/en-US/docs/Web/CSS/position),
+ *              which has the advantage that tooltips don't get cut off by scrollable parent elements.
+ *              However, CSS rules like `contain: layout` can break fixed positioning in child nodes,
+ *              which can be worked about by using `"absolute"` here.
+ *
+ *              On iOS, which at the time of writing still doesn't properly support fixed positioning,
+ *              the library always uses absolute positioning.
+ * @param [config.parent] The element to put the tooltips into. By default, they are put in the editor
+ *              (`cm-editor`) element, and that is usually what you want. But in some layouts that can
+ *              lead to positioning issues, and you need to use a different parent to work around those.
+ * @param [config.tooltipSpace] By default, when figuring out whether there is room for a tooltip at a
+ *              given position, the extension considers the entire space between 0,0 and `innerWidth`,
+ *              `innerHeight` to be available for showing tooltips. You can provide a function here that
+ *              returns an alternative rectangle.
+ */
 export function tooltips(config = {}) {
     return tooltipConfig.of(config);
 }
@@ -85,8 +97,7 @@ const tooltipPlugin = ViewPlugin.fromClass(class {
         this.measureReq = { read: this.readMeasure.bind(this), write: this.writeMeasure.bind(this), key: this };
         this.manager = new TooltipViewManager(view, showTooltip, t => this.createTooltip(t));
         this.intersectionObserver = typeof IntersectionObserver == "function" ? new IntersectionObserver(entries => {
-            if (Date.now() > this.lastTransaction - 50 &&
-                entries.length > 0 && entries[entries.length - 1].intersectionRatio < 1)
+            if (Date.now() > this.lastTransaction - 50 && entries.length > 0 && entries[entries.length - 1].intersectionRatio < 1)
                 this.measureSoon();
         }, { threshold: [1] }) : null;
         this.observeIntersection();
@@ -189,24 +200,22 @@ const tooltipPlugin = ViewPlugin.fromClass(class {
         for (let i = 0; i < this.manager.tooltips.length; i++) {
             let tooltip = this.manager.tooltips[i], tView = this.manager.tooltipViews[i], { dom } = tView;
             let pos = measured.pos[i], size = measured.size[i];
-            if (!pos || pos.bottom <= Math.max(editor.top, space.top) ||
-                pos.top >= Math.min(editor.bottom, space.bottom) ||
-                pos.right < Math.max(editor.left, space.left) - .1 ||
-                pos.left > Math.min(editor.right, space.right) + .1) {
+            // Hide tooltips that are outside of the editor.
+            if (!pos || pos.bottom <= Math.max(editor.top, space.top) || pos.top >= Math.min(editor.bottom, space.bottom) ||
+                pos.right < Math.max(editor.left, space.left) - .1 || pos.left > Math.min(editor.right, space.right) + .1) {
                 dom.style.top = Outside;
                 continue;
             }
             let arrow = tooltip.arrow ? tView.dom.querySelector(".cm-tooltip-arrow") : null;
-            let arrowHeight = arrow ? 7 : 0;
+            let arrowHeight = arrow ? 7 /* Size */ : 0;
             let width = size.right - size.left, height = size.bottom - size.top;
             let offset = tView.offset || noOffset, ltr = this.view.textDirection == Direction.LTR;
-            let left = size.width > space.right - space.left ? (ltr ? space.left : space.right - size.width)
-                : ltr ? Math.min(pos.left - (arrow ? 14 : 0) + offset.x, space.right - width)
-                    : Math.max(space.left, pos.left - width + (arrow ? 14 : 0) - offset.x);
+            let left = size.width > space.right - space.left ? (ltr ? space.left : space.right - size.width) :
+                ltr ? Math.min(pos.left - (arrow ? 14 /* Offset */ : 0) + offset.x, space.right - width) : Math.max(space.left, pos.left - width + (arrow ? 14 /* Offset */ : 0) - offset.x);
             let above = !!tooltip.above;
-            if (!tooltip.strictSide && (above
-                ? pos.top - (size.bottom - size.top) - offset.y < space.top
-                : pos.bottom + (size.bottom - size.top) + offset.y > space.bottom) &&
+            if (!tooltip.strictSide && (above ?
+                pos.top - (size.bottom - size.top) - offset.y < space.top :
+                pos.bottom + (size.bottom - size.top) + offset.y > space.bottom) &&
                 above == (space.bottom - pos.bottom > pos.top - space.top))
                 above = !above;
             let top = above ? pos.top - height - arrowHeight - offset.y : pos.bottom + arrowHeight + offset.y;
@@ -224,7 +233,7 @@ const tooltipPlugin = ViewPlugin.fromClass(class {
                 dom.style.left = left + "px";
             }
             if (arrow)
-                arrow.style.left = `${pos.left + (ltr ? offset.x : -offset.x) - (left + 14 - 7)}px`;
+                arrow.style.left = `${pos.left + (ltr ? offset.x : -offset.x) - (left + 14 /* Offset */ - 7 /* Size */)}px`;
             if (tView.overlap !== true)
                 others.push({ left, top, right, bottom: top + height });
             dom.classList.toggle("cm-tooltip-above", above);
@@ -266,8 +275,8 @@ const baseTheme = EditorView.baseTheme({
         color: "white"
     },
     ".cm-tooltip-arrow": {
-        height: `${7}px`,
-        width: `${7 * 2}px`,
+        height: `${7 /* Size */}px`,
+        width: `${7 /* Size */ * 2}px`,
         position: "absolute",
         zIndex: -1,
         overflow: "hidden",
@@ -276,26 +285,26 @@ const baseTheme = EditorView.baseTheme({
             position: "absolute",
             width: 0,
             height: 0,
-            borderLeft: `${7}px solid transparent`,
-            borderRight: `${7}px solid transparent`,
+            borderLeft: `${7 /* Size */}px solid transparent`,
+            borderRight: `${7 /* Size */}px solid transparent`,
         },
         ".cm-tooltip-above &": {
-            bottom: `-${7}px`,
+            bottom: `-${7 /* Size */}px`,
             "&:before": {
-                borderTop: `${7}px solid #bbb`,
+                borderTop: `${7 /* Size */}px solid #bbb`,
             },
             "&:after": {
-                borderTop: `${7}px solid #f5f5f5`,
+                borderTop: `${7 /* Size */}px solid #f5f5f5`,
                 bottom: "1px"
             }
         },
         ".cm-tooltip-below &": {
-            top: `-${7}px`,
+            top: `-${7 /* Size */}px`,
             "&:before": {
-                borderBottom: `${7}px solid #bbb`,
+                borderBottom: `${7 /* Size */}px solid #bbb`,
             },
             "&:after": {
-                borderBottom: `${7}px solid #f5f5f5`,
+                borderBottom: `${7 /* Size */}px solid #f5f5f5`,
                 top: "1px"
             }
         },
@@ -312,6 +321,7 @@ const baseTheme = EditorView.baseTheme({
     }
 });
 const noOffset = { x: 0, y: 0 };
+/** Facet to which an extension can add a value to show a tooltip. */
 export const showTooltip = Facet.define({
     enables: [tooltipPlugin, baseTheme]
 });
@@ -324,6 +334,7 @@ class HoverTooltipHost {
         this.dom.classList.add("cm-tooltip-hover");
         this.manager = new TooltipViewManager(view, showHoverTooltip, t => this.createHostedView(t));
     }
+    // Needs to be static so that host tooltip instances always match
     static create(view) {
         return new HoverTooltipHost(view);
     }
@@ -364,11 +375,6 @@ const showHoverTooltipHost = showTooltip.compute([showHoverTooltip], state => {
         arrow: tooltips.some(t => t.arrow),
     };
 });
-var Hover;
-(function (Hover) {
-    Hover[Hover["Time"] = 300] = "Time";
-    Hover[Hover["MaxDist"] = 6] = "MaxDist";
-})(Hover || (Hover = {}));
 class HoverPlugin {
     constructor(view, source, field, setHover, hoverTime) {
         this.view = view;
@@ -440,8 +446,8 @@ class HoverPlugin {
         let tooltip = this.active;
         if (tooltip && !isInTooltip(this.lastMove.target) || this.pending) {
             let { pos } = tooltip || this.pending, end = (_a = tooltip === null || tooltip === void 0 ? void 0 : tooltip.end) !== null && _a !== void 0 ? _a : pos;
-            if ((pos == end ? this.view.posAtCoords(this.lastMove) != pos
-                : !isOverRange(this.view, pos, end, event.clientX, event.clientY, 6))) {
+            if ((pos == end ? this.view.posAtCoords(this.lastMove) != pos :
+                !isOverRange(this.view, pos, end, event.clientX, event.clientY, 6 /* MaxDist */))) {
                 this.view.dispatch({ effects: this.setHover.of(null) });
                 this.pending = null;
             }
@@ -480,6 +486,18 @@ function isOverRange(view, from, to, x, y, margin) {
     }
     return false;
 }
+/**
+ * Set up a hover tooltip, which shows up when the pointer hovers over ranges of text. The callback
+ * is called when the mouse hovers over the document text. It should, if there is a tooltip associated
+ * with position `pos`, return the tooltip description (either directly or in a promise). The `side`
+ * argument indicates on which side of the position the pointer is—it will be -1 if the pointer is
+ * before the position, 1 if after the position.
+ *
+ * Note that all hover tooltips are hosted within a single tooltip container element. This allows
+ * multiple tooltips over the same range to be "merged" together without overlapping.
+ * @param options.hideOnChange When enabled (this defaults to false), close the tooltip whenever the document changes.
+ * @param options.hoverTime Hover time after which the tooltip should appear, in milliseconds. Defaults to 300ms.
+ */
 export function hoverTooltip(source, options = {}) {
     let setHover = StateEffect.define();
     let hoverState = StateField.define({
@@ -510,10 +528,11 @@ export function hoverTooltip(source, options = {}) {
     });
     return [
         hoverState,
-        ViewPlugin.define(view => new HoverPlugin(view, source, hoverState, setHover, options.hoverTime || 300)),
+        ViewPlugin.define(view => new HoverPlugin(view, source, hoverState, setHover, options.hoverTime || 300 /* Time */)),
         showHoverTooltipHost
     ];
 }
+/** Get the active tooltip view for a given tooltip, if available. */
 export function getTooltip(view, tooltip) {
     let plugin = view.plugin(tooltipPlugin);
     if (!plugin)
@@ -521,11 +540,18 @@ export function getTooltip(view, tooltip) {
     let found = plugin.manager.tooltips.indexOf(tooltip);
     return found < 0 ? null : plugin.manager.tooltipViews[found];
 }
+/** Returns true if any hover tooltips are currently active. */
 export function hasHoverTooltips(state) {
     return state.facet(showHoverTooltip).some(x => x);
 }
 const closeHoverTooltipEffect = StateEffect.define();
+/** Transaction effect that closes all hover tooltips. */
 export const closeHoverTooltips = closeHoverTooltipEffect.of(null);
+/**
+ * Tell the tooltip extension to recompute the position of the active tooltips. This can
+ * be useful when something happens (such as a re-positioning or CSS change affecting the
+ * editor) that could invalidate the existing tooltip positions.
+ */
 export function repositionTooltips(view) {
     var _a;
     (_a = view.plugin(tooltipPlugin)) === null || _a === void 0 ? void 0 : _a.maybeMeasure();

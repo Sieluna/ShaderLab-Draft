@@ -52,6 +52,11 @@ const bracketMatchingUnique = [
     bracketMatchingState,
     baseTheme
 ];
+/**
+ * Create an extension that enables bracket matching. Whenever the cursor is next to a bracket,
+ * that bracket and the one it matches are highlighted. Or, when no matching bracket is found,
+ * another highlighting style is used to indicate this.
+ */
 export function bracketMatching(config = {}) {
     return [bracketMatchingConfig.of(config), bracketMatchingUnique];
 }
@@ -66,6 +71,11 @@ function matchingNodes(node, dir, brackets) {
     }
     return null;
 }
+/**
+ * Find the matching bracket for the token at `pos`, scanning direction `dir`. Only the
+ * `brackets` and `maxScanDistance` properties are used from `config`, if given. Returns
+ * null if no bracket was found at `pos`, or a match result otherwise.
+ */
 export function matchBrackets(state, pos, dir, config = {}) {
     let maxScanDistance = config.maxScanDistance || DefaultScanDist, brackets = config.brackets || DefaultBrackets;
     let tree = syntaxTree(state), node = tree.resolveInner(pos, dir);
@@ -120,7 +130,7 @@ function matchPlainBrackets(state, pos, dir, tree, tokenType, maxScanDistance, b
             if ((found % 2 == 0) == (dir > 0)) {
                 depth++;
             }
-            else if (depth == 1) {
+            else if (depth == 1) { // Closing
                 return { start: startToken, end: { from: basePos + pos, to: basePos + pos + 1 }, matched: (found >> 1) == (bracket >> 1) };
             }
             else {

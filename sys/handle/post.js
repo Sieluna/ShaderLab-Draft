@@ -7,6 +7,15 @@ const handle = {
         const result = await query('select max(post_id) as max from posts');
         return result[0].max;
     },
+    getWithId: async () => {
+
+    },
+    getWithName: async () => {
+
+    },
+    getWithRank: async () => {
+
+    },
     /**
      *
      * @param {number} user

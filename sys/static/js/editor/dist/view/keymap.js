@@ -55,8 +55,16 @@ const handleKeyEvents = EditorView.domEventHandlers({
         return runHandlers(getKeymap(view.state), event, view, "editor");
     }
 });
+/**
+ * Facet used for registering keymaps.
+ *
+ * You can add multiple keymaps to an editor. Their priorities determine their precedence (the
+ * ones specified early or with high priority get checked first). When a handler has returned
+ * `true` for a given key, no further handlers are called.
+ */
 export const keymap = Facet.define({ enables: handleKeyEvents });
 const Keymaps = new WeakMap();
+/** This is hidden behind an indirection, rather than directly computed by the facet, to keep internal types out of the facet's type. */
 function getKeymap(state) {
     let bindings = state.facet(keymap);
     let map = Keymaps.get(bindings);
@@ -64,6 +72,7 @@ function getKeymap(state) {
         Keymaps.set(bindings, map = buildKeymap(bindings.reduce((a, b) => a.concat(b), [])));
     return map;
 }
+/** Run the key handlers registered for a given scope. The event object should be a `"keydown"` event. Returns true if any of the handlers handled it. */
 export function runScopeHandlers(view, event, scope) {
     return runHandlers(getKeymap(view.state), event, view, scope);
 }
@@ -137,8 +146,7 @@ function runHandlers(map, event, view, scope) {
     if (scopeObj) {
         if (runFor(scopeObj[prefix + modifiers(name, event, !isChar)]))
             return true;
-        if (isChar && (event.shiftKey || event.altKey || event.metaKey) &&
-            (baseName = base[event.keyCode]) && baseName != name) {
+        if (isChar && (event.shiftKey || event.altKey || event.metaKey) && (baseName = base[event.keyCode]) && baseName != name) {
             if (runFor(scopeObj[prefix + modifiers(baseName, event, true)]))
                 return true;
         }

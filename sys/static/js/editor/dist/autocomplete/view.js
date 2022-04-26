@@ -3,6 +3,7 @@ import { completionState, setSelectedEffect, startCompletionEffect, closeComplet
 import { completionConfig } from "./config.js";
 import { cur, CompletionContext, applyCompletion } from "./completion.js";
 const CompletionInteractMargin = 75;
+/** Returns a command that moves the completion selection forward or backward by the given amount. */
 export function moveCompletionSelection(forward, by = "option") {
     return (view) => {
         let cState = view.state.field(completionState, false);
@@ -20,6 +21,7 @@ export function moveCompletionSelection(forward, by = "option") {
         return true;
     };
 }
+/** Accept the current completion. */
 export const acceptCompletion = (view) => {
     let cState = view.state.field(completionState, false);
     if (view.state.readOnly || !cState || !cState.open || Date.now() - cState.open.timestamp < CompletionInteractMargin)
@@ -27,6 +29,7 @@ export const acceptCompletion = (view) => {
     applyCompletion(view, cState.open.options[cState.open.selected]);
     return true;
 };
+/** Explicitly start autocompletion. */
 export const startCompletion = (view) => {
     let cState = view.state.field(completionState, false);
     if (!cState)
@@ -34,9 +37,10 @@ export const startCompletion = (view) => {
     view.dispatch({ effects: startCompletionEffect.of(true) });
     return true;
 };
+/** Close the currently active completion. */
 export const closeCompletion = (view) => {
     let cState = view.state.field(completionState, false);
-    if (!cState || !cState.active.some(a => a.state != 0))
+    if (!cState || !cState.active.some(a => a.state != 0 /* Inactive */))
         return false;
     view.dispatch({ effects: closeCompletionEffect.of(null) });
     return true;
@@ -47,26 +51,20 @@ class RunningQuery {
         this.context = context;
         this.time = Date.now();
         this.updates = [];
+        // Note that 'undefined' means 'not done yet', whereas 'null' means 'query returned null'.
         this.done = undefined;
     }
 }
 const DebounceTime = 50, MaxUpdateCount = 50, MinAbortTime = 1000;
-var CompositionState;
-(function (CompositionState) {
-    CompositionState[CompositionState["None"] = 0] = "None";
-    CompositionState[CompositionState["Started"] = 1] = "Started";
-    CompositionState[CompositionState["Changed"] = 2] = "Changed";
-    CompositionState[CompositionState["ChangedAndMoved"] = 3] = "ChangedAndMoved";
-})(CompositionState || (CompositionState = {}));
 export const completionPlugin = ViewPlugin.fromClass(class {
     constructor(view) {
         this.view = view;
         this.debounceUpdate = -1;
         this.running = [];
         this.debounceAccept = -1;
-        this.composing = 0;
+        this.composing = 0 /* None */;
         for (let active of view.state.field(completionState).active)
-            if (active.state == 1)
+            if (active.state == 1 /* Pending */)
                 this.startQuery(active);
     }
     update(update) {
@@ -97,21 +95,21 @@ export const completionPlugin = ViewPlugin.fromClass(class {
         }
         if (this.debounceUpdate > -1)
             clearTimeout(this.debounceUpdate);
-        this.debounceUpdate = cState.active.some(a => a.state == 1 && !this.running.some(q => q.active.source == a.source)) ?
+        this.debounceUpdate = cState.active.some(a => a.state == 1 /* Pending */ && !this.running.some(q => q.active.source == a.source)) ?
             setTimeout(() => this.startUpdate(), DebounceTime) : -1;
-        if (this.composing != 0)
+        if (this.composing != 0 /* None */)
             for (let tr of update.transactions) {
                 if (getUserEvent(tr) == "input")
-                    this.composing = 2;
-                else if (this.composing == 2 && tr.selection)
-                    this.composing = 3;
+                    this.composing = 2 /* Changed */;
+                else if (this.composing == 2 /* Changed */ && tr.selection)
+                    this.composing = 3 /* ChangedAndMoved */;
             }
     }
     startUpdate() {
         this.debounceUpdate = -1;
         let { state } = this.view, cState = state.field(completionState);
         for (let active of cState.active) {
-            if (active.state == 1 && !this.running.some(r => r.active.source == active.source))
+            if (active.state == 1 /* Pending */ && !this.running.some(r => r.active.source == active.source))
                 this.startQuery(active);
         }
     }
@@ -136,6 +134,7 @@ export const completionPlugin = ViewPlugin.fromClass(class {
         else if (this.debounceAccept < 0)
             this.debounceAccept = setTimeout(() => this.accept(), DebounceTime);
     }
+    // For each finished query in this.running, try to create a result or, if appropriate, restart the query.
     accept() {
         var _a;
         if (this.debounceAccept > -1)
@@ -150,6 +149,7 @@ export const completionPlugin = ViewPlugin.fromClass(class {
             this.running.splice(i--, 1);
             if (query.done) {
                 let active = new ActiveResult(query.active.source, query.active.explicitPos, query.done, query.done.from, (_a = query.done.to) !== null && _a !== void 0 ? _a : cur(query.updates.length ? query.updates[0].startState : this.view.state));
+                // Replay the transactions that happened since the start of the request and see if that preserves the result
                 for (let tr of query.updates)
                     active = active.update(tr, conf);
                 if (active.hasResult()) {
@@ -158,15 +158,17 @@ export const completionPlugin = ViewPlugin.fromClass(class {
                 }
             }
             let current = this.view.state.field(completionState).active.find(a => a.source == query.active.source);
-            if (current && current.state == 1) {
+            if (current && current.state == 1 /* Pending */) {
                 if (query.done == null) {
-                    let active = new ActiveSource(query.active.source, 0);
+                    // Explicitly failed. Should clear the pending status if it hasn't been re-set in the meantime.
+                    let active = new ActiveSource(query.active.source, 0 /* Inactive */);
                     for (let tr of query.updates)
                         active = active.update(tr, conf);
-                    if (active.state != 1)
+                    if (active.state != 1 /* Pending */)
                         updated.push(active);
                 }
                 else {
+                    // Cleared by subsequent transactions. Restart.
                     this.startQuery(current);
                 }
             }
@@ -177,13 +179,14 @@ export const completionPlugin = ViewPlugin.fromClass(class {
 }, {
     eventHandlers: {
         compositionstart() {
-            this.composing = 1;
+            this.composing = 1 /* Started */;
         },
         compositionend() {
-            if (this.composing == 3) {
+            if (this.composing == 3 /* ChangedAndMoved */) {
+                // Safari fires compositionend events synchronously, possibly from inside an update, so dispatch asynchronously to avoid reentrancy
                 setTimeout(() => this.view.dispatch({ effects: startCompletionEffect.of(false) }), 20);
             }
-            this.composing = 0;
+            this.composing = 0 /* None */;
         }
     }
 });

@@ -64,6 +64,7 @@ const inputHandler = EditorView.inputHandler.of((view, from, to, insert) => {
     view.dispatch(tr);
     return true;
 });
+/** Command that implements deleting a pair of matching brackets when the cursor is between them. */
 export const deleteBracketPair = ({ state, dispatch }) => {
     if (state.readOnly)
         return false;
@@ -85,6 +86,7 @@ export const deleteBracketPair = ({ state, dispatch }) => {
         dispatch(state.update(changes, { scrollIntoView: true }));
     return !dont;
 };
+/** Close-brackets related key bindings. Binds Backspace to {@link deleteBracketPair}. */
 export const closeBracketsKeymap = [
     { key: "Backspace", run: deleteBracketPair }
 ];

@@ -70,13 +70,13 @@ export class MarkView extends ContentView {
     reuseDOM(node) {
         if (node.nodeName == this.mark.tagName.toUpperCase()) {
             this.setDOM(node);
-            this.dirty |= 4 | 2;
+            this.dirty |= 4 /* Attrs */ | 2 /* Node */;
         }
     }
     sync(track) {
         if (!this.dom)
             this.setDOM(this.setAttrs(document.createElement(this.mark.tagName)));
-        else if (this.dirty & 4)
+        else if (this.dirty & 4 /* Attrs */)
             this.setAttrs(this.dom);
         super.sync(track);
     }
@@ -120,11 +120,11 @@ function textCoords(text, pos, side) {
         pos = length;
     let from = pos, to = pos, flatten = 0;
     if (pos == 0 && side < 0 || pos == length && side >= 0) {
-        if (!(browser.chrome || browser.gecko)) {
+        if (!(browser.chrome || browser.gecko)) { // These browsers reliably return valid rectangles for empty ranges
             if (pos) {
                 from--;
                 flatten = 1;
-            }
+            } // FIXME this is wrong in RTL text
             else {
                 to++;
                 flatten = -1;
@@ -145,6 +145,7 @@ function textCoords(text, pos, side) {
         rect = Array.prototype.find.call(rects, r => r.width) || rect;
     return flatten ? flattenRect(rect, flatten < 0) : rect || null;
 }
+// Also used for collapsed ranges that don't have a placeholder widget!
 export class WidgetView extends ContentView {
     constructor(widget, length, side) {
         super();
@@ -253,6 +254,10 @@ export class CompositionView extends WidgetView {
     }
     get isEditable() { return true; }
 }
+/**
+ * Uses the old structure of a chunk of content view frozen for composition to try and find a
+ * reasonable DOM location for the given offset.
+ */
 function scanCompositionTree(pos, side, view, text, enterView, fromText) {
     if (view instanceof MarkView) {
         for (let child of view.children) {
@@ -285,6 +290,10 @@ function posFromDOMInCompositionTree(node, offset, view, text) {
     }
     return view.localPosFromDOM(node, offset);
 }
+/**
+ * These are drawn around uneditable widgets to avoid a number of browser bugs that show up when
+ * the cursor is directly next to uneditable inline content.
+ */
 export class WidgetBufferView extends ContentView {
     constructor(side) {
         super();
@@ -310,9 +319,11 @@ export class WidgetBufferView extends ContentView {
     domBoundsAround() { return null; }
     coordsAt(pos) {
         let imgRect = this.dom.getBoundingClientRect();
+        // Since the <img> height doesn't correspond to text height, try
+        // to borrow the height from some sibling node.
         let siblingRect = inlineSiblingRect(this, this.side > 0 ? -1 : 1);
-        return siblingRect && siblingRect.top < imgRect.bottom && siblingRect.bottom > imgRect.top
-            ? { left: imgRect.left, right: imgRect.right, top: siblingRect.top, bottom: siblingRect.bottom } : imgRect;
+        return siblingRect && siblingRect.top < imgRect.bottom && siblingRect.bottom > imgRect.top ?
+            { left: imgRect.left, right: imgRect.right, top: siblingRect.top, bottom: siblingRect.bottom } : imgRect;
     }
     get overrideDOMText() {
         return DocText.empty;
@@ -363,6 +374,7 @@ export function inlineDOMAtPos(dom, children, pos) {
     }
     return new DOMPos(dom, 0);
 }
+// Assumes `view`, if a mark view, has precisely 1 child.
 export function joinInlineInto(parent, view, open) {
     let last, { children } = parent;
     if (open > 0 && view instanceof MarkView && children.length &&

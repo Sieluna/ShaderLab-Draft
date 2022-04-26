@@ -1,6 +1,8 @@
 export function getSelection(root) {
     let target;
-    if (root.nodeType == 11) {
+    // Browsers differ on whether shadow roots have a getSelection method.
+    // If it exists, use that, otherwise, call it on the document.
+    if (root.nodeType == 11) { // Shadow root
         target = root.getSelection ? root : root.ownerDocument;
     }
     else {
@@ -21,6 +23,9 @@ export function hasSelection(dom, selection) {
     if (!selection.anchorNode)
         return false;
     try {
+        // Firefox will raise 'permission denied' errors when accessing
+        // properties of `sel.anchorNode` when it's in a generated CSS
+        // element.
         return contains(dom, selection.anchorNode);
     }
     catch (_) {
@@ -35,6 +40,9 @@ export function clientRectsFor(dom) {
     else
         return [];
 }
+// Scans forward and backward through DOM positions equivalent to the
+// given one to see if the two are in the same place (i.e. after a
+// text node vs at the end of that text node)
 export function isEquivalentPosition(node, off, targetNode, targetOff) {
     return targetNode ? (scanFor(node, off, targetNode, targetOff, -1) ||
         scanFor(node, off, targetNode, targetOff, 1)) : false;
@@ -85,7 +93,7 @@ function windowRect(win) {
 export function scrollRectIntoView(dom, rect, side, x, y, xMargin, yMargin, ltr) {
     let doc = dom.ownerDocument, win = doc.defaultView;
     for (let cur = dom; cur;) {
-        if (cur.nodeType == 1) {
+        if (cur.nodeType == 1) { // Element
             let bounding, top = cur == doc.body;
             if (top) {
                 bounding = windowRect(win);
@@ -96,6 +104,7 @@ export function scrollRectIntoView(dom, rect, side, x, y, xMargin, yMargin, ltr)
                     continue;
                 }
                 let rect = cur.getBoundingClientRect();
+                // Make sure scrollbar width isn't included in the rectangle
                 bounding = { left: rect.left, right: rect.left + cur.clientWidth,
                     top: rect.top, bottom: rect.top + cur.clientHeight };
             }
@@ -161,7 +170,7 @@ export function scrollRectIntoView(dom, rect, side, x, y, xMargin, yMargin, ltr)
             cur = cur.assignedSlot || cur.parentNode;
             x = y = "nearest";
         }
-        else if (cur.nodeType == 11) {
+        else if (cur.nodeType == 11) { // A shadow root
             cur = cur.host;
         }
         else {
@@ -177,8 +186,7 @@ export class DOMSelectionState {
         this.focusOffset = 0;
     }
     eq(domSel) {
-        return this.anchorNode == domSel.anchorNode && this.anchorOffset == domSel.anchorOffset &&
-            this.focusNode == domSel.focusNode && this.focusOffset == domSel.focusOffset;
+        return this.anchorNode == domSel.anchorNode && this.anchorOffset == domSel.anchorOffset && this.focusNode == domSel.focusNode && this.focusOffset == domSel.focusOffset;
     }
     setRange(range) {
         this.set(range.anchorNode, range.anchorOffset, range.focusNode, range.focusOffset);
@@ -191,9 +199,10 @@ export class DOMSelectionState {
     }
 }
 let preventScrollSupported = null;
+// Feature-detects support for .focus({preventScroll: true}), and uses a fallback kludge when not supported.
 export function focusPreventScroll(dom) {
     if (dom.setActive)
-        return dom.setActive();
+        return dom.setActive(); // in IE
     if (preventScrollSupported)
         return dom.focus(preventScrollSupported);
     let stack = [];

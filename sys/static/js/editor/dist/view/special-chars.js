@@ -40,13 +40,17 @@ const specialCharConfig = Facet.define({
             specialChars: Specials,
             addSpecialChars: null
         });
-        if (config.replaceTabs = !supportsTabSize())
+        if ((config.replaceTabs = !supportsTabSize()))
             config.specialChars = new RegExp("\t|" + config.specialChars.source, UnicodeRegexpSupport);
         if (config.addSpecialChars)
             config.specialChars = new RegExp(config.specialChars.source + "|" + config.addSpecialChars.source, UnicodeRegexpSupport);
         return config;
     }
 });
+/**
+ * Returns an extension that installs highlighting of special characters.
+ * @param config Configuration options.
+ */
 export function highlightSpecialChars(config = {}) {
     return [specialCharConfig.of(config), specialCharPlugin()];
 }
@@ -92,6 +96,7 @@ function specialCharPlugin() {
     }));
 }
 const DefaultPlaceholder = "\u2022";
+// Assigns placeholder characters from the Control Pictures block to ASCII control characters
 function placeholder(code) {
     if (code >= 32)
         return DefaultPlaceholder;

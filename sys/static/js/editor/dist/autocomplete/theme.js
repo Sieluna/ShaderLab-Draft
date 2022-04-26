@@ -92,7 +92,7 @@ export const baseTheme = EditorView.baseTheme({
         "&:after": { content: "'□'" }
     },
     ".cm-completionIcon-keyword": {
-        "&:after": { content: "'🔑\uFE0E'" }
+        "&:after": { content: "'🔑\uFE0E'" } // Disable emoji rendering
     },
     ".cm-completionIcon-namespace": {
         "&:after": { content: "'▢'" }

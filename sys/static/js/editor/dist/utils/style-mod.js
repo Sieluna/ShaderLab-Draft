@@ -68,10 +68,10 @@ class StyleSet {
     }
     mount(modules) {
         let sheet = this.sheet;
-        let pos = 0, j = 0;
+        let pos = 0 /* Current rule offset */, j = 0 /* Index into this.modules */;
         for (let i = 0; i < modules.length; i++) {
             let mod = modules[i], index = this.modules.indexOf(mod);
-            if (index < j && index > -1) {
+            if (index < j && index > -1) { // Ordering conflict
                 this.modules.splice(index, 1);
                 j--;
                 index = -1;

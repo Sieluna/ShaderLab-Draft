@@ -1,13 +1,8 @@
+/** Comment or uncomment the current selection. Will use line comments if available, otherwise falling back to block comments. */
 export const toggleComment = target => {
     let config = getConfig(target.state);
     return config.line ? toggleLineComment(target) : config.block ? toggleBlockCommentByLine(target) : false;
 };
-var CommentOption;
-(function (CommentOption) {
-    CommentOption[CommentOption["Toggle"] = 0] = "Toggle";
-    CommentOption[CommentOption["Comment"] = 1] = "Comment";
-    CommentOption[CommentOption["Uncomment"] = 2] = "Uncomment";
-})(CommentOption || (CommentOption = {}));
 function command(f, option) {
     return ({ state, dispatch }) => {
         if (state.readOnly)
@@ -19,18 +14,26 @@ function command(f, option) {
         return true;
     };
 }
-export const toggleLineComment = command(changeLineComment, 0);
-export const lineComment = command(changeLineComment, 1);
-export const lineUncomment = command(changeLineComment, 2);
-export const toggleBlockComment = command(changeBlockComment, 0);
-export const blockComment = command(changeBlockComment, 1);
-export const blockUncomment = command(changeBlockComment, 2);
-export const toggleBlockCommentByLine = command((o, s) => changeBlockComment(o, s, selectedLineRanges(s)), 0);
+/** Comment or uncomment the current selection using line comments. The line comment syntax is taken from the {@link CommentTokens} [language data]{@link languageDataAt} */
+export const toggleLineComment = command(changeLineComment, 0 /* Toggle */);
+/** Comment the current selection using line comments. */
+export const lineComment = command(changeLineComment, 1 /* Comment */);
+/** Uncomment the current selection using line comments. */
+export const lineUncomment = command(changeLineComment, 2 /* Uncomment */);
+/** Comment or uncomment the current selection using block comments. The block comment syntax is taken from the {@link CommentTokens} [language data]{@link languageDataAt} */
+export const toggleBlockComment = command(changeBlockComment, 0 /* Toggle */);
+/** Comment the current selection using block comments. */
+export const blockComment = command(changeBlockComment, 1 /* Comment */);
+/** Uncomment the current selection using block comments. */
+export const blockUncomment = command(changeBlockComment, 2 /* Uncomment */);
+/** Comment or uncomment the lines around the current selection using block comments. */
+export const toggleBlockCommentByLine = command((o, s) => changeBlockComment(o, s, selectedLineRanges(s)), 0 /* Toggle */);
 function getConfig(state, pos = state.selection.main.head) {
     let data = state.languageDataAt("commentTokens", pos);
     return data.length ? data[0] : {};
 }
 const SearchMargin = 50;
+/** Determines if the given range is block-commented in the given state. */
 function findBlockComment(state, { open, close }, from, to) {
     let textBefore = state.sliceDoc(from - SearchMargin, from);
     let textAfter = state.sliceDoc(to, to + SearchMargin);
@@ -73,19 +76,20 @@ function selectedLineRanges(state) {
     }
     return ranges;
 }
+/** Performs toggle, comment and uncomment of block comments in languages that support them. */
 function changeBlockComment(option, state, ranges = state.selection.ranges) {
     let tokens = ranges.map(r => getConfig(state, r.from).block);
     if (!tokens.every(c => c))
         return null;
     let comments = ranges.map((r, i) => findBlockComment(state, tokens[i], r.from, r.to));
-    if (option != 2 && !comments.every(c => c)) {
+    if (option != 2 /* Uncomment */ && !comments.every(c => c)) {
         return { changes: state.changes(ranges.map((range, i) => {
                 if (comments[i])
                     return [];
                 return [{ from: range.from, insert: tokens[i].open + " " }, { from: range.to, insert: " " + tokens[i].close }];
             })) };
     }
-    else if (option != 1 && comments.some(c => c)) {
+    else if (option != 1 /* Comment */ && comments.some(c => c)) {
         let changes = [];
         for (let i = 0, comment; i < comments.length; i++)
             if (comment = comments[i]) {
@@ -96,6 +100,7 @@ function changeBlockComment(option, state, ranges = state.selection.ranges) {
     }
     return null;
 }
+/** Performs toggle, comment and uncomment of line comments. */
 function changeLineComment(option, state, ranges = state.selection.ranges) {
     let lines = [];
     let prevLine = -1;
@@ -124,7 +129,7 @@ function changeLineComment(option, state, ranges = state.selection.ranges) {
         if (lines.length == startI + 1)
             lines[startI].single = true;
     }
-    if (option != 2 && lines.some(l => l.comment < 0 && (!l.empty || l.single))) {
+    if (option != 2 /* Uncomment */ && lines.some(l => l.comment < 0 && (!l.empty || l.single))) {
         let changes = [];
         for (let { line, token, indent, empty, single } of lines)
             if (single || !empty)
@@ -132,7 +137,7 @@ function changeLineComment(option, state, ranges = state.selection.ranges) {
         let changeSet = state.changes(changes);
         return { changes: changeSet, selection: state.selection.map(changeSet, 1) };
     }
-    else if (option != 1 && lines.some(l => l.comment >= 0)) {
+    else if (option != 1 /* Comment */ && lines.some(l => l.comment >= 0)) {
         let changes = [];
         for (let { line, comment, token } of lines)
             if (comment >= 0) {

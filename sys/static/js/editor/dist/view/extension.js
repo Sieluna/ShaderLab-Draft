@@ -23,6 +23,15 @@ export class ScrollTarget {
     }
 }
 export const scrollIntoView = StateEffect.define({ map: (t, ch) => t.map(ch) });
+/**
+ * Log or report an unhandled exception in client code. Should probably only be used by
+ * extension code that allows client code to provide functions, and calls those functions
+ * in a context where an exception can't be propagated to calling code in a reasonable way
+ * (for example when in an event handler).
+ *
+ * Either calls a handler registered with {@link EditorView.exceptionSink}, `window.onerror`,
+ * if defined, or `console.error` (in which case it'll pass `context`, when given, as first argument).
+ */
 export function logException(state, exception, context) {
     let handler = state.facet(exceptionSink);
     if (handler.length)
@@ -37,13 +46,24 @@ export function logException(state, exception, context) {
 export const editable = Facet.define({ combine: values => values.length ? values[0] : true });
 let nextPluginID = 0;
 export const viewPlugin = Facet.define();
+/**
+ * View plugins associate stateful values with a view. They can influence the way the content is drawn,
+ * and are notified of things that happen in the view.
+ */
 export class ViewPlugin {
-    constructor(id, create, domEventHandlers, buildExtensions) {
+    constructor(
+    // @internal
+    id, 
+    // @internal
+    create, 
+    // @internal
+    domEventHandlers, buildExtensions) {
         this.id = id;
         this.create = create;
         this.domEventHandlers = domEventHandlers;
         this.extension = buildExtensions(this);
     }
+    /** Define a plugin from a constructor function that creates the plugin's value, given an editor view. */
     static define(create, spec) {
         const { eventHandlers, provide, decorations: deco } = spec || {};
         return new ViewPlugin(nextPluginID++, create, eventHandlers, plugin => {
@@ -58,6 +78,7 @@ export class ViewPlugin {
             return ext;
         });
     }
+    /** Create a plugin for a class whose constructor takes a single editor view as argument. */
     static fromClass(cls, spec) {
         return ViewPlugin.define(view => new cls(view), spec);
     }
@@ -66,6 +87,7 @@ export class PluginInstance {
     constructor(spec) {
         this.spec = spec;
         this.mustUpdate = null;
+        // This is null when the plugin is initially created, but initialized on the first update.
         this.value = null;
     }
     update(view) {
@@ -117,17 +139,11 @@ export class PluginInstance {
 }
 export const editorAttributes = Facet.define();
 export const contentAttributes = Facet.define();
+// Provide decorations
 export const decorations = Facet.define();
 export const atomicRanges = Facet.define();
 export const scrollMargins = Facet.define();
 export const styleModule = Facet.define();
-export var UpdateFlag;
-(function (UpdateFlag) {
-    UpdateFlag[UpdateFlag["Focus"] = 1] = "Focus";
-    UpdateFlag[UpdateFlag["Height"] = 2] = "Height";
-    UpdateFlag[UpdateFlag["Viewport"] = 4] = "Viewport";
-    UpdateFlag[UpdateFlag["Geometry"] = 8] = "Geometry";
-})(UpdateFlag || (UpdateFlag = {}));
 export class ChangedRange {
     constructor(fromA, toA, fromB, toB) {
         this.fromA = fromA;
@@ -177,11 +193,20 @@ export class ChangedRange {
         }
     }
 }
+/** View [plugins](#view.ViewPlugin) are given instances of this class, which describe what happened, whenever the view is updated. */
 export class ViewUpdate {
-    constructor(view, state, transactions = none) {
+    // @internal
+    constructor(
+    /** The editor view that the update is associated with. */
+    view, 
+    /** The new editor state. */
+    state, 
+    /** The transactions involved in the update. May be empty. */
+    transactions = none) {
         this.view = view;
         this.state = state;
         this.transactions = transactions;
+        // @internal
         this.flags = 0;
         this.startState = view.state;
         this.changes = ChangeSet.empty(this.startState.doc.length);
@@ -193,26 +218,33 @@ export class ViewUpdate {
         let focus = view.hasFocus;
         if (focus != view.inputState.notifiedFocused) {
             view.inputState.notifiedFocused = focus;
-            this.flags |= 1;
+            this.flags |= 1 /* Focus */;
         }
     }
+    /** Tells you whether the [viewport]{@link EditorView.viewport} or [visible ranges]{@link EditorView.visibleRanges} changed in this update. */
     get viewportChanged() {
-        return (this.flags & 4) > 0;
+        return (this.flags & 4 /* Viewport */) > 0;
     }
+    /** Indicates whether the height of a block element in the editor changed in this update. */
     get heightChanged() {
-        return (this.flags & 2) > 0;
+        return (this.flags & 2 /* Height */) > 0;
     }
+    /** Returns true when the document was modified or the size of the editor, or elements within the editor, changed. */
     get geometryChanged() {
-        return this.docChanged || (this.flags & (8 | 2)) > 0;
+        return this.docChanged || (this.flags & (8 /* Geometry */ | 2 /* Height */)) > 0;
     }
+    /** True when this update indicates a focus change. */
     get focusChanged() {
-        return (this.flags & 1) > 0;
+        return (this.flags & 1 /* Focus */) > 0;
     }
+    /** Whether the document changed in this update. */
     get docChanged() {
         return !this.changes.empty;
     }
+    /** Whether the selection was explicitly set in this update. */
     get selectionSet() {
         return this.transactions.some(tr => tr.selection);
     }
+    // @internal
     get empty() { return this.flags == 0 && this.transactions.length == 0; }
 }

@@ -11,14 +11,22 @@ export class CachedToken {
 }
 const nullToken = new CachedToken;
 export class InputStream {
-    constructor(input, ranges) {
+    // @internal
+    constructor(
+    // @internal
+    input, 
+    // @internal
+    ranges) {
         this.input = input;
         this.ranges = ranges;
+        // @internal
         this.chunk = "";
+        // @internal
         this.chunkOff = 0;
         this.chunk2 = "";
         this.chunk2Pos = 0;
         this.next = -1;
+        // @internal
         this.token = nullToken;
         this.rangeIndex = 0;
         this.pos = this.chunkPos = ranges[0].from;
@@ -127,6 +135,7 @@ export class InputStream {
         this.chunk = "";
         return this.next = -1;
     }
+    // @internal
     reset(pos, token) {
         if (token) {
             this.token = token;
@@ -158,6 +167,7 @@ export class InputStream {
         }
         return this;
     }
+    // @internal
     read(from, to) {
         if (from >= this.chunkPos && to <= this.chunkPos + this.chunk.length)
             return this.chunk.slice(from - this.chunkPos, to - this.chunkPos);
@@ -175,6 +185,7 @@ export class InputStream {
         return result;
     }
 }
+// @internal
 export class TokenGroup {
     constructor(data, id) {
         this.data = data;
@@ -184,19 +195,44 @@ export class TokenGroup {
 }
 TokenGroup.prototype.contextual = TokenGroup.prototype.fallback = TokenGroup.prototype.extend = false;
 export class ExternalTokenizer {
-    constructor(token, options = {}) {
+    constructor(
+    // @internal
+    token, options = {}) {
         this.token = token;
         this.contextual = !!options.contextual;
         this.fallback = !!options.fallback;
         this.extend = !!options.extend;
     }
 }
+// Tokenizer data is stored a big uint16 array containing, for each
+// state:
+//
+//  - A group bitmask, indicating what token groups are reachable from
+//    this state, so that paths that can only lead to tokens not in
+//    any of the current groups can be cut off early.
+//
+//  - The position of the end of the state's sequence of accepting
+//    tokens
+//
+//  - The number of outgoing edges for the state
+//
+//  - The accepting tokens, as (token id, group mask) pairs
+//
+//  - The outgoing edges, as (start character, end character, state
+//    index) triples, with end character being exclusive
+//
+// This function interprets that data, running through a stream as
+// long as new states with the a matching group mask can be reached,
+// and updating `token` when it matches a token.
 function readToken(data, input, stack, group) {
     let state = 0, groupMask = (1 << group), { parser } = stack.p, { dialect } = parser;
     scan: for (;;) {
         if ((groupMask & data[state]) == 0)
             break;
         let accEnd = data[state + 1];
+        // Check whether this state can lead to a token in the current group
+        // Accept tokens in this state, possibly overwriting
+        // lower-precedence / shorter tokens
         for (let i = state + 3; i < accEnd; i += 2)
             if ((data[i + 1] & groupMask) > 0) {
                 let term = data[i];
@@ -206,6 +242,7 @@ function readToken(data, input, stack, group) {
                     break;
                 }
             }
+        // Do a binary search on the state's edges
         for (let next = input.next, low = 0, high = data[state + 2]; low < high;) {
             let mid = (low + high) >> 1;
             let index = accEnd + mid + (mid << 1);

@@ -14,12 +14,13 @@ export class LineView extends ContentView {
         this.attrs = null;
         this.breakAfter = 0;
     }
+    // Consumes source
     merge(from, to, source, hasStart, openStart, openEnd) {
         if (source) {
             if (!(source instanceof LineView))
                 return false;
             if (!this.dom)
-                source.transferDOM(this);
+                source.transferDOM(this); // Reuse source.dom when appropriate
         }
         if (hasStart)
             this.setDeco(source ? source.attrs : null);
@@ -66,6 +67,7 @@ export class LineView extends ContentView {
     append(child, openStart) {
         joinInlineInto(this, child, openStart);
     }
+    // Only called when building a line view in ContentBuilder
     addLineDeco(deco) {
         let attrs = deco.spec.attributes, cls = deco.spec.class;
         if (attrs)
@@ -79,7 +81,7 @@ export class LineView extends ContentView {
     reuseDOM(node) {
         if (node.nodeName == "DIV") {
             this.setDOM(node);
-            this.dirty |= 4 | 2;
+            this.dirty |= 4 /* Attrs */ | 2 /* Node */;
         }
     }
     sync(track) {
@@ -89,7 +91,7 @@ export class LineView extends ContentView {
             this.dom.className = "cm-line";
             this.prevAttrs = this.attrs ? null : undefined;
         }
-        else if (this.dirty & 4) {
+        else if (this.dirty & 4 /* Attrs */) {
             clearAttributes(this.dom);
             this.dom.className = "cm-line";
             this.prevAttrs = this.attrs ? null : undefined;

@@ -1,41 +1,39 @@
-var Tree;
-(function (Tree) {
-    Tree[Tree["BranchShift"] = 5] = "BranchShift";
-    Tree[Tree["Branch"] = 32] = "Branch";
-})(Tree || (Tree = {}));
-var Open;
-(function (Open) {
-    Open[Open["From"] = 1] = "From";
-    Open[Open["To"] = 2] = "To";
-})(Open || (Open = {}));
+/** The data structure for documents. */
 export class Text {
+    // @internal
     constructor() { }
+    /** Get the line description around the given position. */
     lineAt(pos) {
         if (pos < 0 || pos > this.length)
             throw new RangeError(`Invalid position ${pos} in document of length ${this.length}`);
         return this.lineInner(pos, false, 1, 0);
     }
+    /** Get the description for the given (1-based) line number. */
     line(n) {
         if (n < 1 || n > this.lines)
             throw new RangeError(`Invalid line number ${n} in ${this.lines}-line document`);
         return this.lineInner(n, true, 1, 0);
     }
+    /** Replace a range of the text with the given content. */
     replace(from, to, text) {
         let parts = [];
-        this.decompose(0, from, parts, 2);
+        this.decompose(0, from, parts, 2 /* To */);
         if (text.length)
-            text.decompose(0, text.length, parts, 1 | 2);
-        this.decompose(to, this.length, parts, 1);
+            text.decompose(0, text.length, parts, 1 /* From */ | 2 /* To */);
+        this.decompose(to, this.length, parts, 1 /* From */);
         return TextNode.from(parts, this.length - (to - from) + text.length);
     }
+    /** Append another document to this one. */
     append(other) {
         return this.replace(this.length, this.length, other);
     }
+    /** Retrieve the text between the given points. */
     slice(from, to = this.length) {
         let parts = [];
         this.decompose(from, to, parts, 0);
         return TextNode.from(parts, to - from);
     }
+    /** Test whether this text is equal to another instance. */
     eq(other) {
         if (other == this)
             return true;
@@ -54,8 +52,16 @@ export class Text {
                 return true;
         }
     }
+    /** Iterate over the text. -1 from end to start */
     iter(dir = 1) { return new RawTextCursor(this, dir); }
+    /** Iterate over a range of the text. When `from` > `to`, the iterator will run in reverse. */
     iterRange(from, to = this.length) { return new PartialTextCursor(this, from, to); }
+    /**
+     * Return a cursor that iterates over the given range of lines, _without_ returning the
+     * line breaks between, and yielding empty strings for empty lines.
+     * @param [from] line start
+     * @param [to] line end
+     */
     iterLines(from, to) {
         let inner;
         if (from == null) {
@@ -69,21 +75,27 @@ export class Text {
         }
         return new LineCursor(inner);
     }
+    // @internal
     toString() { return this.sliceString(0); }
+    /** Convert the document to an array of lines (which can be deserialized again via {@link Text.of}). */
     toJSON() {
         let lines = [];
         this.flatten(lines);
         return lines;
     }
+    /** Create a `Text` instance for the given array of lines. */
     static of(text) {
         if (text.length == 0)
             throw new RangeError("A document must have at least one line");
         if (text.length == 1 && !text[0])
             return Text.empty;
-        return text.length <= 32 ? new TextLeaf(text) : TextNode.from(TextLeaf.split(text, []));
+        return text.length <= 32 /* Branch */ ? new TextLeaf(text) : TextNode.from(TextLeaf.split(text, []));
     }
 }
 Symbol.iterator;
+// Leaves store an array of line strings. There are always line breaks
+// between these strings. Leaves are limited in size and have to be
+// contained in TextNode instances for bigger documents.
 class TextLeaf extends Text {
     constructor(text, length = textLength(text)) {
         super();
@@ -104,10 +116,10 @@ class TextLeaf extends Text {
     decompose(from, to, target, open) {
         let text = from <= 0 && to >= this.length ? this
             : new TextLeaf(sliceText(this.text, from, to), Math.min(to, this.length) - Math.max(0, from));
-        if (open & 1) {
+        if (open & 1 /* From */) {
             let prev = target.pop();
             let joined = appendText(text.text, prev.text.slice(), 0, text.length);
-            if (joined.length <= 32) {
+            if (joined.length <= 32 /* Branch */) {
                 target.push(new TextLeaf(joined, prev.length + text.length));
             }
             else {
@@ -124,7 +136,7 @@ class TextLeaf extends Text {
             return super.replace(from, to, text);
         let lines = appendText(this.text, appendText(text.text, sliceText(this.text, 0, from)), to);
         let newLen = this.length + text.length - (to - from);
-        if (lines.length <= 32)
+        if (lines.length <= 32 /* Branch */)
             return new TextLeaf(lines, newLen);
         return TextNode.from(TextLeaf.split(lines, []), newLen);
     }
@@ -150,7 +162,7 @@ class TextLeaf extends Text {
         for (let line of text) {
             part.push(line);
             len += line.length + 1;
-            if (part.length == 32) {
+            if (part.length == 32 /* Branch */) {
                 target.push(new TextLeaf(part, len));
                 part = [];
                 len = -1;
@@ -161,6 +173,10 @@ class TextLeaf extends Text {
         return target;
     }
 }
+// Nodes provide the tree structure of the `Text` type. They store a
+// number of other nodes or leaves, taking care to balance themselves
+// on changes. There are implied line breaks _between_ the children of
+// a node (but not before the first or after the last child).
 class TextNode extends Text {
     constructor(children, length) {
         super();
@@ -183,7 +199,7 @@ class TextNode extends Text {
         for (let i = 0, pos = 0; pos <= to && i < this.children.length; i++) {
             let child = this.children[i], end = pos + child.length;
             if (from <= end && to >= pos) {
-                let childOpen = open & ((pos <= from ? 1 : 0) | (end >= to ? 2 : 0));
+                let childOpen = open & ((pos <= from ? 1 /* From */ : 0) | (end >= to ? 2 /* To */ : 0));
                 if (pos >= from && end <= to && !childOpen)
                     target.push(child);
                 else
@@ -196,11 +212,14 @@ class TextNode extends Text {
         if (text.lines < this.lines)
             for (let i = 0, pos = 0; i < this.children.length; i++) {
                 let child = this.children[i], end = pos + child.length;
+                // Fast path: if the change only affects one child and the
+                // child's size remains in the acceptable range, only update
+                // that child
                 if (from >= pos && to <= end) {
                     let updated = child.replace(from - pos, to - pos, text);
                     let totalLines = this.lines - child.lines + updated.lines;
-                    if (updated.lines < (totalLines >> (5 - 1)) &&
-                        updated.lines > (totalLines >> (5 + 1))) {
+                    if (updated.lines < (totalLines >> (5 /* BranchShift */ - 1)) &&
+                        updated.lines > (totalLines >> (5 /* BranchShift */ + 1))) {
                         let copy = this.children.slice();
                         copy[i] = updated;
                         return new TextNode(copy, this.length - (to - from) + text.length);
@@ -246,13 +265,13 @@ class TextNode extends Text {
         let lines = 0;
         for (let ch of children)
             lines += ch.lines;
-        if (lines < 32) {
+        if (lines < 32 /* Branch */) {
             let flat = [];
             for (let ch of children)
                 ch.flatten(flat);
             return new TextLeaf(flat, length);
         }
-        let chunk = Math.max(32, lines >> 5), maxChunk = chunk << 1, minChunk = chunk >> 1;
+        let chunk = Math.max(32 /* Branch */, lines >> 5 /* BranchShift */), maxChunk = chunk << 1, minChunk = chunk >> 1;
         let chunked = [], currentLines = 0, currentLen = -1, currentChunk = [];
         function add(child) {
             let last;
@@ -266,7 +285,7 @@ class TextNode extends Text {
             }
             else if (child instanceof TextLeaf && currentLines &&
                 (last = currentChunk[currentChunk.length - 1]) instanceof TextLeaf &&
-                child.lines + last.lines <= 32) {
+                child.lines + last.lines <= 32 /* Branch */) {
                 currentLines += child.lines;
                 currentLen += child.length + 1;
                 currentChunk[currentChunk.length - 1] = new TextLeaf(last.text.concat(child.text), last.length + 1 + child.length);
@@ -357,6 +376,7 @@ class RawTextCursor {
                 skip--;
             }
             else if (top instanceof TextLeaf) {
+                // Move to the next string
                 let next = top.text[offset + (dir < 0 ? -1 : 0)];
                 this.offsets[last] += dir;
                 if (next.length > Math.max(0, skip)) {
@@ -461,12 +481,23 @@ if (typeof Symbol != "undefined") {
     RawTextCursor.prototype[Symbol.iterator] = PartialTextCursor.prototype[Symbol.iterator] =
         LineCursor.prototype[Symbol.iterator] = function () { return this; };
 }
+/** This type describes a line in the document. It is created on-demand when lines are [queried]{@link Text.lineAt}. */
 export class Line {
-    constructor(from, to, number, text) {
+    // @internal
+    constructor(
+    /** The position of the start of the line. */
+    from, 
+    /** The position at the end of the line (_before_ the line break, or at the end of document for the last line). */
+    to, 
+    /** This line's line number (1-based). */
+    number, 
+    /** The line's content. */
+    text) {
         this.from = from;
         this.to = to;
         this.number = number;
         this.text = text;
     }
+    /** The length of the line (not including any line break after it). */
     get length() { return this.to - this.from; }
 }

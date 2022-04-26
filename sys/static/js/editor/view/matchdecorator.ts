@@ -36,23 +36,24 @@ export class MatchDecorator {
     private boundary: RegExp | undefined
     private maxLength: number
 
-    /** Create a decorator. */
+    /**
+     * Create a decorator.
+     * @param config.regexp The regular expression to match against the content. Will only be matched
+     *                      inside lines (not across them). Should have its 'g' flag set.
+     * @param config.decoration The decoration to apply to matches, either directly or as a function
+     *                      of the match.
+     * @param config.boundary By default, changed lines are re-matched entirely. You can provide a
+     *                      boundary expression,which should match single character strings that can
+     *                      never occur in `regexp`, to reducethe amount of re-matching.
+     * @param config.maxLength Matching happens by line, by default, but when lines are folded or very
+     *                      long lines are onlypartially drawn, the decorator may avoid matching part
+     *                      of them for speed. This controls howmuch additional invisible content it
+     *                      should include in its matches. Defaults to 1000.
+     */
     constructor(config: {
-        /** The regular expression to match against the content. Will only be matched inside lines (not across them). Should have its 'g' flag set. */
         regexp: RegExp,
-        /** The decoration to apply to matches, either directly or as a function of the match. */
         decoration: Decoration | ((match: RegExpExecArray, view: EditorView, pos: number) => Decoration),
-        /**
-         * By default, changed lines are re-matched entirely. You can provide a boundary expression,
-         * which should match single character strings that can never occur in `regexp`, to reduce
-         * the amount of re-matching.
-         */
         boundary?: RegExp,
-        /**
-         * Matching happens by line, by default, but when lines are folded or very long lines are only
-         * partially drawn, the decorator may avoid matching part of them for speed. This controls how
-         * much additional invisible content it should include in its matches. Defaults to 1000.
-         */
         maxLength?: number,
     }) {
         let {regexp, decoration, boundary, maxLength = 1000} = config

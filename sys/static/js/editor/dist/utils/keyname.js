@@ -86,24 +86,31 @@ const gecko = typeof navigator != "undefined" && /Gecko\/\d+/.test(navigator.use
 const mac = typeof navigator != "undefined" && /Mac/.test(navigator.platform);
 const ie = typeof navigator != "undefined" && /MSIE \d|Trident\/(?:[7-9]|\d{2,})\..*rv:(\d+)/.exec(navigator.userAgent);
 const brokenModifierNames = chrome && (mac || +chrome[1] < 57) || gecko && mac;
+// Fill in the digit keys
 for (let i = 0; i < 10; i++)
     base[48 + i] = base[96 + i] = String(i);
+// The function keys
 for (let i = 1; i <= 24; i++)
     base[i + 111] = "F" + i;
+// And the alphabetic keys
 for (let i = 65; i <= 90; i++) {
     base[i] = String.fromCharCode(i + 32);
     shift[i] = String.fromCharCode(i);
 }
+// For each code that doesn't have a shift-equivalent, copy the base name
 for (let code in base)
     if (!shift.hasOwnProperty(code))
         shift[code] = base[code];
 export function keyName(event) {
+    // Don't trust event.key in Chrome when there are modifiers until they fix https://bugs.chromium.org/p/chromium/issues/detail?id=633838
     let ignoreKey = brokenModifierNames && (event.ctrlKey || event.altKey || event.metaKey) || (safari || ie) && event.shiftKey && event.key && event.key.length == 1;
     let name = (!ignoreKey && event.key) || (event.shiftKey ? shift : base)[event.keyCode] || event.key || "Unidentified";
+    // Edge sometimes produces wrong names (Issue #3)
     if (name == "Esc")
         name = "Escape";
     if (name == "Del")
         name = "Delete";
+    // https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/8860571/
     if (name == "Left")
         name = "ArrowLeft";
     if (name == "Up")

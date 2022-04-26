@@ -9,6 +9,8 @@ const observeOptions = {
     attributes: true,
     characterDataOldValue: true
 };
+// IE11 has very broken mutation observers, so we also listen to
+// DOMCharacterDataModified there
 const useCharData = browser.ie && browser.ie_version <= 11;
 export class DOMObserver {
     constructor(view, onChange, onScrollChanged) {
@@ -16,7 +18,14 @@ export class DOMObserver {
         this.onChange = onChange;
         this.onScrollChanged = onScrollChanged;
         this.active = false;
+        // The known selection. Kept in our own object, as opposed to just
+        // directly accessing the selection because:
+        //  - Safari doesn't report the right selection in shadow DOM
+        //  - Reading from the selection forces a DOM layout
+        //  - This way, we can ignore selectionchange events if we have
+        //    already seen the 'new' selection
         this.selectionRange = new DOMSelectionState;
+        // Set when a selection change is detected, cleared on flush
         this.selectionChanged = false;
         this.delayedFlush = -1;
         this.resizeTimeout = -1;
@@ -28,11 +37,21 @@ export class DOMObserver {
         this.intersecting = false;
         this.gapIntersection = null;
         this.gaps = [];
+        // Timeout for scheduling check of the parents that need scroll handlers
         this.parentCheck = -1;
         this.dom = view.contentDOM;
         this.observer = new MutationObserver(mutations => {
             for (let mut of mutations)
                 this.queue.push(mut);
+            // IE11 will sometimes (on typing over a selection or
+            // backspacing out a single character text node) call the
+            // observer callback before actually updating the DOM.
+            //
+            // Unrelatedly, iOS Safari will, when ending a composition,
+            // sometimes first clear it, deliver the mutations, and then
+            // reinsert the finished text. CodeMirror's handling of the
+            // deletion will prevent the reinsertion from happening,
+            // breaking composition.
             if ((browser.ie && browser.ie_version <= 11 || browser.ios && view.composing) &&
                 mutations.some(m => m.type == "childList" && m.removedNodes.length ||
                     m.type == "characterData" && m.oldValue.length > m.target.nodeValue.length))
@@ -116,7 +135,13 @@ export class DOMObserver {
         let context = sel.anchorNode && view.docView.nearest(sel.anchorNode);
         if (context && context.ignoreEvent(event))
             return;
+        // Deletions on IE11 fire their events in the wrong order, giving
+        // us a selection change event before the DOM changes are
+        // reported.
+        // Chrome Android has a similar issue when backspacing out a
+        // selection (#645).
         if ((browser.ie && browser.ie_version <= 11 || browser.android && browser.chrome) && !view.state.selection.main.empty &&
+            // (Selection.isCollapsed isn't reliable on IE)
             sel.focusNode && isEquivalentPosition(sel.focusNode, sel.focusOffset, sel.anchorNode, sel.anchorOffset))
             this.flushSoon();
         else
@@ -124,6 +149,8 @@ export class DOMObserver {
     }
     readSelectionRange() {
         let { root } = this.view, domSel = getSelection(root);
+        // The Selection object is broken in shadow roots in Safari. See
+        // https://github.com/codemirror/codemirror.next/issues/414
         let range = browser.safari && root.nodeType == 11 && deepActiveElement() == this.view.contentDOM &&
             safariSelectionRangeHack(this.view) || domSel;
         if (this.selectionRange.eq(range))
@@ -148,7 +175,7 @@ export class DOMObserver {
                     changed.push(dom);
                 dom = dom.assignedSlot || dom.parentNode;
             }
-            else if (dom.nodeType == 11) {
+            else if (dom.nodeType == 11) { // Shadow root
                 dom = dom.host;
             }
             else {
@@ -192,11 +219,20 @@ export class DOMObserver {
         if (useCharData)
             this.dom.removeEventListener("DOMCharacterDataModified", this.onCharData);
     }
+    // Throw away any pending changes
     clear() {
         this.processRecords();
         this.queue.length = 0;
         this.selectionChanged = false;
     }
+    // Chrome Android, especially in combination with GBoard, not only
+    // doesn't reliably fire regular key events, but also often
+    // surrounds the effect of enter or backspace with a bunch of
+    // composition events that, when interrupted, cause text duplication
+    // or other kinds of corruption. This hack makes the editor back off
+    // from handling DOM changes for a moment when such a key is
+    // detected (via beforeinput or keydown), and then dispatches the
+    // key event, throwing away the DOM changes if it gets handled.
     delayAndroidKey(key, keyCode) {
         if (!this.delayedAndroidKey)
             requestAnimationFrame(() => {
@@ -210,6 +246,8 @@ export class DOMObserver {
                 if (this.view.state == startState)
                     this.view.update([]);
             });
+        // Since backspace beforeinput is sometimes signalled spuriously,
+        // Enter always takes precedence.
         if (!this.delayedAndroidKey || key == "Enter")
             this.delayedAndroidKey = { key, keyCode };
     }
@@ -248,7 +286,11 @@ export class DOMObserver {
         }
         return { from, to, typeOver };
     }
+    // Apply pending changes, if any
     flush(readSelection = true) {
+        // Completely hold off flushing when pending keys are set—the code
+        // managing those will make sure processRecords is called and the
+        // view is resynchronized after
         if (this.delayedFlush >= 0 || this.delayedAndroidKey)
             return;
         if (readSelection)
@@ -260,6 +302,7 @@ export class DOMObserver {
         this.selectionChanged = false;
         let startState = this.view.state;
         this.onChange(from, to, typeOver);
+        // The view wasn't updated
         if (this.view.state == startState)
             this.view.update([]);
     }
@@ -269,7 +312,7 @@ export class DOMObserver {
             return null;
         cView.markDirty(rec.type == "attributes");
         if (rec.type == "attributes")
-            cView.dirty |= 4;
+            cView.dirty |= 4 /* Attrs */;
         if (rec.type == "childList") {
             let childBefore = findChild(cView, rec.previousSibling || rec.target.previousSibling, -1);
             let childAfter = findChild(cView, rec.nextSibling || rec.target.nextSibling, 1);
@@ -309,8 +352,14 @@ function findChild(cView, dom, dir) {
     }
     return null;
 }
+// Used to work around a Safari Selection/shadow DOM bug (#414)
 function safariSelectionRangeHack(view) {
     let found = null;
+    // Because Safari (at least in 2018-2021) doesn't provide regular
+    // access to the selection inside a shadowroot, we have to perform a
+    // ridiculous hack to get at it—using `execCommand` to trigger a
+    // `beforeInput` event so that we can read the target range from the
+    // event.
     function read(event) {
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -324,6 +373,9 @@ function safariSelectionRangeHack(view) {
     let anchorNode = found.startContainer, anchorOffset = found.startOffset;
     let focusNode = found.endContainer, focusOffset = found.endOffset;
     let curAnchor = view.docView.domAtPos(view.state.selection.main.anchor);
+    // Since such a range doesn't distinguish between anchor and head,
+    // use a heuristic that flips it around if its end matches the
+    // current anchor.
     if (isEquivalentPosition(curAnchor.node, curAnchor.offset, focusNode, focusOffset))
         [anchorNode, anchorOffset, focusNode, focusOffset] = [focusNode, focusOffset, anchorNode, anchorOffset];
     return { anchorNode, anchorOffset, focusNode, focusOffset };

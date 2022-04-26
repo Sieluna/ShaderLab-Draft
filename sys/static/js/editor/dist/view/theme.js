@@ -90,6 +90,7 @@ export const baseTheme = buildTheme("." + baseThemeID, {
     "&.cm-focused .cm-cursorLayer": {
         animation: "steps(1) cm-blink 1.2s infinite"
     },
+    // Two animations defined so that we can switch between them to restart the animation without forcing another style recomputation.
     "@keyframes cm-blink": { "0%": {}, "50%": { visibility: "hidden" }, "100%": {} },
     "@keyframes cm-blink2": { "0%": {}, "50%": { visibility: "hidden" }, "100%": {} },
     ".cm-cursor, .cm-dropCursor": {

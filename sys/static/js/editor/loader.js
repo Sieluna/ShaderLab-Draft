@@ -1,5 +1,5 @@
 import { keymap, highlightSpecialChars, drawSelection, highlightActiveLine, dropCursor, rectangularSelection,
-    crosshairCursor, lineNumbers, highlightActiveLineGutter } from "./dist/view/index.js";
+         crosshairCursor, lineNumbers, highlightActiveLineGutter } from "./dist/view/index.js";
 import { EditorState } from "./dist/state/index.js";
 import { defaultHighlightStyle, syntaxHighlighting, indentOnInput, bracketMatching, foldGutter, foldKeymap } from "./dist/language/index.js";
 import { defaultKeymap, history, historyKeymap } from "./dist/commands/index.js";

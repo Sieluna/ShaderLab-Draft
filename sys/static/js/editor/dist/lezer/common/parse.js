@@ -1,19 +1,14 @@
 import { Range } from "./tree.js";
-var Open;
-(function (Open) {
-    Open[Open["Start"] = 1] = "Start";
-    Open[Open["End"] = 2] = "End";
-})(Open || (Open = {}));
 export class TreeFragment {
     constructor(from, to, tree, offset, openStart = false, openEnd = false) {
         this.from = from;
         this.to = to;
         this.tree = tree;
         this.offset = offset;
-        this.open = (openStart ? 1 : 0) | (openEnd ? 2 : 0);
+        this.open = (openStart ? 1 /* Start */ : 0) | (openEnd ? 2 /* End */ : 0);
     }
-    get openStart() { return (this.open & 1) > 0; }
-    get openEnd() { return (this.open & 2) > 0; }
+    get openStart() { return (this.open & 1 /* Start */) > 0; }
+    get openEnd() { return (this.open & 2 /* End */) > 0; }
     static addTree(tree, fragments = [], partial = false) {
         let result = [new TreeFragment(0, tree.length, tree, 0, false, partial)];
         for (let f of fragments)

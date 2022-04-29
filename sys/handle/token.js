@@ -1,43 +1,34 @@
-const expressUnless = require("express-unless");
 const jwt = require("jsonwebtoken");
+const config = require("../config/token.js");
 
-class UnauthorizedError extends Error {
-    constructor(code, error) {
-        super(error.message);
-        this.code = code;
-        this.status = 401;
-        this.name = "UnauthorizedError";
-        this.inner = error;
-    }
-}
+const getVerificationKey = typeof config.secret == "function" ? config.secret : () => config.secret;
+const credentialsRequired = typeof config.credentialsRequired == "undefined" ? true : config.credentialsRequired;
+const requestProperty = typeof config.requestProperty == "string" ? config.requestProperty : "auth";
 
-/**
- * @param {any} options.secret
- * @param {any} options.algorithms
- * @param {any} [options.getToken]
- * @param {any} [options.isRevoked]
- * @param {any} [options.credentialsRequired]
- * @param {any} [options.requestProperty]
- */
-module.exports = options => {
-    if (!options.secret || !options.algorithms || !Array.isArray(options.algorithms)) return;
-
-    const getVerificationKey = typeof options.secret == "function" ? options.secret : async () => options.secret;
-    const credentialsRequired = typeof options.credentialsRequired == "undefined" ? true : options.credentialsRequired;
-    const requestProperty = typeof options.requestProperty == "string" ? options.requestProperty : "auth";
-
-    const middleware = async (req, res, next) => {
+module.exports = {
+    /**
+     * @param {object|number} id object or userid
+     * @param {number} auth permission level
+     * @param {string} opts addition json
+     * @return {*}
+     */
+    sign: (id, auth, opts) => {
+        return jwt.sign(typeof id == "object" ? id : { id: id, auth: auth, opts: opts }, config.secret, {
+            algorithm: config.algorithm,
+            expiresIn: 86400,
+        });
+    },
+    verify: (req, res, next) => {
         let token, decodedToken;
         try {
             if (req.method === "OPTIONS" && "access-control-request-headers" in req.headers) {
                 const hasAuthInAccessControl = req.headers["access-control-request-headers"].split(",").map(header => header.trim().toLowerCase()).includes("authorization");
-                if (hasAuthInAccessControl)
-                    return next();
+                if (hasAuthInAccessControl) return next();
             }
 
             const authorizationHeader = req.headers && "Authorization" in req.headers ? "Authorization" : "authorization";
-            if (options.getToken && typeof options.getToken === "function") {
-                token = await options.getToken(req);
+            if (config.getToken && typeof config.getToken == "function") {
+                token = config.getToken(req);
             } else if (req.headers && req.headers[authorizationHeader]) {
                 const parts = (req.headers[authorizationHeader]).split(' ');
                 if (parts.length === 2) {
@@ -45,38 +36,28 @@ module.exports = options => {
                     const credentials = parts[1];
                     if (/^Bearer$/i.test(scheme))
                         token = credentials;
-                    else {
-                        if (credentialsRequired)
-                            throw new UnauthorizedError("credentials_bad_scheme", { message: "Format is Authorization: Bearer [token]" });
-                        else
-                            return next();
-                    }
-                } else throw new UnauthorizedError("credentials_bad_format", { message: "Format is Authorization: Bearer [token]" });
+                    else
+                        return credentialsRequired ? next({ code: "CREDENTIALS_BAD_SCHEME", status: 401, message: "Format is Authorization: Bearer [token]" }) : next();
+                } else return next({ code: "CREDENTIALS_BAD_FORMAT", message: "Format is Authorization: Bearer [token]" });
             }
 
-            if (!token) {
-                if (credentialsRequired)
-                    throw new UnauthorizedError("credentials_required", { message: "No authorization token was found" });
-                else
-                    return next();
-            }
+            if (!token) return credentialsRequired ? next({ code: "CREDENTIALS_REQUIRED", status: 401, message: "No authorization token was found" }) : next();
 
             try {
                 decodedToken = jwt.decode(token, { complete: true });
             } catch (err) {
-                throw new UnauthorizedError("invalid_token", err);
+                return next({ code: "INVALID_TOKEN", status: 401, message: err.message, inner: err });
             }
 
-            const key = await getVerificationKey(req, decodedToken);
-
+            const key = getVerificationKey(req, decodedToken);
             try {
-                jwt.verify(token, key, options);
+                jwt.verify(token, key, config);
             } catch (err) {
-                throw new UnauthorizedError("invalid_token", err);
+                return next({ code: "INVALID_TOKEN", status: 401, message: err.message, inner: err });
             }
 
-            const isRevoked = options.isRevoked && await options.isRevoked(req, decodedToken) || false;
-            if (isRevoked) throw new UnauthorizedError("revoked_token", { message: "The token has been revoked." });
+            const isRevoked = config.isRevoked && config.isRevoked(req, decodedToken) || false;
+            if (isRevoked) return next({ code: "REVOKED_TOKEN", status: 401, message: "The token has been revoked." });
 
             req[requestProperty] = decodedToken.payload;
             next();
@@ -84,6 +65,4 @@ module.exports = options => {
             return next(err);
         }
     }
-    middleware.unless = expressUnless;
-    return middleware;
-}
+};

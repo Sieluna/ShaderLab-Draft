@@ -1,7 +1,5 @@
 // Editor
-export { EditorState, EditorView, basicSetup } from "./editor/loader.js";
-export { clike, c, cpp, java, csharp, scala, kotlin, glsl, nesC, objectiveC, objectiveCpp, squirrel, ceylon, dart } from "./editor/lang/clike.js";
-export { autoCloseTags, esLint, javascript, javascriptLanguage, jsxLanguage, snippets, tsxLanguage, typescriptLanguage } from "./editor/lang/javascript.js";
+export { EditorState, EditorView, config } from "./editor/loader.js";
 
 // Maths
 export { Color } from './math/color.js';

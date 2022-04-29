@@ -6,7 +6,7 @@ const redirect = (existData) => {
 }
 
 const submitInfo = (target) => {
-    fetch(`/user/${target}`, {
+    fetch(`/api/user/${target}`, {
         method: "POST",
         body: new URLSearchParams(new FormData(document.getElementById("panel-input"))),
         redirect: "follow"

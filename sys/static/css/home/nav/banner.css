@@ -1,0 +1,18 @@
+/**
+ * Background Banner
+ */
+.sl-nav > .sl-nav_banner {
+    position: relative;
+    z-index: 0;
+    display: flex;
+    justify-content: center;
+    margin: 0 auto;
+    width: 100%;
+    min-height: 155px;
+    height: 9.5vw;
+    max-height: 240px;
+    background-image: url("../../../img/home/sponza.jpg");
+    background-position: center 0;
+    background-size: cover;
+    background-repeat: no-repeat;
+}

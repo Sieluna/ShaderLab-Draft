@@ -1,5 +1,11 @@
 @import "./shared.css";
 @import "./theme.css";
+
 @import "./home/nav.css";
-@import "./home/feature.css";
+@import "./home/nav/left.css";
+@import "./home/nav/center.css";
+@import "./home/nav/right.css";
+@import "./home/nav/banner.css";
+@import "./home/nav/filter.css";
+
 @import "./home/layout.css";

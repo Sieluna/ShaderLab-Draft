@@ -1,15 +1,20 @@
-const user = localStorage.getItem("user");
+//const user = localStorage.getItem("user");
+const user = {}
 
 const center = document.querySelector(".sl-nav .container-extend");
 const outer = document.querySelector(".sl-nav .bar-outer");
 const panel = document.querySelector(".sl-nav .search-panel");
 const search = document.querySelector("#nav-search");
+const userContainer = document.querySelector(".sl-nav .right-entry-item:first-child");
+const avatar = document.querySelector(".sl-nav .avatar-container");
+const userinfo = document.querySelector(".sl-nav .avatar-bottom");
 
 if (user != null) {
     document.querySelectorAll(".sl-nav .login-entry").forEach(node => node.setAttribute("style", "display: none"));
-    document.querySelectorAll(".sl-nav .avatar-container").forEach(node => node.setAttribute("style", "display: block"));
-    //document.querySelector(".sl-nav .avatar-container .user-entry > ")
+    avatar.setAttribute("style", "display: block");
 } else {
+    document.querySelectorAll(".sl-nav .login-entry").forEach(node => node.setAttribute("style", "display: block"));
+    avatar.setAttribute("style", "display: none");
 }
 
 let onTop;
@@ -45,16 +50,58 @@ let onPanel = {
     }
 }
 
-window.onload = () => {
-    document.querySelector("#nav-search .nav-search-clean").addEventListener("click", () => {
-        document.querySelector("#nav-search .nav-search-input").value = "";
-    });
+const isParent = (refNode, otherNode) => {
+    if (otherNode == null) return false; // if switch platform
+    let parent = otherNode.parentNode;
+    do {
+        if (refNode === parent) return true;
+        parent = parent.parentNode;
+    } while (parent);
+    return false;
+}
 
+let avatarLock = true, avatarLockId = -1;
+
+const enterAvatar = event => {
+    if (!isParent(avatar, event.relatedTarget) && event.target === avatar && avatarLock) {
+        avatarLock = false;
+        avatar.setAttribute("class", "avatar-container large-avatar");
+        userinfo.setAttribute("class", "avatar-bottom");
+        userinfo.setAttribute("style", "padding-top: 8px;");
+        setTimeout(() => avatarLock = true, 300);
+    }
+}
+
+const leaveAvatar = event => {
+    if (!isParent(userContainer, event.relatedTarget) && avatarLockId < 0) {
+        console.log("lock id > 0")
+        if (avatarLock) {
+            avatarLock = false;
+            avatar.setAttribute("class", "avatar-container small-avatar");
+            userinfo.setAttribute("class", "avatar-bottom avatar-bottom-transition");
+            setTimeout(() => {
+                userinfo.setAttribute("style", "padding-top: 8px; display: none");
+                avatarLock = true;
+            }, 300);
+        } else {
+            avatarLockId = setTimeout(() => { avatarLockId = -1; leaveAvatar(event); }, 300)
+        }
+    }
+}
+
+window.onload = () => {
+    document.querySelector("#nav-search .nav-search-clean").addEventListener("click", () => document.querySelector("#nav-search .nav-search-input").value = "");
     /* Search */
     document.querySelector("#nav-search .nav-search-input").addEventListener("focusout", () => onPanel.inputFocus = false);
     document.querySelector("#nav-search .nav-search-input").addEventListener("focusin", () => onPanel.inputFocus = true);
+    document.querySelector("#nav-search .nav-search-input").addEventListener("input", () => {
+
+    })
     outer.addEventListener("click", () => onPanel.panelFocus = false);
     panel.addEventListener("mouseover", () => onPanel.panelFocus = true);
 
-
+    if (user != null) {
+        avatar.addEventListener("mouseover", enterAvatar);
+        userContainer.addEventListener("mouseout", leaveAvatar);
+    }
 }

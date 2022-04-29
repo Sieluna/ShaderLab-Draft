@@ -1,4 +1,4 @@
-const query = require("./sql.js");
+const query = require("./model.js");
 const state = require("../config/state.js");
 
 const handle = {

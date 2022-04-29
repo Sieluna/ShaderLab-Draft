@@ -1,20 +1,47 @@
-const query = require("./sql.js");
+const { post, thumb } = require("./model.js").models;
 const state = require("../config/state.js");
 
 const handle = {
+    /**
+     * @param {number} id
+     * @return {any|null}
+     */
+    getPostById: async id => {
+        const result = await post.findByPk(id);
+        return result ? result : state.NotExist;
+    },
+    /**
+     * @param {string} name
+     * @return {any|null}
+     */
+    getPostByName: async name => {
+        const result = await post.findOne({ where: { name: name }});
+        return result ? result : state.NotExist;
+    },
     /** @return {number} */
     getLastId: async () => {
-        const result = await query('select max(post_id) as max from posts');
-        return result[0].max;
+        return await post.max("post_id");
     },
-    getWithId: async () => {
+    /**
+     * @param {number} [num]
+     * @return {any[]}
+     */
+    getAllPost: async num => {
+        return num ? await post.findAll({ limit: num }) : await post.findAll();
+    },
+    getPostRankById: async id => {
 
     },
-    getWithName: async () => {
-
+    /**
+     * @param {boolean} [order] true -> asc, false -> desc
+     * @param {number} [num]
+     * @return {any[]}
+     */
+    getAllPostByRank: async (order, num) => {
+        return num ? await post.findAll({ order: [], limit: num }) : await post.findAll();
     },
-    getWithRank: async () => {
-
+    thumbPost: async (user, post) => {
+        return await thumb.create({}, { include: [{ association: user}] })
     },
     /**
      *
@@ -26,5 +53,3 @@ const handle = {
         const reuslt = await query('call createPost(?, ?, ?, ?)', [user, topic, json.name, json.content]);
     },
 }
-
-module.exports = handle;

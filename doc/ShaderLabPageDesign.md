@@ -9,9 +9,9 @@ version: 2.0.1
 | Module  | Specification |
 |:-------:|:-------------:|
 | nodeJS  |   commonJS    |
- | browser | ES 6 Standard |  
+| browser | ES 6 Standard |  
 
-https://www.zybuluo.com/mdeditor#1523606
+https://mermaid-js.github.io/mermaid/
 
 
 ## Login page
@@ -34,11 +34,11 @@ Structure design: Background, Navigation Bar, Main Panel
 
 If user already registered, this page should not be load.
 
-| Feature      |                          Data                          |
-|:-------------|:------------------------------------------------------:|
-| Page Loading |                GET background: web link                |
-| Register     | POST {Account: string16, password: string32 } GET JSON |
-| Login        | POST {Account: string16, password: string32 } GET JSON |
+| Feature      |                    Request                    |  Response   |
+|:-------------|:---------------------------------------------:|:-----------:|
+| Page Loading |              GET api/img/random               | RETURN blob |
+| Register     | POST {Account: string16, password: string32 } | RETURN JSON |
+| Login        | POST {Account: string16, password: string32 } | RETURN JSON |
 
 ## Home Page
 
@@ -58,10 +58,6 @@ Structure design: Navigation, Layout
 ### Analyze
 
 This page should contain 50% functions of the application, including search, user, info.
-
-```flow
-
-```
 
 Navigation Bar:
 
@@ -94,6 +90,42 @@ Main Layout:
 
 
 Layout should get the data from database under **ranking**.
+
+| Feature      |         Request          |   Response   |
+|:-------------|:------------------------:|:------------:|
+| Page Loading |      GET /api/post       | RETURN JSON  |
+|              |   GET /api/user/vertify  | RETURN token |
+| Search       |    GET /api/post/tag     | RETURN JSON  |
+
+Search panel implement:
+
+```mermaid
+flowchart TD
+    Static --> focus{On focus}
+    focus --> |No longer focus| End
+    focus --> |Stay| extend[Open large]
+    focus --> |Input > 0| search[Searching]
+    extend ---> |On extend outer| End
+    extend --> |On extend| extend
+    search --> |> 0| extendListLayout[List searching result]
+    search --> |< 0| extend
+    extendListLayout --> End
+```
+
+User avatar icon implement:
+
+```mermaid
+flowchart TD
+    small[User small icon] --> mouseover{On top}
+    mouseover --> |Stay > 0.3s| large[User large icon]
+    mouseover --> |Stay < 0.3s| lockevent[set time out]
+    mouseover --> |Locked| End
+    lockevent --> large
+    large --> leave[Leave]
+    leave --> End
+```
+
+## Profile Page
 
 --------------------------------------
 

@@ -37,13 +37,15 @@ module.exports = sequelize => {
             type: DataTypes.STRING,
             field: "user_introduction"
         },
-        deprecated: {
-            type: DataTypes.BOOLEAN,
-            field: "user_deprecated",
-            defaultValue: false
+        permission: {
+            type: DataTypes.INTEGER,
+            field: "user_rank",
+            defaultValue: 1
         }
     }, {
+        paranoid: true,
         createdAt: "user_create",
-        updatedAt: "user_update"
+        updatedAt: "user_update",
+        deleteAt: "user_abort"
     });
 }

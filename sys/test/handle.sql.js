@@ -1,4 +1,4 @@
-const sequelize = require("../handle/sql.js");
+const sequelize = require("../handle/model.js");
 const expect = require("chai").expect;
 
 const { user } = sequelize.models;
@@ -7,9 +7,7 @@ describe("Sql handle test", () => {
     let code = true;
     before(() => sequelize.sync({ force: true }).then(() => sequelize.authenticate().catch(error => code = error)));
     after(async () => await sequelize.drop());
-    it("should return no error", () => {
-        expect(code).to.be.true;
-    });
+    it("should return no error", () => expect(code).to.be.true);
     describe("sequelize insert test", () => {
         beforeEach(() => user.max("user_id").then(id => user.create({ name: "InsertTest" + id + 1, password: "InsertTestPassword"}).then(res => code = res)));
         it("should return the user data", () => {

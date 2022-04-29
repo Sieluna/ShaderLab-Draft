@@ -1,28 +1,26 @@
 const express = require("express");
 const path = require("path");
-const multer = require("multer");
-const upload = multer({ dest: path.join(__dirname, "../static/data/user") });
 
 const state = require("../config/state.js");
-const userHandle = require("../handle/user.js");
+const topicHandle = require("../handle/topic.js");
 const tokenHandle = require("../handle/token.js");
+const userHandle = require("../handle/user");
 
 const router = express.Router();
 
 router.get("/", tokenHandle.verify, async (req, res) => {
-    const users = await userHandle.getAllUsers();
-    res.status(200).json(users);
+    const topic = await topicHandle.getAllTopics();
+    res.status(200).json(topic);
 });
 
 router.get("/:id", tokenHandle.verify, async (req, res) => {
-    const user = await userHandle.getUser(req.params.id);
+    const user = await topicHandle.getTopicById(req.params.id);
     switch (user) {
         case state.NotExist:
-            res.status(404).send("User not found");
+            res.status(404).send("Topic not found");
             break;
         case state.Empty:
-            res.status(400).send("Param is empty");
-            break;
+            req.status(400).send("Not valid id, should be ")
         default:
             res.status(200).json(user);
             break;

@@ -1,6 +1,4 @@
-const crypto = require("crypto");
-
 module.exports = {
-    key: process.env.TOKEN_KEY || crypto.randomBytes(64).toString("hex"),
-    algorithm: ["HS256"]
+    secret: process.env.TOKEN_KEY || "SHADERLAB_JSONWEBTOKEN_KEY",
+    algorithm: "HS256"
 }

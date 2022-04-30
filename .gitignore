@@ -5,9 +5,6 @@
 doc/SoftwareDesignDocument.docx
 doc/SoftwareDesignDocument.pdf
 
-# package
-package-lock.json
-
 # Server ignore
 node_modules/*
 sys/static/dist/*

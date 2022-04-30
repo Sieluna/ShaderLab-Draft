@@ -13,14 +13,14 @@ module.exports = sequelize => {
         name: {
             type: DataTypes.STRING(16),
             field: "user_name",
-            unique: true
+            unique: true,
         },
         avatar: {
-            type: DataTypes.BLOB,
+            type: DataTypes.STRING,
             field: "user_avatar"
         },
         email: {
-            type: DataTypes.STRING(64),
+            type: DataTypes.STRING,
             field: "user_email",
             unique: true
         },
@@ -29,8 +29,8 @@ module.exports = sequelize => {
             field: "user_password",
             allowNull: false,
             set(value) {
-                const enPsw = crypto.createHash("md5").update(this.name + value).digest("hex");
-                this.setDataValue("password", enPsw);
+                this.setDataValue("password",
+                    crypto.createHash("md5").update(this.name + value).digest("hex"));
             }
         },
         introduction: {

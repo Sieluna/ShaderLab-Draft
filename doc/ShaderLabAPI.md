@@ -53,3 +53,5 @@ sequenceDiagram
 
 --------------------------------------
 
+User password could have no length limit.
+md 5 could compress to 32.

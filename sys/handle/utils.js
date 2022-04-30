@@ -1,12 +1,24 @@
 const emailReg = /^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+((\.[a-zA-Z0-9_-]{2,3}){1,2})$/;
+const numberReg = /^[0-9]+$/;
 
-const isEmail = (string) => emailReg.test(string);
+/**
+ * @param {any} data
+ * @return {boolean}
+ */
+const isEmpty = data => data === undefined ? true : data == null ? true : typeof data == "number" ? false : data.trim().length === 0;
 
-const isEmpty = (string) => string === undefined ? true : string == null ? true : string === "";
+/**
+ * Better to check {@link isEmpty} before use it.
+ * @param {string} data
+ * @return {boolean}
+ */
+const isEmail = data => emailReg.test(data);
 
-const isNumber = (number) => {
-    if (typeof number == "number") return true;
-    return typeof number == "string" && number.length > 0 ? !Number.isNaN(Number(number)) : false;
-}
+/**
+ * Better to check {@link isEmpty} before use it.
+ * @param {string} data
+ * @return {boolean}
+ */
+const isNumber = data => numberReg.test(data);
 
 module.exports = { isEmail, isEmpty, isNumber };

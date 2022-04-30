@@ -42,12 +42,12 @@ const handle = {
      */
     create: async (name, image, description) => {
         if (isEmpty(name) || isEmpty(description)) return state.Empty;
-        if (name.length < 32 || description.length < 250) return state.OverSize;
+        if (name.length > 32 || description.length > 250) return state.OverSize;
         return await topic.create({ name: name, image: image, description: description });
     },
     createByName: async name => {
         if (isEmpty(name)) return state.Empty;
-        if (name.length < 32) return state.OverSize;
+        if (name.length > 32) return state.OverSize;
         return await topic.create({ name: name });
     },
     /**
@@ -58,15 +58,15 @@ const handle = {
      */
     updateById: async (id, image, description) => {
         if (isEmpty(description)) return state.Empty;
-        return await topic.update({ image: fs.readFileSync(path.join(__dirname, "../static/data/user", image.name)), description: description }, { where: { id: id }});
+        return await topic.update({ image: fs.readFileSync(path.join(__dirname, "../public/data/user", image.name)), description: description }, { where: { id: id }});
     },
     uploadImageById: async (id, image) => {
         if (!isNumber(id)) return state.Empty;
-        return await topic.update({ image: fs.readFileSync(path.join(__dirname, "../static/data/user", image.name)) }, { where: { id: id }});
+        return await topic.update({ image: fs.readFileSync(path.join(__dirname, "../public/data/user", image.name)) }, { where: { id: id }});
     },
     updateDescriptionById: async (id, description) => {
         if (!isNumber(id)) return state.Empty;
-        if (description.length < 250) return state.OverSize;
+        if (description.length > 250) return state.OverSize;
         return await topic.update({ description: description }, { where: { id: id }});
     }
 }

@@ -24,19 +24,25 @@ describe("Utils test", () => {
         it("a string should return false", () => {
             expect(isEmpty(mix)).to.be.false;
         });
+        it("a number should retunr false", () => {
+            expect(isEmpty(num)).to.be.false;
+        });
     });
     describe("is Email test", () => {
-        it("undefined should return true", () => {
+        it("undefined should return false", () => {
             expect(isEmail(undef)).to.be.false;
         });
-        it("null should return true", () => {
+        it("empty should return false", () => {
             expect(isEmail(empty)).to.be.false;
         });
-        it("null should return true", () => {
+        it("null should return false", () => {
             expect(isEmail(none)).to.be.false;
         });
         it("a random should return false", () => {
             expect(isEmail(mix)).to.be.false;
+        });
+        it("a number should retunr false", () => {
+            expect(isEmail(num)).to.be.false;
         });
         it("a email should return true", () => {
             expect(isEmail(email)).to.be.true;
@@ -54,7 +60,6 @@ describe("Utils test", () => {
             expect(isNumber(none)).to.be.false;
         });
         it("a random should return false", () => {
-            console.log(isNumber(mix));
             expect(isNumber(mix)).to.be.false;
         });
         it("a num should return true", () => {

@@ -16,7 +16,7 @@ module.exports = sequelize => {
             unique: true
         },
         image: {
-            type: DataTypes.BLOB,
+            type: DataTypes.STRING,
             field: "topic_image"
         },
         description: {

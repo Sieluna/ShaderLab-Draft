@@ -85,12 +85,29 @@ describe("User handle test", () => {
             expect(userCache).to.be.equal(state.Empty);
         })
     });
+    describe("Property update test", () => {
+        it("i dont know", () => {
+            const obj = { a: "1", b: "2", c: "3", d: "4" };
+            for (const objKey in obj) {
+                console.log(objKey, typeof objKey, obj[objKey]);
+            }
+        });
+    });
     describe("Update account test", () => {
-        beforeEach(async () => await userHandle.updateById(code, { name: "EmailAddUser" + code },));
-        it("should return the user data", async () => {
+        it("should return the state", async () => {
+            let result = await userHandle.updateById(code, { name: "EmailAddUser" + code });
+            console.log(result);
             let fall = await userHandle.getUserByName("EmailAddUser" + code);
             expect(fall).to.have.property("id").to.be.equal(code);
         });
+    });
+    describe("Update account other", () => {
+        it ("should return the state", async () => {
+            let result = await userHandle.updateById(code, { introduction: "I am EmailAddUser" + code });
+            console.log(result);
+            let fall = await userHandle.getUserByName("EmailAddUser" + code);
+            expect(fall).to.have.property("introduction", "I am EmailAddUser" + code);
+        })
     });
     describe("Get user by id test", () => {
         it("should return the user data", async () => {

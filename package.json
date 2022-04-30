@@ -16,13 +16,14 @@
         "chai": "latest",
         "chai-http": "latest",
         "webpack": "latest",
-        "webpack-cli": "latest"
+        "webpack-cli": "latest",
+        "css-loader": "latest",
+        "html-webpack-plugin": "latest"
     },
     "scripts": {
         "server": "set DEBUG=shaderlab:* && node ./sys/bin/www",
-        "compile-editor": "tsc --project ./sys/static/js/editor/tsconfig.json && set FILTER_PATH=sys/static/js/editor/dist && node ./sys/bin/suffix.js",
+        "compile-editor": "tsc --project ./sys/public/js/editor/tsconfig.json && set FILTER_PATH=sys/public/js/editor/dist && node ./sys/bin/suffix.js",
         "test": "mocha --recursive './sys/test/*.js' --reporter mochawesome",
-        "build-dev": "webpack --config ./sys/static/webpack.config.js --mode development",
-        "build-pro": "webpack --config ./sys/static/webpack.config.js --mode production"
+        "build": "webpack --config ./sys/public/webpack.config.js"
     }
 }

@@ -18,6 +18,7 @@ const tagsTable = require("../models/tag.js")(sequelize);
 const postsTable = require("../models/post.js")(sequelize);
 const thumbsTable = require("../models/thumb.js")(sequelize);
 const commentsTable = require("../models/comment.js")(sequelize);
+const repliesTable = require("../models/reply.js")(sequelize);
 
 usersTable.hasMany(postsTable, { foreignKey: { allowNull: false, field: "post_user" }});
 postsTable.belongsTo(usersTable);
@@ -33,6 +34,11 @@ usersTable.hasMany(commentsTable, { foreignKey: { allowNull: false, field: "comm
 commentsTable.belongsTo(usersTable);
 postsTable.hasMany(commentsTable, { foreignKey: { allowNull: false, field: "comment_post" }});
 commentsTable.belongsTo(postsTable);
+
+commentsTable.hasMany(repliesTable, { foreignKey: { allowNull: false, field: "reply_comment" }});
+repliesTable.belongsTo(commentsTable);
+usersTable.hasMany(repliesTable, { foreignKey: { allowNull: false, field: "reply_user" }});
+repliesTable.belongsTo(usersTable);
 
 postsTable.hasMany(tagsTable, { foreignKey: { allowNull: false, field: "tag_post" }});
 tagsTable.belongsTo(postsTable);

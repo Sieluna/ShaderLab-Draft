@@ -37,8 +37,18 @@ jobs:
     - run: npm ci
     - run: npm run build --if-present
     - run: set MYSQL_PASSWORD=${{ env.MYSQL_PASSWORD }} && npm test
-    - uses: actions/upload-artifact@v3
+
+    - name: Upload test results
       if: success() || failure()
+      uses: actions/upload-artifact@v3
       with:
         name: test-results
         path: mocha-json.json
+
+    - name: CreateReport
+      uses: ./
+      if: success() || failure()
+      with:
+        name: Mocha Tests
+        path: '*.json'
+        reporter: mocha-json

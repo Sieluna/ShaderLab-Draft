@@ -1,0 +1,24 @@
+{
+    "compilerOptions": {
+        "lib": ["es6", "dom"],
+        "typeRoots": ["/node_modules/@types"],
+        "strict": true,
+        "target": "es6",
+        "module": "es2022",
+        "moduleResolution": "node",
+        "paths": {
+            "lezer/common": ["./lezer/common/index.ts"],
+            "lezer/highlight": ["./lezer/highlight/index.ts"],
+            "lezer/lr": ["./lezer/lr/index.ts"],
+            "state": ["./state/index.ts"],
+            "view": ["./view/index.ts"],
+            "commands": ["./commands/index.ts"],
+            "language": ["./language/index.ts"],
+            "search": ["./search/index.ts"],
+            "lint": ["./lint/index.ts"],
+            "autocomplete": ["./autocomplete/index.ts"]
+        },
+        "outDir": "dist"
+    },
+    "exclude": ["./lezer.gen/*"]
+}

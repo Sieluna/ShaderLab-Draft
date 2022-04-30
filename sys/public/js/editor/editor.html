@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <style>
+        .cm-editor { height: 300px; border: 1px solid #ddd}
+        .cm-scroller { overflow: auto; }
+    </style>
+    <title>Editor</title>
+</head>
+<body>
+<h1>GLSL Test</h1>
+<div id=glsl-editor></div>
+<h1>JavaScript Test</h1>
+<div id="js-editor"></div>
+</body>
+<script type=module>
+    import { EditorState, EditorView, config } from "./loader.js";
+    import { javascript } from "./dist/javascript.js";
+    import { glsl } from "./dist/glsl.js";
+    import { HoverRef } from "./hover.js";
+
+    let glState = EditorState.create({ doc:
+            '#ifdef GL_ES\n' +
+            'precision mediump float;\n' +
+            '#endif\n\n' +
+            'uniform vec2 u_resolution;\n' +
+            'uniform vec2 u_mouse;\n' +
+            'uniform float u_time;\n\n' +
+            'void main() {\n' +
+            '   vec2 st = gl_FragCoord.xy/u_resolution.xy;\n' +
+            '   st.x *= u_resolution.x/u_resolution.y;\n\n' +
+            '   vec3 color = vec3(0.);\n' +
+            '   color = vec3(st.x,st.y,abs(sin(u_time)));\n\n' +
+            '   gl_FragColor = vec4(color,1.0);\n' +
+            '}', extensions: [
+            config,
+            glsl(),
+            HoverRef
+        ] });
+    window.view = new EditorView({ state: glState, parent: document.querySelector("#glsl-editor") });
+
+    let jsState = EditorState.create({ doc:
+            'function hello(who = "world") {\n' +
+            '   console.log(`Hello, ${who}!`)\n' +
+            '}', extensions: [
+            config,
+            javascript(),
+        ] });
+    window.view = new EditorView({ state: jsState, parent: document.querySelector("#js-editor") });
+</script>
+</html>

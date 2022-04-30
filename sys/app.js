@@ -2,24 +2,22 @@ const express = require("express");
 const path = require("path");
 const logger = require("morgan");
 
-const indexRouter = require("./routes/index.js");
-const userRouter = require("./routes/user.js");
-const homeRouter = require("./routes/home.js");
-const editorRouter = require("./routes/editor.js");
+const sequelize = require("./handle/model.js");
+
+sequelize.sync({ force: true }).then(() => {
+    console.log("Database is synchronized.");
+});
 
 const app = express();
 
 app.use(logger("dev"));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // return value: flase -> object|array. true -> any
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "static")));
 
-app.use("/", indexRouter);
-app.use("/user", userRouter);
-app.use("/home", homeRouter);
-app.use("/editor", editorRouter);
+app.get("/", (req, res) => res.render("index", { title: "Shader Lab" }));
 
-// listen 3000 port
-//app.listen(3000, () => console.log("Server is start running"));
+app.use("/api/user", require("./routes/user.js"));
+app.use("/api/topic", require("./routes/topic.js"));
 
 module.exports = app;

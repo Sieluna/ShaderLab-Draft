@@ -1,66 +1,92 @@
 const express = require("express");
+const path = require("path");
+const multer = require("multer");
+const upload = multer({ dest: path.join(__dirname, "../public/data/user") });
+
+const state = require("../config/state.js");
+const userHandle = require("../handle/user.js");
+const tokenHandle = require("../handle/token.js");
+
 const router = express.Router();
 
-const multer = require("multer");
-const upload = multer({ dest: "./static/data/user" });
+router.get("/", tokenHandle.verify, async (req, res) => {
+    const users = await userHandle.getAllUsers();
+    res.status(200).json(users);
+});
 
-const userHandle = require("../handle/user.js");
-const state = require("../config/state.js");
+router.get("/:id", tokenHandle.verify, async (req, res) => {
+    const user = await userHandle.getUser(req.params.id);
+    switch (user) {
+        case state.NotExist:
+            res.status(404).send("User not found");
+            break;
+        case state.Empty:
+            res.status(400).send("Param is empty");
+            break;
+        default:
+            res.status(200).json(user);
+            break;
+    }
+});
 
-/* why post? password should not show in url */
-router.post("/login", async (req, res, next) => {
-    const user = await userHandle.login({ account: req.body.account, password: req.body.password });
+router.post("/login", async (req, res) => {
+    const user = await userHandle.login(req.body.account, req.body.password);
     switch (user) {
         case state.OverSize:
-            res.send({ code: 400, msg: "Not valid account or password", data: null });
+            res.status(400).send("Not valid account or password");
             break;
         case state.NotCorrect:
-            res.send({ code: 400, msg: "Password incorrect!", data: null });
+            res.status(400).send("Password incorrect!");
             break;
         case state.NotExist:
-            res.send({ code: 400, msg: "Account not exist!", data: null });
+            res.status(400).send("Account not exist!");
             break;
         case state.Empty:
-            res.send({ code: 400, msg: "Account or password can not be empty.", data: null });
+            res.status(400).send("Account or password can not be empty.");
             break;
         default:
-            res.send({ code: 200, msg: "Login success!", data: user });
+            res.status(200).json({ data: user, token: tokenHandle.sign(user.id, user.permission) });
             break;
     }
 });
 
-router.post("/register", async (req, res, next) => {
-    const user = await userHandle.register({ account: req.body.account, password: req.body.password });
+router.post("/", async (req, res) => {
+    const user = await userHandle.register(req.body.account, req.body.password);
     switch (user) {
         case state.Duplicate:
-            res.send({ code: 400, msg: "Account already exist", data: null });
+            res.status(400).send("Account already exist");
             break;
         case state.OverSize:
-            res.send({ code: 400, msg: "Account or password is too long", data: null });
+            res.status(400).send("Account or password is too long");
             break;
         case state.Empty:
-            res.send({ code: 400, msg: "Account or password can not be empty.", data: null });
+            res.status(400).send("Account or password can not be empty.");
             break;
         default:
-            res.send({ code: 200, msg: "Register success!", data: user });
+            res.status(200).json({ data: user, token: tokenHandle.sign(user.id, user.permission) });
             break;
     }
 });
 
-router.post('/update', upload.single("image"), async (req, res, next) => {
-    const user = await userHandle.update({account: req.query.account, password: req.query.password});
-    switch (user) {
-        case state.Duplicate:
-            res.send({ code: 400, msg: "Account already exist", data: null });
+router.put("/:id", tokenHandle.verify, async (req, res) => {
+    if (req.body.id === req.params.id) {
+        const user = await userHandle.updateById(id, req.body);
+    } else {
+        return res.status(400).send(`Bad request: param ID (${id}) does not match body ID (${req.body.id}).`)
+    }
+});
+
+router.delete("/:id", tokenHandle.verify, async (req, res) => {
+    const effect = await userHandle.deprecateById(req.params.id);
+    switch (effect) {
+        case state.NotExist:
+            res.status(404).send("User could not find");
             break;
-        case state.OverSize:
-            res.send({ code: 400, msg: "Account or password is too long", data: null });
-            break;
-        case state.NotCorrect:
-            res.send({ code: 400, msg: "Register fail!", data: null });
+        case state.Empty:
+            res.status(404).send("Params not exist");
             break;
         default:
-            res.send({ code: 200, msg: "Register success!", data: user });
+            res.status(200).end();
             break;
     }
 });

@@ -28,9 +28,7 @@ void async function () {
 
                 let count = 0;
                 for (let item of match) {
-                    if (/.js$/.test(item[1])) {
-                        continue;
-                    }
+                    if (/.js$/.test(item[1])) continue;
                     let temp = item[0];
                     let index = item.index + count;
                     let now = temp.replace(item[1], `${item[1]}.js`);

@@ -9,7 +9,22 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  MYSQL_USER: root
+  MYSQL_PASSWORD: root
+  MYSQL_DATABASE: shaderlab
+
 jobs:
+  setup:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE ${{ env.MYSQL_DATABASE }};' -u${{ env.MYSQL_USER }} -p${{ env.MYSQL_PASSWORD }}
+          mysql -e 'SHOW DATABASES;' -u${{ env.MYSQL_USER }} -p${{ env.MYSQL_PASSWORD }}
+
   build:
 
     runs-on: ubuntu-latest
@@ -18,16 +33,7 @@ jobs:
       matrix:
         node-version: [12.x, 14.x, 16.x]
 
-    env:
-      MYSQL_USER: root
-      MYSQL_PASSWORD: root
-      MYSQL_DATABASE: shaderlab
-
     steps:
-    - run: |
-        sudo /etc/init.d/mysql start
-        mysql -e 'CREATE DATABASE ${{ env.MYSQL_DATABASE }};' -u${{ env.MYSQL_USER }} -p${{ env.MYSQL_PASSWORD }}
-        mysql -e 'SHOW DATABASES;' -u${{ env.MYSQL_USER }} -p${{ env.MYSQL_PASSWORD }}
     - uses: actions/checkout@v3
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
@@ -37,18 +43,3 @@ jobs:
     - run: npm ci
     - run: npm run build --if-present
     - run: set MYSQL_PASSWORD=${{ env.MYSQL_PASSWORD }} && npm test
-
-    - name: Upload test results
-      if: success() || failure()
-      uses: actions/upload-artifact@v3
-      with:
-        name: test-results
-        path: mocha-json.json
-
-    - name: CreateReport
-      uses: ./
-      if: success() || failure()
-      with:
-        name: Mocha Tests
-        path: '*.json'
-        reporter: mocha-json

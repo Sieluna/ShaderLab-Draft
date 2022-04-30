@@ -7,11 +7,5 @@ doc/SoftwareDesignDocument.pdf
 
 # Server ignore
 node_modules/*
-sys/static/dist/*
-
 # test
 mochawesome-report/*
-
-# Static ignore
-sys/static/js/editor/lezer.gen/node_modules/*
-sys/static/js/editor/lezer.gen/package-lock.json

@@ -1,0 +1,1 @@
+export { Tag, styleTags, Highlighter, tagHighlighter, highlightTags, highlightTree, tags, classHighlighter } from "./highlight";

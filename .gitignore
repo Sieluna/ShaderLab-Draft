@@ -1,0 +1,17 @@
+# share
+.idea/
+
+# document
+doc/SoftwareDesignDocument.docx
+doc/SoftwareDesignDocument.pdf
+
+# package
+package-lock.json
+
+# Server ignore
+node_modules/*
+sys/static/dist/*
+
+# Static ignore
+sys/static/js/editor/lezer.gen/node_modules/*
+sys/static/js/editor/lezer.gen/package-lock.json

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="./css/editor.css"/>
+    <title>Editor</title>
+</head>
+<body>
+
+
+
+<div id="vertShaderCode" class="hidden"></div>
+<div id="fragShaderCode" class="hidden"></div>
+
+<div id="renderContainer">
+    <div id="loading" class="hidden">Loading...</div>
+    <div id="renderCanvasContainer">
+        <canvas id="renderCanvas"></canvas>
+    </div>
+    <div id="errorLog"></div>
+</div>
+
+<div id="shadersContainer">
+    <div id="vertexRow" class="row">
+        <div class="rowHeader">
+            <span class="headerTitle">PIXEL (FRAGMENT) SHADER</span>
+        </div>
+        <div class="rowEditor">
+            <div class="shaderCode" id="fragmentShaderEditor"></div>
+        </div>
+    </div>
+    <div id="fragmentRow" class="row">
+        <div class="rowHeader">
+            <span class="headerTitle">VERTEX SHADER</span>
+        </div>
+        <div class="rowEditor">
+            <div class="shaderCode" id="vertexShaderEditor"></div>
+        </div>
+    </div>
+</div>
+
+</body>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="./js/editor/ace.js" type="text/javascript" charset="utf-8"></script>
+</html>

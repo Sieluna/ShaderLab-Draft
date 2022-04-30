@@ -1,0 +1,27 @@
+{
+    "name": "shaderlab",
+    "version": "0.0.0",
+    "private": true,
+    "dependencies": {
+        "express": "latest",
+        "mysql2": "latest",
+        "morgan": "latest",
+        "body-parser": "latest",
+        "multer": "latest"
+    },
+    "devDependencies": {
+        "mocha": "latest",
+        "chai": "latest",
+        "chai-http": "latest",
+        "ts-loader": "latest",
+        "webpack": "latest",
+        "webpack-cli": "latest"
+    },
+    "scripts": {
+        "server": "set DEBUG=shaderlab:* && node ./sys/bin/www",
+        "compile-editor": "tsc --project ./sys/static/js/editor/tsconfig.json && set FILTER_PATH=sys/static/js/editor/dist && node ./sys/bin/suffix.js",
+        "test": "mocha --recursive './sys/test/*.js'",
+        "build-dev": "webpack --config ./sys/static/webpack.config.js --mode development",
+        "build-pro": "webpack --config ./sys/static/webpack.config.js --mode production"
+    }
+}

@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Math</title>
+</head>
+<body>
+<table id="debug"></table>
+</body>
+<script type="module">
+    const debug = document.getElementById("debug");
+    debug.log = (content, callback, condition, addition) => {
+        let counter = performance.now();
+        let result = typeof callback === "function" ? callback() : callback;
+        counter = performance.now() - counter;
+        let text = "<tr>"
+        text += "<td>" + content + "</td>";
+        text += condition(result) ? "<td style='color: green; width: 50px; text-align: center'>Pass</td>" : "<td style='color: red; width: 50px; text-align: center'>Fail</td>";
+        text += "<td>" + (typeof result === "object" ? JSON.stringify(result) : result) + " - " + addition + "</td>";
+        text += "<td style='width: 70px'>" + counter.toFixed(3) + " ms" + "</td>";
+        text += "</tr>"
+        debug.innerHTML += text;
+    }
+
+    import { Vec2 } from "./vec2.js";
+    import { Vec3 } from "./vec3.js";
+    import { Vec4 } from "./vec4.js";
+    import { Euler } from "./euler.js";
+    import { Quat } from "./quat.js";
+    import { Mat3 } from "./mat3.js";
+    import { Mat4 } from "./mat4.js";
+    import { Color } from "./color.js";
+
+    /* Requirement:
+     * GL style Nameing;
+     * vec2, vec3, vec4,
+     * mat2, mat3, mat4
+     */
+
+    debug.innerHTML += "<h3> Vector2 </h3>";
+    {
+        debug.log("Vector2 Creation with none arguments", new Vec2(), result => result.equals([0, 0]), "it should return two 0");
+        debug.log("Vector2 Creation with single arguments", new Vec2(1), result => result.equals([1, 1]), "it should return two 1")
+        debug.log("Vector2 Creation with double arguments", new Vec2(1, 2), result => result.equals([1, 2]), "it should return 1 and 2");
+        debug.log("Vector2 Copy form [1, 2]", new Vec2(1).copy([1, 2]), result => result.equals([1, 2]), "it should return 1 and 2");
+        debug.log("Vector2 Set with x = [1, 2]", new Vec2(1).set([1, 2]), result => result.equals([1, 2]), "it should return 1 and 2");
+        debug.log("Vector2 Set with x = 1, y = 2", new Vec2(1).set(1, 2), result => result.equals([1, 2]), "it should return 1 and 2");
+        debug.log("Vector2 Add, [1, 2] + [3, 4]", new Vec2(1, 2).add([3, 4]), result => result.equals([4, 6]), "it should return 4 and 6");
+        debug.log("Vector2 Add, [1, 2] + [3, 4] On other", new Vec2(1).add([1, 2], [3, 4]), result => result.equals([4, 6]), "it should return 4 and 6");
+        debug.log("Vector2 Sub, [1, 2] - [3, 4]", new Vec2(1, 2).sub([3, 4]), result => result.equals([-2, -2]), "it should return -2 and -2");
+        debug.log("Vector2 Sub, [1, 2] - [3, 4] On other", new Vec2(1).sub([1, 2], [3, 4]), result => result.equals([-2, -2]), "it should return -2 and -2");
+        debug.log("Vector2 Mul, [1, 2] * [3, 4]", new Vec2(1, 2).multiply([3, 4]), result => result.equals([3, 8]), "it should return 3 and 8");
+        debug.log("Vector2 Mul Scale, [1, 2] * 2", new Vec2(1, 2).multiply(2), result => result.equals([2, 4]), "it should return 2 and 4");
+        debug.log("Vector2 Div, [1, 2] / [3, 4]", new Vec2(1, 2).divide([3, 4]), result => result.compare([0.3333333, 0.5]), "it should have 0.3333333 and 0.5");
+        debug.log("Vector2 Div Scale, [1, 2] / 2", new Vec2(1, 2).divide(2), result => result.compare([0.5, 1]), "it should have 0.5 and 1");
+        debug.log("Vector2 Scale with 2", new Vec2(1, 2).scale(2), result => result.equals([2, 4]), "it should return 2 and 4");
+        debug.log("Vector2 Distance", new Vec2(1, 2).distance([3, 4]), result => result - 2.828427 < 1e-5, "it should return 2.828427");
+        debug.log("Vector2 SquaredDistance", new Vec2(1, 2).squaredDistance([3, 4]), result => result - 8 < 1e-15, "it should return 8");
+        debug.log("Vector2 Magnitude", new Vec2(1, 2).magnitude(), result => result - 2.236067 < 1e-5, "it should return 2.236067");
+        debug.log("Vector2 SquaredMagnitude", new Vec2(1, 2).squaredMagnitude(), result => result === 5, "it should return 5");
+        debug.log("Vector2 Negate", new Vec2(1, 2).negate(), result => result.equals([-1, -2]), "it should return -1 and -2");
+        debug.log("Vector2 Normalize", new Vec2(5, 0).normalize(), result => result.equals([1, 0]), "it should return 1, 0");
+        debug.log("Vector2 Dot", new Vec2(1, 2).dot([3, 4]), result => result === 11, "it should return 11");
+        debug.log("Vector2 Cross", new Vec2(1, 2).cross([3, 4]), result => result === -2, "it should return -2");
+        debug.log("Vector2 Lerp", new Vec2(1, 2).lerp([3, 4], 0.5), result => result.equals([2, 3]), "it should return 2 and 3");
+        debug.log("Vector2 applyMatrix3", new Vec2(1, 2).applyMatrix3([1, 0, 0, 0, 1, 0, 0, 0, 1]), result => result.equals([1, 2]), "it should return 1, 2");
+        debug.log("Vector2 applyMatrix4", new Vec2(1, 2).applyMatrix4([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]), result => result.equals([1, 2]), "it should return 1, 2");
+        debug.log("Vector2 Compare", new Vec2(0, 1.23456789), result => result.compare([0, 1.23456]) === true, "it should return true");
+        debug.log("Vector2 Compare", new Vec2(0, 1.23456789), result => result.compare([0, 1.2345]) === false, "it should return false");
+        debug.log("Vector2 String", new Vec2(1, 2).toString(), result => typeof result === 'string', "it should return [1,2]");
+        debug.log("Vector2 zero", Vec2.zero, result => result.x === 0 && result.y === 0, "a zero vector2");
+
+        debug.innerHTML += "<h4 style='margin: 5px'> Static </h4>"
+
+        const vA = new Vec2(1, 2), vB = new Vec2(3, 4), out = new Vec2();
+        debug.log("Vector2-Static Copy", Vec2.copy(out, vA), result => out.equals([1, 2]) && result.equals([1, 2]) && vA.equals([1, 2]), "it should return value of vectorA");
+        debug.log("Vector2-Static Set", Vec2.set(out, 1, 2), result => out.equals([1, 2]) && result.equals([1, 2]), "it should return value of vectorA");
+        debug.log("Vector2-Static Add", Vec2.add(out, vA, vB), result => out.equals([4, 6]) && result.equals([4, 6]) && vA.equals([1, 2]) && vB.equals([3, 4]), "it should return value of vectorA + vectorB");
+        debug.log("Vector2-Static Sub", Vec2.subtract(out, vA, vB), result => out.equals([-2, -2]) && result.equals([-2, -2]) && vA.equals([1, 2]) && vB.equals([3, 4]), "it should return value of vectorA - vectorB");
+        debug.log("Vector2-Static Mul", Vec2.multiply(out, vA, vB), result => out.equals([3, 8]) && result.equals([3, 8]) && vA.equals([1, 2]) && vB.equals([3, 4]), "it should return value of vectorA * vectorB");
+        debug.log("Vector2-Static Div", Vec2.divide(out, vA, vB), result => out.compare([0.33333333, 0.5]) && result.compare([0.33333333, 0.5]) && vA.equals([1, 2]) && vB.equals([3, 4]), "it should return value of vectorA / vectorB");
+        debug.log("Vector2-Static Floor", Vec2.floor(out, new Vec2(Math.E, Math.PI)), result => out.equals([2, 3]) && result.equals([2, 3]), "it should return value of floor e and pi");
+        debug.log("Vector2-Static Min", Vec2.min(out, [1, 4], [3, 2]), result => out.equals([1, 2]) && result.equals([1, 2]) && vA.equals([1, 2]) && vB.equals([3, 4]), "it should return min value of two Vector2");
+        debug.log("Vector2-Static Max", Vec2.max(out, [1, 4], [3, 2]), result => out.equals([3, 4]) && result.equals([3, 4]) && vA.equals([1, 2]) && vB.equals([3, 4]), "it should return max value of two Vector2");
+        debug.log("Vector2-Static Scale", Vec2.scale(out, vA, 2), result => out.equals([2, 4]) && result.equals([2, 4]) && vA.equals([1, 2]) && vB.equals([3, 4]), "it should return value of vectorA * 2");
+        debug.log("Vector2-Static Distance", Vec2.distance(vA, vB), result => result - 2.828427 < 1e-5 && vA.equals([1, 2]) && vB.equals([3, 4]), "it should return 2.828427");
+        debug.log("Vector2-Static SquaredDistance", Vec2.squaredDistance(vA, vB), result => result - 8 < 1e-5 && vA.equals([1, 2]) && vB.equals([3, 4]), "it should return 8");
+        debug.log("Vector2-Static Magnitude", Vec2.magnitude(vA), result => result - 2.236067 < 1e-5 && vA.equals([1, 2]), "it should return 2.236067");
+        debug.log("Vector2-Static SquaredMagnitude", Vec2.squaredMagnitude(vA), result => result - 5 < 1e-5 && vA.equals([1, 2]), "it should return 5");
+        debug.log("Vector2-Static Negate", Vec2.negate(out, vA), result => out.equals([-1, -2]) && result.equals([-1, -2]) && vA.equals([1, 2]), "it should return -1 and -2");
+        debug.log("Vector2-Static Inverse", Vec2.inverse(out, vA), result => out.equals([1, 0.5]) && result.equals([1, 0.5]) && vA.equals([1, 2]), "it should return 1 and 0.5");
+        debug.log("Vector2-Static Normalize", Vec2.normalize(out, [5, 0]), result => out.equals([1, 0]) && result.equals([1, 0]), "it should return 1 and 0");
+        debug.log("Vector2-Static Dot", Vec2.dot(vA, vB), result => result === 11 && vA.equals([1, 2]) && vB.equals([3, 4]), "it should return 11");
+        debug.log("Vector2-Static Cross", Vec2.cross(vA, vB), result => result === -2 && vA.equals([1, 2]) && vB.equals([3, 4]), "it should return -2");
+        debug.log("Vector2-Static Lerp", Vec2.lerp(out, vA, vB, 0.5), result => out.equals([2, 3]) && result.equals([2, 3]) && vA.equals([1, 2]) && vB.equals([3, 4]), "it should return 2 and 3");
+        debug.log("Vector2-Static TransformMatrix3x3", Vec2.transformMat3(out, vA, [1, 0, 0, 0, 1, 0, 0, 0, 1]), result => out.equals([1, 2]) && result.equals([1, 2]) && vA.equals([1, 2]), "it should return 1, 2");
+        debug.log("Vector2-Static TransformMatrix4x4", Vec2.transformMat4(out, vA, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]), result => out.equals([1, 2]) && result.equals([1, 2]) && vA.equals([1, 2]), "it should return 1, 2");
+        debug.log("Vector2-Static Rotate", Vec2.rotate(out, [6, -5], [0, -5], Math.PI), result => out.compare([-6, -5]) && result.compare([-6, -5]), "it should return -6 and -5");
+        debug.log("Vector2-Static Angle", Vec2.angle([1, 0], [1, 2]), result => result - 1.10714 < 1e-5, "it should return 1.10714");
+        debug.log("Vector2-Static Compare", Vec2.compare([1e-16, 1], [0, 1]), result => result === true, "compare 1e-16 and 0");
+        debug.log("Vector2-Static Equals", Vec2.equals([1, 2], vA), result => result === true, "vA should equals [1, 2]");
+    }
+
+    debug.innerHTML += "<h3> Vector3 </h3>";
+    {
+        debug.log("Vector3 Creation with none arguments", new Vec3(), result => result.equals([0, 0, 0]), "it should return three 0");
+        debug.log("Vector3 Creation with single arguments", new Vec3(1), result => result.equals([1, 1, 1]), "it should return three 1")
+        debug.log("Vector3 Creation with triple arguments", new Vec3(1, 2, 3), result => result.equals([1, 2, 3]), "it should return 1, 2 and 3");
+        debug.log("Vector3 Copy form [1, 2, 3]", new Vec3(1).copy([1, 2, 3]), result => result.equals([1, 2, 3]), "it should return 1, 2 and 3");
+        debug.log("Vector3 Set with x = [1, 2, 3]", new Vec3(1).set([1, 2, 3]), result => result.equals([1, 2, 3]), "it should return 1, 2 and 3");
+        debug.log("Vector3 Set with x = 1, y = 2, z = 3", new Vec3(1).set(1, 2, 3), result => result.equals([1, 2, 3]), "it should return 1, 2 and 3");
+        debug.log("Vector3 Add, [1, 2, 3] + [4, 5, 6]", new Vec3(1, 2, 3).add([4, 5, 6]), result => result.equals([5, 7, 9]), "it should return 5, 7 and 9");
+        debug.log("Vector3 Sub, [1, 2, 3] - [4, 5, 6]", new Vec3(1, 2, 3).sub([4, 5, 6]), result => result.equals([-3, -3, -3]), "it should return -3, -3 and -3");
+        debug.log("Vector3 Mul, [1, 2, 3] * [4, 5, 6]", new Vec3(1, 2, 3).multiply([4, 5, 6]), result => result.equals([4, 10, 18]), "it should return 4, 10 and 18");
+        debug.log("Vector3 Div, [1, 2, 3] / [4, 5, 6]", new Vec3(1, 2, 3).divide([4, 5, 6]), result => result.compare([0.25, 0.4, 0.5]), "it should have 0.25, 0.4 and 0.5");
+        debug.log("Vector3 Scale with 2", new Vec3(1, 2, 3).scale(2), result => result.equals([2, 4, 6]), "it should return 2, 4 and 6");
+        debug.log("Vector3 Distance", new Vec3(1, 2, 3).distance([4, 5, 6]), result => result - 5.196152 < 1e-5, "it should return 5.196152");
+        debug.log("Vector3 SquaredDistance", new Vec3(1, 2, 3).squaredDistance([4, 5, 6]), result => result - 27 < 1e-5, "it should return 27");
+        debug.log("Vector3 Magnitude", new Vec3(1, 2, 3).magnitude(), result => result - 3.741657 < 1e-5, "it should return 3.741657");
+        debug.log("Vector3 SquaredMagnitude", new Vec3(1, 2, 3).squaredMagnitude(), result => result - 14 < 1e-5, "it should return 14");
+        debug.log("Vector3 Negate", new Vec3(1, 2, 3).negate(), result => result.equals([-1, -2, -3]), "it should return -1, -2 and -3");
+        debug.log("Vector3 Normalize", new Vec3(5, 0, 0).normalize(), result => result.equals([1, 0, 0]), "it should return 1, 0 and 0");
+        debug.log("Vector3 Dot", new Vec3(1, 2, 3).dot([4, 5, 6]), result => result - 32 < 1e-5, "it should return 32");
+        debug.log("Vector3 Cross", new Vec3(1, 2, 3).cross([4, 5, 6]), result => result.equals([-3, 6, -3]), "it should return -3, 6 and -3");
+        debug.log("Vector3 Lerp", new Vec3(1, 2, 3).lerp([4, 5, 6], 0.5), result => result.equals([2.5, 3.5, 4.5]), "it should return 2.5, 3.5 and 4.5");
+        debug.log("Vector3 Compare", new Vec3(0, 0, 1.23456789), result => result.compare([0, 0, 1.23456]) === true, "it should return true");
+        debug.log("Vector3 Compare", new Vec3(0, 0, 1.23456789), result => result.compare([0, 0, 1.2345]) === false, "it should return false");
+        debug.log("Vector3 String", new Vec3(1, 2, 3).toString(), result => typeof result === 'string', "it should return [1,2,3]");
+
+        debug.innerHTML += "<h4 style='margin: 5px'> Static </h4>"
+
+        const vA = new Vec3(1, 2, 3), vB = new Vec3(4, 5, 6), out = new Vec3();
+        debug.log("Vector3-Static Copy", Vec3.copy(out, vA), result => out.equals([1, 2, 3]) && result.equals([1, 2, 3]) && vA.equals([1, 2, 3]), "it should return value of vectorA");
+        debug.log("Vector3-Static Set", Vec3.set(out, 1, 2, 3), result => out.equals([1, 2, 3]) && result.equals([1, 2, 3]), "it should return value of vectorA");
+        debug.log("Vector3-Static Add", Vec3.add(out, vA, vB), result => out.equals([5, 7, 9]) && result.equals([5, 7, 9]) && vA.equals([1, 2, 3]) && vB.equals([4, 5, 6]), "it should return value of vectorA + vectorB");
+        debug.log("Vector3-Static Sub", Vec3.subtract(out, vA, vB), result => out.equals([-3, -3, -3]) && result.equals([-3, -3, -3]) && vA.equals([1, 2, 3]) && vB.equals([4, 5, 6]), "it should return value of vectorA - vectorB");
+        debug.log("Vector3-Static Mul", Vec3.multiply(out, vA, vB), result => out.equals([4, 10, 18]) && result.equals([4, 10, 18]) && vA.equals([1, 2, 3]) && vB.equals([4, 5, 6]), "it should return value of vectorA * vectorB");
+        debug.log("Vector3-Static Div", Vec3.divide(out, vA, vB), result => out.equals([0.25, 0.4, 0.5]) && result.equals([0.25, 0.4, 0.5]) && vA.equals([1, 2, 3]) && vB.equals([4, 5, 6]), "it should return value of vectorA / vectorB");
+        debug.log("Vector3-Static Floor", Vec3.floor(out, new Vec3(Math.E, Math.PI, Math.SQRT2)), result => out.equals([2, 3, 1]) && result.equals([2, 3, 1]), "it should return value of floor e, pi and sqrt2");
+        debug.log("Vector3-Static Min", Vec3.min(out, [1, 3, 1], [3, 1, 3]), result => out.equals([1, 1, 1]) && result.equals([1, 1, 1]) && vA.equals([1, 2, 3]) && vB.equals([4, 5, 6]), "it should return min value of two Vector2");
+        debug.log("Vector3-Static Max", Vec3.max(out, [1, 3, 1], [3, 1, 3]), result => out.equals([3, 3, 3]) && result.equals([3, 3, 3]) && vA.equals([1, 2, 3]) && vB.equals([4, 5, 6]), "it should return max value of two Vector2");
+        debug.log("Vector3-Static Scale", Vec3.scale(out, vA, 2), result => out.equals([2, 4, 6]) && result.equals([2, 4, 6]) && vA.equals([1, 2, 3]) && vB.equals([4, 5, 6]), "it should return value of vectorA * 2");
+        debug.log("Vector3-Static Distance", Vec3.distance(vA, vB), result => result - 5.196152 < 1e-5 && vA.equals([1, 2, 3]) && vB.equals([4, 5, 6]), "it should return 5.196152");
+        debug.log("Vector3-Static SquaredDistance", Vec3.squaredDistance(vA, vB), result => result - 27 < 1e-5 && vA.equals([1, 2, 3]) && vB.equals([4, 5, 6]), "it should return 27");
+        debug.log("Vector3-Static Magnitude", Vec3.magnitude(vA), result => result - 3.741657 < 1e-5 && vA.equals([1, 2, 3]), "it should return 3.741657");
+        debug.log("Vector3-Static SquaredMagnitude", Vec3.squaredMagnitude(vA), result => result - 14 < 1e-5 && vA.equals([1, 2, 3]), "it should return 14");
+        debug.log("Vector3-Static Negate", Vec3.negate(out, vA), result => out.equals([-1, -2, -3]) && result.equals([-1, -2, -3]) && vA.equals([1, 2, 3]), "it should return -1, -2 and -3");
+        debug.log("Vector3-Static Inverse", Vec3.inverse(out, vA), result => out.compare([1, 0.5, 0.333333333]) && result.compare([1, 0.5, 0.333333333]) && vA.equals([1, 2, 3]), "it should return 1, 0.5 and 0.33333333");
+        debug.log("Vector3-Static Normalize", Vec3.normalize(out, [5, 0, 0]), result => out.equals([1, 0, 0]) && result.equals([1, 0, 0]), "it should return 1, 0 and 0");
+        debug.log("Vector3-Static Dot", Vec3.dot(vA, vB), result => result - 32 < 1e-5 && vA.equals([1, 2, 3]) && vB.equals([4, 5, 6]), "it should return 32");
+        debug.log("Vector3-Static Cross", Vec3.cross(out, vA, vB), result => result.equals([-3, 6, -3]) && vA.equals([1, 2, 3]) && vB.equals([4, 5, 6]), "it should return -3, 6 and -3");
+        debug.log("Vector3-Static Lerp", Vec3.lerp(out, vA, vB, 0.5), result => out.equals([2.5, 3.5, 4.5]) && result.equals([2.5, 3.5, 4.5]) && vA.equals([1, 2, 3]) && vB.equals([4, 5, 6]), "it should return 2.5, 3.5 and 4.5");
+        debug.log("Vector3-Static TransformMatrix3x3 with identity", Vec3.transformMat3(out, vA, [1, 0, 0, /**/ 0, 1, 0, /**/ 0, 0, 1]), result => out.equals([1, 2, 3]) && result.equals([1, 2, 3]) && vA.equals([1, 2, 3]), "it should return 1, 2 and 3");
+        debug.log("Vector3-Static TransformMatrix3x3 with 90 deg about x", Vec3.transformMat3(out, [0, 1, 0], [1, 0, 0, /**/ 0, 0, 1, /**/ 0, -1, 0]), result => out.equals([0, 0, 1]) && result.equals([0, 0, 1]), "it should return 0, 0 and 1");
+        debug.log("Vector3-Static TransformMatrix3x3 with 90 deg about y", Vec3.transformMat3(out, [1, 0, 0], [0, 0, -1, /**/ 0, 1, 0, /**/ 1, 0, 0]), result => out.equals([0, 0, -1]) && result.equals([0, 0, -1]), "it should return 0, 0 and -1");
+        debug.log("Vector3-Static TransformMatrix3x3 with 90 deg about z", Vec3.transformMat3(out, [1, 0, 0], [0, 1, 0, /**/ -1, 0, 0, /**/ 0, 0, 1]), result => out.equals([0, 1, 0]) && result.equals([0, 1, 0]), "it should return 0, 1 and 0");
+        debug.log("Vector3-Static TransformMatrix3x3 with a lookAt normal matrix", () => {
+            let matrix = Mat4.lookAt(new Mat4(), [5, 6, 7], [2, 6, 7], [0, 1, 0]);
+            let n = new Mat3();
+            matrix = Mat3.transpose(n, Mat3.invert(n, Mat3.fromMat4(n, matrix)));
+            return Vec3.transformMat3(out, [1, 0, 0], matrix); }, result => out.equals([0, 0, 1]) && result.equals([0, 0, 1]), "it should return 0, 0 and 1");
+        debug.log("Vector3-Static TransformMatrix4x4 with identity", Vec3.transformMat4(out, vA, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]), result => out.equals([1, 2, 3]) && result.equals([1, 2, 3]) && vA.equals([1, 2, 3]), "it should return 1, 2 and 3");
+        debug.log("Vector3-Static TransformMatrix4x4 with a lookAt", () => {
+            let matrix = Mat4.lookAt(new Mat4(), [5, 6, 7], [2, 6, 7], [0, 1, 0]);
+            return Vec3.transformMat4(out, vA, matrix); }, result => out.equals([4, -4, -4]) && result.equals([4, -4, -4]) && vA.equals([1, 2, 3]), "it should rotate and translate the input");
+        debug.log("Vector3-Static TransformMatrix4x4 with a perspective matrix", Vec3.transformMat4(out, [10, 20, 30], [0.750, 0, 0, 0, /**/ 0, 1, 0, 0, /**/ 0, 0, -1.02, -1, /**/ 0, 0, -2.02, 0]), result => result.compare([-0.25, -0.666666, 1.087333]), "transform a point from perspective(pi/2, 4/3, 1, 100)");
+        debug.log("Vector3-Static TransformQuaternion", Vec3.transformQuat(out, vA, [0.18257418567011074, 0.3651483713402215, 0.5477225570103322, 0.730296742680443]), result => result.compare([1, 2, 3]), "should rotate the input vector");
+        debug.log("Vector3-Static RotateX", Vec3.rotateX(out, [2, 7, 0], [2, 5, 0], Math.PI), result => out.compare([2, 3, 0]) && result.compare([2, 3, 0]), "it should return 2, 3 and 0");
+        debug.log("Vector3-Static RotateY", Vec3.rotateY(out, [-2, 3, 10], [-4, 3, 10], Math.PI), result => out.compare([-6, 3, 10]) && result.compare([-6, 3, 10]), "it should return 2, 3 and 0");
+        debug.log("Vector3-Static RotateZ", Vec3.rotateX(out, [2, 7, 0], [2, 5, 0], Math.PI), result => out.compare([2, 3, 0]) && result.compare([2, 3, 0]), "it should return 2, 3 and 0");
+        debug.log("Vector3-Static Angle", Vec3.angle(vA, vB), result => result - 0.225726 < 1e-5, "it should return 0.225726");
+        debug.log("Vector3-Static Compare", Vec3.compare([1e-16, 1, 2], [0, 1, 2]), result => result === true, "compare 1e-16 and 0");
+        debug.log("Vector3-Static Equals", Vec3.equals([1, 2, 3], vA), result => result === true, "vA should equals [1, 2, 3]");
+    }
+
+    debug.innerHTML += "<h3> Vector4 </h3>";
+    {
+        debug.log("Vector4 Creation with none arguments", new Vec4(), result => result.equals([0, 0, 0, 0]), "it should return four 0");
+        debug.log("Vector4 Creation with single arguments", new Vec4(1), result => result.equals([1, 1, 1, 1]), "it should return four 1")
+        debug.log("Vector4 Creation with double arguments", new Vec4(1, 2, 3, 4), result => result.equals([1, 2, 3, 4]), "it should return 1, 2, 3 and 4");
+        debug.log("Vector4 Copy form [1, 2, 3, 4]", new Vec4(1).copy([1, 2, 3, 4]), result => result.equals([1, 2, 3, 4]), "it should return 1, 2, 3 and 4");
+        debug.log("Vector4 Set with x = [1, 2, 3, 4]", new Vec4(1).set([1, 2, 3, 4]), result => result.equals([1, 2, 3, 4]), "it should return 1, 2, 3 and 4");
+        debug.log("Vector4 Set with x = 1, y = 2, z = 3, w = 4", new Vec4(1).set(1, 2, 3, 4), result => result.equals([1, 2, 3, 4]), "it should return 1, 2, 3 and 4");
+        debug.log("Vector4 Add, [1, 2, 3, 4] + [5, 6, 7, 8]", new Vec4(1, 2, 3, 4).add([5, 6, 7, 8]), result => result.equals([6, 8, 10, 12]), "it should return 6, 8, 10 and 12");
+        debug.log("Vector4 Add, [1, 2, 3, 4] + [5, 6, 7, 8] On other", new Vec4(1).add([1, 2, 3, 4], [5, 6, 7, 8]), result => result.equals([6, 8, 10, 12]), "it should return 6, 8, 10 and 12");
+        debug.log("Vector4 Sub, [1, 2, 3, 4] - [5, 6, 7, 8]", new Vec4(1, 2, 3, 4).sub([5, 6, 7, 8]), result => result.equals([-4, -4, -4, -4]), "it should return -4, -4, -4 and -4");
+        debug.log("Vector4 Sub, [1, 2, 3, 4] - [5, 6, 7, 8] On other", new Vec4(1).sub([1, 2, 3 ,4], [5, 6, 7, 8]), result => result.equals([-4, -4, -4, -4]), "it should return -4, -4, -4 and -4");
+        debug.log("Vector4 Mul, [1, 2, 3, 4] * [5, 6, 7, 8]", new Vec4(1, 2, 3, 4).multiply([5, 6, 7, 8]), result => result.equals([5, 12, 21, 32]), "it should return 5, 12, 21 and 32");
+        debug.log("Vector4 Mul Scale, [1, 2, 3, 4] * 2", new Vec4(1, 2, 3, 4).multiply(2), result => result.equals([2, 4, 6, 8]), "it should return 2, 4, 6 and 8");
+        debug.log("Vector4 Div, [1, 2, 3, 4] / [5, 6, 7, 8]", new Vec4(1, 2, 3, 4).divide([5, 6, 7, 8]), result => result.compare([0.2, 0.333333, 0.428571, 0.5]), "it should have 0.2, 0.333333, 0.428571 and 0.5");
+        debug.log("Vector4 Div Scale, [1, 2, 3, 4] / 2", new Vec4(1, 2, 3, 4).divide(2), result => result.compare([0.5, 1, 1.5, 2]), "it should have 0.5, 1, 1.5 and 2");
+        debug.log("Vector4 Normalize", new Vec4(3, 0, 0, 0).normalize(), result => result.equals([1, 0, 0, 0]), "it should return 1, 0, 0 and 0")
+        debug.log("Vector4 Dot", new Vec4(1, 2, 3, 4).dot([5, 6, 7, 8]), result => result - 70 < 1e-5, "it should return 70");
+        debug.log("Vector4 Compare", new Vec4(0, 0, 0, 1.23456789), result => result.compare([0, 0, 0, 1.23456]) === true, "it should return true");
+        debug.log("Vector4 Compare", new Vec4(0, 0, 0, 1.23456789), result => result.compare([0, 0, 0, 1.2345]) === false, "it should return false");
+        debug.log("Vector4 String", new Vec4(1, 2, 3, 4).toString(), result => typeof result === 'string', "it should return [1,2,3,4]");
+
+        debug.innerHTML += "<h4 style='margin: 5px'> Static </h4>"
+
+        const vA = new Vec4(1, 2, 3, 4), vB = new Vec4(5, 6, 7, 8), out = new Vec4();
+        debug.log("Vector4-Static Copy", Vec4.copy(out, vA), result => out.equals([1, 2, 3, 4]) && result.equals([1, 2, 3, 4]) && vA.equals([1, 2, 3, 4]), "it should return value of vectorA");
+        debug.log("Vector4-Static Set", Vec4.set(out, 1, 2, 3, 4), result => out.equals([1, 2, 3, 4]) && result.equals([1, 2, 3, 4]), "it should return value of vectorA");
+        debug.log("Vector4-Static Add", Vec4.add(out, vA, vB), result => out.equals([6, 8, 10, 12]) && result.equals([6, 8, 10, 12]) && vA.equals([1, 2, 3, 4]) && vB.equals([5, 6, 7, 8]), "it should return value of vectorA + vectorB");
+        debug.log("Vector4-Static Sub", Vec4.subtract(out, vA, vB), result => out.equals([-4, -4, -4, -4]) && result.equals([-4, -4, -4, -4]) && vA.equals([1, 2, 3, 4]) && vB.equals([5, 6, 7, 8]), "it should return value of vectorA - vectorB");
+        debug.log("Vector4-Static Mul", Vec4.multiply(out, vA, vB), result => out.equals([5, 12, 21, 32]) && result.equals([5, 12, 21, 32]) && vA.equals([1, 2, 3, 4]) && vB.equals([5, 6, 7, 8]), "it should return value of vectorA * vectorB");
+        debug.log("Vector4-Static Div", Vec4.divide(out, vA, vB), result => out.compare([0.2, 0.333333, 0.428571, 0.5]) && result.compare([0.2, 0.333333, 0.428571, 0.5]) && vA.equals([1, 2, 3, 4]) && vB.equals([5, 6, 7, 8]), "it should return value of vectorA / vectorB");
+        debug.log("Vector4-Static Floor", Vec4.floor(out, new Vec4(Math.E, Math.PI, Math.SQRT2, Math.SQRT1_2)), result => out.equals([2, 3, 1, 0]) && result.equals([2, 3, 1, 0]), "it should return value of floor e, pi, sqrt2 and sqrt0.5");
+        debug.log("Vector4-Static Min", Vec4.min(out, [1, 3, 1, 3], [3, 1, 3, 1]), result => out.equals([1, 1, 1, 1]) && result.equals([1, 1, 1, 1]) && vA.equals([1, 2, 3, 4]) && vB.equals([5, 6, 7, 8]), "it should return min value of two Vector2");
+        debug.log("Vector4-Static Max", Vec4.max(out, [1, 3, 1, 3], [3, 1, 3, 1]), result => out.equals([3, 3, 3, 3]) && result.equals([3, 3, 3, 3]) && vA.equals([1, 2, 3, 4]) && vB.equals([5, 6, 7, 8]), "it should return max value of two Vector2");
+        debug.log("Vector4-Static Scale", Vec4.scale(out, vA, 2), result => out.equals([2, 4, 6, 8]) && result.equals([2, 4, 6, 8]) && vA.equals([1, 2, 3, 4]) && vB.equals([5, 6, 7, 8]), "it should return value of vectorA * 2");
+        debug.log("Vector4-Static Distance", Vec4.distance(vA, vB), result => result - 8 < 1e-5 && vA.equals([1, 2, 3, 4]) && vB.equals([5, 6, 7, 8]), "it should return 8");
+        debug.log("Vector4-Static SquaredDistance", Vec4.squaredDistance(vA, vB), result => result - 64 < 1e-5 && vA.equals([1, 2, 3, 4]) && vB.equals([5, 6, 7, 8]), "it should return 64");
+        debug.log("Vector4-Static Magnitude", Vec4.magnitude(vA), result => result - 5.4772255 < 1e-5 && vA.equals([1, 2, 3, 4]), "it should return 5.477225");
+        debug.log("Vector4-Static SquaredMagnitude", Vec4.squaredMagnitude(vA), result => result - 30 < 1e-5 && vA.equals([1, 2, 3, 4]), "it should return 30");
+        debug.log("Vector4-Static Negate", Vec4.negate(out, vA), result => out.equals([-1, -2, -3, -4]) && result.equals([-1, -2, -3, -4]) && vA.equals([1, 2, 3, 4]), "it should return -1, -2, -3 and -4");
+        debug.log("Vector4-Static Inverse", Vec4.inverse(out, vA), result => out.compare([1, 0.5, 0.333333333, 0.25]) && result.compare([1, 0.5, 0.333333333, 0.25]) && vA.equals([1, 2, 3, 4]), "it should return 1, 0.5, 0.33333333 and 0.25");
+        debug.log("Vector4-Static Normalize", Vec4.normalize(out, [5, 0, 0, 0]), result => out.equals([1, 0, 0, 0]) && result.equals([1, 0, 0, 0]), "it should return 1, 0, 0 and 0");
+        debug.log("Vector4-Static Dot", Vec4.dot(vA, vB), result => result - 70 < 1e-5 && vA.equals([1, 2, 3, 4]) && vB.equals([5, 6, 7, 8]), "it should return 70");
+        debug.log("Vector4-Static Cross", Vec4.cross(out, [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0]), result => result.equals([0, 0, 0, -1]) && vA.equals([1, 2, 3, 4]) && vB.equals([5, 6, 7, 8]), "it should return -3, 6 and -3");
+        debug.log("Vector4-Static Lerp", Vec4.lerp(out, vA, vB, 0.5), result => out.equals([3, 4, 5, 6]) && result.equals([3, 4, 5, 6]) && vA.equals([1, 2, 3, 4]) && vB.equals([5, 6, 7, 8]), "it should return 3, 4, 5 and 6");
+        debug.log("Vector4-Static TransformMat4", Vec4.transformMat4(out, vA, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 2, 3, 1]), result => result.equals([5, 10, 15, 4]), "it should return 5, 10, 15, 4");
+        debug.log("Vector4-Static TransformQuat", Vec4.transformQuat(out, vA, new Quat(1, 0, 0, 1)), result => result.equals([2, -6, 4, 4]), "it should return 2, -6, 4 and 4");
+        debug.log("Vector4-Static Compare", Vec4.compare([0, 1, 0, 1e-16], [0, 1, 0, 0]), result => result === true, "compare 1e-16 and 0");
+        debug.log("Vector4-Static Equals", Vec4.equals([1, 2, 3, 4], vA), result => result === true, "vA should equals [1, 2, 3]");
+    }
+
+    debug.innerHTML += "<h3> Euler </h3>";
+    {
+        debug.log("Euler Creation with none arguments", new Euler(), result => result.equals([0, 0, 0]) && result.order === "YXZ","it should return three 0 with order yxz");
+        debug.log("Euler Creation with single arguments", new Euler(1), result => result.equals([1, 1, 1]) && result.order === "YXZ", "it should return three 1 with order yxz")
+        debug.log("Euler Creation with triple arguments", new Euler(1, 2, 3), result => result.equals([1, 2, 3]) && result.order === "YXZ", "it should return 1, 2 and 3 with order yxz");
+        debug.log("Euler Creation with triple arguments with order", new Euler(1, 2, 3, "XYZ"), result => result.equals([1, 2, 3]) && result.order === "XYZ", "it should return 1, 2 and 3 with order xyz");
+        debug.log("Euler Compare", new Euler(0, 0, 1.23456789), result => result.compare([0, 0, 1.23456]) === true, "it should return true");
+        debug.log("Euler Compare", new Euler(0, 0, 1.23456789), result => result.compare([0, 0, 1.2345]) === false, "it should return false");
+        debug.log("Euler Copy form [1, 2, 3]", new Euler(1).copy([1, 2, 3]), result => result.equals([1, 2, 3]), "it should return 1, 2 and 3");
+        debug.log("Euler Set with x = [1, 2, 3]", new Euler(1).set([1, 2, 3]), result => result.equals([1, 2, 3]), "it should return 1, 2 and 3");
+        debug.log("Euler Set with x = 1, y = 2, z = 3", new Euler(1).set(1, 2, 3), result => result.equals([1, 2, 3]), "it should return 1, 2 and 3");
+        debug.log("Euler FromRotationMatrix", new Euler().fromRotationMatrix(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1), result => result.equals([0, 0, 0]), "rotation matrix")
+
+        debug.innerHTML += "<h4 style='margin: 5px'> Static </h4>"
+
+        const eA = new Euler(1, 2, 3), eB = new Euler(4, 5, 6), out = new Euler();
+        debug.log("Euler-Static Copy", Euler.copy(out, eA), result => out.equals([1, 2, 3]) && result.equals([1, 2, 3]) && eA.equals([1, 2, 3]), "it should return value of eulerA");
+        debug.log("Euler-Static Set", Euler.set(out, 1, 2, 3), result => out.equals([1, 2, 3]) && result.equals([1, 2, 3]) && eA.equals([1, 2, 3]), "it should return value of eulerA");
+        //debug.log("Euler-Static FromRotationMatrix", Euler.fromRotationMatrix(out, ), result => out.equals([1, 2, 3]) && result.equals([1, 2, 3]) && eA.equals([1, 2, 3]), "it should return value of eulerA");
+
+    }
+
+    debug.innerHTML += "<h3> Quaternion </h3>";
+    {
+        debug.log("Quaternion Creation with none arguments", new Quat(), result => result.equals([0, 0, 0, 1]), "it should return identity quaternion");
+        debug.log("Quaternion Creation with multi arguments", new Quat(1, 2, 3, 4), result => result.equals([1, 2, 3, 4]), "it should return 1, 2, 3 and 4");
+        debug.log("Quaternion Copy form [1, 2, 3, 4]", new Quat(1).copy([1, 2, 3, 4]), result => result.equals([1, 2, 3, 4]), "it should return 1, 2, 3 and 4");
+        debug.log("Quaternion Set with x = 1, y = 2, z = 3, w = 4", new Quat(1).set(1, 2, 3, 4), result => result.equals([1, 2, 3, 4]), "it should return 1, 2, 3 and 4");
+
+        const qA = new Quat(1, 2, 3, 4), qB = new Quat(5, 6, 7, 8), out = new Quat();
+        debug.log("Quaternion-Static Copy", Quat.copy(out, qA), result => out.equals([1, 2, 3, 4]) && result.equals([1, 2, 3, 4]) && qA.equals([1, 2, 3, 4]), "it should return value of quaternionA");
+        debug.log("Quaternion-Static Set", Quat.set(out, 1, 2, 3, 4), result => out.equals([1, 2, 3, 4]) && result.equals([1, 2, 3, 4]), "it should return value of quaternionA");
+        debug.log("Quaternion-Static identity", Quat.identity(out), result => out.equals([0, 0, 0, 1]) && result.equals([0, 0, 0, 1]), "it should return value of identity quaternion");
+        debug.log("Quaternion-Static getAxisAngle", () => {
+            Quat.setAxisAngle(out, [0, 1, 0], 0.0);
+            return Quat.getAxisAngle([1, 1, -1], out); }, result => (result % (Math.PI * 2.0)) === 0, "it should return a multiple of 2*PI as the angle component");
+        debug.log("Quaternion-Static Add", Quat.add(out, qA, qB), result => out.equals([6, 8, 10, 12]) && result.equals([6, 8, 10, 12]) && qA.equals([1, 2, 3, 4]) && qB.equals([5, 6, 7, 8]), "it should return value of quaternionA + quaternionB");
+        debug.log("Quaternion-Static Mul", Quat.multiply(out, qA, qB), result => out.equals([24, 48, 48, -6]) && result.equals([24, 48, 48, -6]) && qA.equals([1, 2, 3, 4]) && qB.equals([5, 6, 7, 8]), "it should return value of quaternionA * quaternionB");
+        debug.log("Quaternion-Static Scale", Quat.scale(out, qA, 2), result => out.equals([2, 4, 6, 8]) && result.equals([2, 4, 6, 8]) && qA.equals([1, 2, 3, 4]) && qB.equals([5, 6, 7, 8]), "it should return value of vectorA * 2");
+        debug.log("Quaternion-Static Magnitude", Quat.magnitude(qA), result => result - 5.4772255 < 1e-5 && qA.equals([1, 2, 3, 4]), "it should return 5.477225");
+        debug.log("Quaternion-Static SquaredMagnitude", Quat.squaredMagnitude(qA), result => result - 30 < 1e-5 && qA.equals([1, 2, 3, 4]), "it should return 30");
+        debug.log("Quaternion-Static Invert", Quat.invert(out, qA), result => qA.equals([1, 2, 3, 4]), "it should return -0.033333, -0.066666, -0.1 and 0.133333");
+        debug.log("Quaternion-Static Conjugate", Quat.conjugate(out, qA), result => out.compare([-1, -2, -3, 4]) && result.compare([-1, -2, -3, 4]) && qA.equals([1, 2, 3, 4]), "it should return -1, -2, -3 and 4");
+        debug.log("Quaternion-Static Normalize", Quat.normalize(out, [5, 0, 0, 0]), result => out.equals([1, 0, 0, 0]) && result.equals([1, 0, 0, 0]), "it should return 1, 0, 0 and 0");
+        debug.log("Quaternion-Static Dot", Quat.dot(qA, qB), result => result - 70 < 1e-5 && qA.equals([1, 2, 3, 4]) && qB.equals([5, 6, 7, 8]), "it should return 70");
+        debug.log("Quaternion-Static Slerp", Quat.slerp(out, qA, qB, 0.5), result => out.equals([3, 4, 5, 6]) && result.equals([3, 4, 5, 6]) && qA.equals([1, 2, 3, 4]) && qB.equals([5, 6, 7, 8]), "it should return 3, 4, 5 and 6");
+        debug.log("Quaternion-Static FromEuler", Quat.fromEuler(out, [-30, 30, 30], "XYZ"), result => out.compare([-0.6965503,0.0540453,0.696550,-0.1634454]), "should set dest to the correct value");
+        debug.log("Quaternion-Static Compare", Quat.compare([0, 1, 0, 1e-16], [0, 1, 0, 0]), result => result === true, "compare 1e-16 and 0");
+        debug.log("Quaternion-Static Equals", Quat.equals([1, 2, 3, 4], qA), result => result === true, "quaternionA should equals [1, 2, 3]");
+    }
+
+    debug.innerHTML += "<h3> Matrix3 </h3>";
+    {
+        debug.log("Matrix3x3 Creation with none arguments", new Mat3(), result => result.equals([1, 0, 0, 0, 1, 0, 0, 0, 1]), "it should return identity");
+        debug.log("Matrix3x3 Creation with a lot of arguments", new Mat3(1, 2, 3, 4, 5, 6, 7, 8, 9), result => result.equals([1, 2, 3, 4, 5, 6, 7, 8, 9]), "it should return 1 - 9")
+        debug.log("Matrix3x3 Compare", new Mat3(0, 0, 1.23456789, 0, 0, 0, 0, 0, 0), result => result.compare([0, 0, 1.23456, 0, 0, 0, 0, 0, 0]) === true, "it should return true");
+        debug.log("Matrix3x3 Compare", new Mat3(0, 0, 1.23456789, 0, 0, 0, 0, 0, 0), result => result.compare([0, 0, 1.2345, 0, 0, 0, 0, 0, 0]) === false, "it should return false");
+        debug.log("Matrix3x3 Identity", new Mat3(1, 2, 3, 4, 5, 6, 7, 8, 9).identity(), result => result.equals([1, 0, 0, 0, 1, 0, 0, 0, 1]), "it should return identity");
+        debug.log("Matrix3x3 Copy form [1, 2, 3, 4, 5, 6, 7, 8, 9]", new Mat3().copy([1, 2, 3, 4, 5, 6, 7, 8, 9]), result => result.equals([1, 2, 3, 4, 5, 6, 7, 8, 9]), "it should return 1 - 9")
+        debug.log("Matrix3x3 Set with m00 = [1, 2, 3, 4, 5, 6, 7, 8, 9]", new Mat3().set([1, 2, 3, 4, 5, 6, 7, 8, 9]), result => result.equals([1, 2, 3, 4, 5, 6, 7, 8, 9]), "it should return 1 - 9")
+        debug.log("Matrix3x3 Set with m00 = 1, m01 = 0, m02 = 0, m10 = 0, m11 = 1, m12 = 0, m20 = 0, m21 = 0, m22 = 1", new Mat3().set(1, 2, 3, 4, 5, 6, 7, 8, 9), result => result.equals([1, 2, 3, 4, 5, 6, 7, 8, 9]), "it should return 1 - 9")
+        debug.log("Matrix3x3 Multiply", new Mat3(1, 0, 0, 0, 1, 0, 1, 2, 1).multiply([1, 0, 0, 0, 1, 0, 3, 4, 1]), result => result.equals([1, 0, 0, 0, 1, 0, 4, 6, 1]), "it should return [1, 0, 0, 0, 1, 0, 4, 6, 1]")
+        debug.log("Matrix3x3 Scale with [2, 2]", new Mat3(1, 0, 0, 0, 1, 0, 1, 2, 1).scale(new Vec2(2)), result => result.equals([2, 0, 0, 0, 2, 0, 1, 2, 1]), "it should return [2, 0, 0, 0, 2, 0, 1, 2, 1]")
+
+        const matA = new Mat3(1, 0, 0,
+                              0, 1, 0,
+                              1, 2, 1);
+
+        const matB = new Mat3(1, 0, 0,
+                              0, 1, 0,
+                              3, 4, 1);
+
+        const out = new Mat3(0, 0, 0,
+                             0, 0, 0,
+                             0, 0, 0);
+
+        const identity = new Mat3();
+
+        debug.log("Matrix3x3-Static Copy", Mat3.copy(out, matA), result => result.equals(matA) && out.equals(matA), "it should return matA");
+        debug.log("Matrix3x3-Static Set", Mat3.set(out, 1, 0, 0, 0, 1, 0, 0, 0, 1), result => result.equals(identity) && out.equals(identity), "it should return identity");
+        debug.log("Matrix3x3-Static identity", Mat3.identity(out), result => result.equals(identity) && out.equals(identity), "it should return identity");
+        debug.log("Matrix3x3-Static transpose", Mat3.transpose(out, matA), result => result.equals([1, 0, 1, 0, 1, 2, 0, 0, 1]) && out.equals([1, 0, 1, 0, 1, 2, 0, 0, 1]), "it should return [1, 0, 1, 0, 1, 2, 0, 0, 1]");
+        debug.log("Matrix3x3-Static invert", Mat3.invert(out, matA), result => result.equals([1, 0, 0, 0, 1, 0, -1, -2, 1]) && out.equals([1, 0, 0, 0, 1, 0, -1, -2, 1]), "it should return [1, 0, 0, 0, 1, 0, -1, -2, 1]");
+        debug.log("Matrix3x3-Static determinant", Mat3.determinant(matA), result => result === 1, "it should return 1");
+        debug.log("Matrix3x3-Static multiply", Mat3.multiply(out, matA, matB), result => result.equals([1, 0, 0, 0, 1, 0, 4, 6, 1]) && out.equals([1, 0, 0, 0, 1, 0, 4, 6, 1]), "it should return [1, 0, 0, 0, 1, 0, 4, 6, 1]");
+        debug.log("Matrix3x3-Static scale", Mat3.scale(out, matA, new Vec2(2)), result => result.equals([2, 0, 0, 0, 2, 0, 1, 2, 1]) && out.equals([2, 0, 0, 0, 2, 0, 1, 2, 1]), "it should return [2, 0, 0, 0, 2, 0, 1, 2, 1]");
+        debug.log("Matrix3x3-Static fromMat4", Mat3.fromMat4(out, [1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12, 13,14,15,16]), result => result.equals([1, 2, 3, 5, 6, 7, 9, 10, 11]) && out.equals([1, 2, 3, 5, 6, 7, 9, 10, 11]), "it should return [1, 2, 3, 5, 6, 7, 9, 10, 11]");
+        debug.log("Matrix3x3-Static fromQuat", Mat3.fromQuat(out, [0, -0.7071067811865475, 0, 0.7071067811865475]), result => Vec3.transformMat3(new Vec3(), [0, 0, -1], result).compare([1, 0, 0]), "it should rotate a vector by PI/2 radians");
+        debug.log("Matrix3x3-Static normalFromMat4", Mat3.normalFromMat4(out, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]), result => result.equals(identity) && out.equals(identity), "it should return identity");
+    }
+
+    debug.innerHTML += "<h3> Matrix4 </h3>";
+    {
+        const matA = new Mat4(1, 0, 0, 0,
+                              0, 1, 0, 0,
+                              0, 0, 1, 0,
+                              1, 2, 3, 1);
+
+        const matB = new Mat4(1, 0, 0, 0,
+                              0, 1, 0, 0,
+                              0, 0, 1, 0,
+                              4, 5, 6, 1);
+
+        const out = new Mat4(0, 0, 0, 0,
+                             0, 0, 0, 0,
+                             0, 0, 0, 0,
+                             0, 0, 0, 0);
+
+        const identity = new Mat4();
+
+        debug.log("Matrix4x4-Static Copy", Mat4.copy(out, matA), result => result.equals(matA) && out.equals(matA), "it should return matA");
+        debug.log("Matrix4x4-Static Set", Mat4.set(out, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1), result => result.equals(identity) && out.equals(identity), "it should return identity");
+        debug.log("Matrix4x4-Static identity", Mat4.identity(out), result => result.equals(identity) && out.equals(identity), "it should return identity");
+        debug.log("Matrix4x4-Static transpose", Mat4.transpose(out, matA), result => result.equals([1, 0, 0, 1, 0, 1, 0, 2, 0, 0, 1, 3, 0, 0, 0, 1]) && out.equals([1, 0, 0, 1, 0, 1, 0, 2, 0, 0, 1, 3, 0, 0, 0, 1]), "it should return [1, 0, 0, 1, 0, 1, 0, 2, 0, 0, 1, 3, 0, 0, 0, 1]");
+        debug.log("Matrix4x4-Static invert", Mat4.invert(out, matA), result => result.equals([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, -1, -2, -3, 1]) && out.equals([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, -1, -2, -3, 1]), "it should return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, -1, -2, -3, 1]");
+        debug.log("Matrix4x4-Static determinant", Mat4.determinant(matA), result => result === 1, "it should return 1");
+        debug.log("Matrix4x4-Static multiply", Mat4.multiply(out, matA, matB), result => result.equals([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 5, 7, 9, 1]) && out.equals([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 5, 7, 9, 1]), "it should return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 5, 7, 9, 1]");
+        debug.log("Matrix4x4-Static scale", Mat4.scale(out, matA, new Vec3(4, 5, 6)), result => result.equals([4, 0, 0, 0, 0, 5, 0, 0, 0, 0, 6, 0, 1, 2, 3, 1]) && out.equals([4, 0, 0, 0, 0, 5, 0, 0, 0, 0, 6, 0, 1, 2, 3, 1]), "it should return [4, 0, 0, 0, 0, 5, 0, 0, 0, 0, 6, 0, 1, 2, 3, 1]");
+        debug.log("Matrix4x4-Static translate", Mat4.translate(out, matA, new Vec3(4, 5, 6)), result => result.equals([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 5, 7, 9, 1]), "it should return 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 5, 7, 9, 1");
+        debug.log("Matrix4x4-Static rotate", Mat4.rotate(out, matA, Math.PI * 0.5, new Vec3(1, 0, 0)), result => result.equals([1, 0, 0, 0, 0, Math.cos(Math.PI * 0.5), Math.sin(Math.PI * 0.5), 0, 0, -Math.sin(Math.PI * 0.5), Math.cos(Math.PI * 0.5), 0, 1, 2, 3, 1]), "it will rotate");
+        debug.log("Matrix4x4-Static Get Translation", Mat4.getTranslation(new Vec3(1, 2, 3), matB), result => result.equals([4, 5, 6]), "it translate by matrixB")
+        debug.log("Matrix4x4-Static Get Scaling", Mat4.getScaling(new Vec3(1, 2, 3), [3, 0, 0, 0, 0, 3, 0, 0, 0, 0, 3, 0, 1, 2, 3, 3]), result => result.equals([3, 3, 3]), "it should return [3, 3, 3]]")
+        debug.log("Matrix4x4-Static Get MaxScaleOnAxis", Mat4.getMaxScaleOnAxis(matB), result => result === 1, "it should return the max scale on axis")
+        debug.log("Matrix4x4-Static Get Rotation", Mat4.getRotation(new Quat(1, 2, 3, 4), matB), result => result.equals([0, 0, 0, 1]), "it should return identity quaternion");
+        debug.log("Matrix4x4-Static From Rotation Translation Scale", Mat4.fromRotationTranslationScale(out, Quat.setAxisAngle(new Quat(), [1, 0, 0], 0.7), new Vec3(1, 2, 3), new Vec3(5, 6, 7)), result => Mat4.getScaling(new Vec3(5, 6, 7), out).equals([5, 6, 7]), "it should return the same scaling factor when created")
+        debug.log("Matrix4x4-Static From Quat", Mat4.fromQuat(out, new Quat(1, 2, 3, 1)), result => result.compare([-25, 10, 2, 0, -2, -19, 14, 0, 10, 10, -9, 0, 0, 0, 0, 1]), "it translate by matrixB")
+        debug.log("Matrix4x4-Static perspective nonzero near", Mat4.perspective(out, 45 * Math.PI / 180.0, 640/480, 0.1, 200), result => result.compare([1.81066, 0, 0, 0, 0, 2.414213, 0, 0, 0, 0, -1.001, -1, 0, 0, -0.2001, 0]), "it should return a matrix with nonzero near, 45deg fovy, and realistic aspect ratio");
+        debug.log("Matrix4x4-Static perspective no far plane", Mat4.perspective(out, 45 * Math.PI / 180.0, 640/480, 0.1), result => result.compare([1.81066, 0, 0, 0, 0, 2.414213, 0, 0, 0, 0, -1, -1, 0, 0, -0.2, 0]), "it should return a matrix with no far plane, 45deg fovy, and realistic aspect ratio");
+        debug.log("Matrix4x4-Static perspective infinite far plane", Mat4.perspective(out, 45 * Math.PI / 180.0, 640/480, 0.1, Infinity), result => result.compare([1.81066, 0, 0, 0, 0, 2.414213, 0, 0, 0, 0, -1, -1, 0, 0, -0.2, 0]), "it should return a matrix with infinite far plane, 45deg fovy, and realistic aspect ratio");
+        debug.log("Matrix4x4-Static orthogonal", Mat4.orthogonal(out, -1, 1, -1, 1, -1, 1), result => result.equals([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1]), "it should return a standard orthogonal matrix");
+        debug.log("Matrix4x4-Static Look At", Mat4.lookAt(out, [0, 0, 0], new Vec3(0, -1, 0), new Vec3(0, 0, -1)), result => Vec3.transformMat4(new Vec3(), [0, -1, 0], result).equals([0, 0, -1]), "it should tranform view into local -Z");
+        debug.log("Matrix4x4-Static Target To", Mat4.targetTo(out, [0, 0, 0], new Vec3(0, -1, 0), new Vec3(0, 0, -1)), result => Vec3.transformMat4(new Vec3(), [0, -1, 0], result).equals([0, 0, 1]), "it should tranform view into local Z");
+        debug.log("Matrix4x4-Static Compare", Mat4.compare([1e-16, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]), result => result === true, "compare 1e-16 and 0");
+        debug.log("Matrix4x4-Static Equals", Mat4.equals([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 2, 3, 1], matA), result => result === true, "matA should equals unit matrix with m30 = 1, m31 = 2, m32 = 3");
+    }
+
+    debug.innerHTML += "<h3> Color </h3>";
+    {
+        debug.log("Color Creation", new Color(), result => result.r === 0, "black");
+        debug.log("Color Creation hex", new Color("#ff0000"), result => result.r === 1, "red");
+        debug.log("Color Creation number", new Color(0xff0000), result => result.r === 1, "red");
+        debug.log("Color Creation string", new Color("red"), result => result.r === 1, "red");
+    }
+</script>
+</html>

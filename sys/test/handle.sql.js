@@ -11,7 +11,6 @@ describe("Sql handle test", () => {
     describe("sequelize insert test", () => {
         beforeEach(() => user.max("user_id").then(id => user.create({ name: "InsertTest" + id + 1, password: "InsertTestPassword"}).then(res => code = res)));
         it("should return the user data", () => {
-            console.log(code)
            expect(code).to.have.property("dataValues");
         });
     });
@@ -24,7 +23,6 @@ describe("Sql handle test", () => {
             }
         });
         it("should return the user data", () => {
-            console.log(code);
             expect(code).exist;
         });
     });

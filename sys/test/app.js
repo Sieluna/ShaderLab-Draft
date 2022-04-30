@@ -15,7 +15,6 @@ describe("App function test", () => {
             url = path.posix.join(join(`/api/${single}`, multi), empty);
         });
         it("should return the forward slash", () => {
-            console.log(url)
             expect(url).to.be.equal("/api/:single\\/objA/objB");
         });
     });
@@ -30,10 +29,7 @@ describe("App function test", () => {
         const data = { a: "1", b: "2", c: "3" };
         const str = "123";
         it("should be equal to 3", () => {
-            console.log(Object.values(data).length);
-            if (typeof str == "object") {
-                console.log(typeof str);
-            }
+            expect(Object.values(data).length).to.be.equal(3);
         })
     })
 });

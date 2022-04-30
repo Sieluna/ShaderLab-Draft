@@ -16,11 +16,11 @@ describe("Topic handle test", () => {
             expect(topicCache).to.have.property("id").to.be.equal(code);
         });
     });
-    describe("Create with full set up test", () => {
-        beforeEach(() => code = 0);
-        it("should return the topic data", async () => {
-            topicCache = await topicHandle.create("TopicHandleTest" + (++code));
-            expect(topicCache).to.have.property("id").to.be.equal(code);
-        });
-    });
+    //describe("Create with full set up test", () => {
+    //    beforeEach(() => code = 0);
+    //    it("should return the topic data", async () => {
+    //        topicCache = await topicHandle.create("TopicHandleTest" + (++code));
+    //        expect(topicCache).to.have.property("id").to.be.equal(code);
+    //    });
+    //});
 });

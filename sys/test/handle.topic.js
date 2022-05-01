@@ -6,8 +6,8 @@ const expect = require("chai").expect;
 
 describe("Topic handle test", () => {
     let code = true, topicCache;
-    before(() => sequelize.sync({force: true}).then(() => sequelize.authenticate().catch(error => code = error)));
-    after(async () => await sequelize.drop());
+    before("Database create", () => sequelize.sync({force: true}).then(() => sequelize.authenticate().catch(error => code = error)));
+    after("Database clean", async () => await sequelize.drop());
     it("should return no error", () => expect(code).to.be.true);
     describe("Create with name test", () => {
         beforeEach(() => code = 0);

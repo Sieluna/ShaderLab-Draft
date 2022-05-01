@@ -73,4 +73,4 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - name: npm test
-        run: set MYSQL_PASSWORD=${{ env.MYSQL_PASSWORD }} && npm test
+        run: set ENABLE_DEBUG=false && set MYSQL_PASSWORD=${{ env.MYSQL_PASSWORD }} && npm test

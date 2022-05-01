@@ -1,7 +1,4 @@
 const app = require("../app.js");
-const fs = require("fs");
-const path = require("path");
-const FormData = require("form-data");
 const chai = require("chai");
 const chaiHttp = require("chai-http");
 const sequelize = require("../handle/model");
@@ -13,8 +10,8 @@ chai.use(chaiHttp);
 
 describe("User APIs", () => {
     let code = true;
-    before(() => sequelize.sync({ force: true }).then(() => sequelize.authenticate().catch(error => code = error)));
-    after(async () => await sequelize.drop());
+    before("Database create", () => sequelize.sync({ force: true }).then(() => sequelize.authenticate().catch(error => code = error)));
+    after("Database clean", async () => await sequelize.drop());
     it("should return no error", () => expect(code).to.be.true);
     describe("User router register test", () => {
         it("should return code 200, and user info", done => {

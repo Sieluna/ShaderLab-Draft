@@ -1,6 +1,4 @@
 const { isEmpty, isNumber, isEmail } = require("../handle/utils.js");
-const state = require("../config/state.js");
-const sequelize = require("../handle/model");
 const expect = require("chai").expect;
 
 describe("Utils test", () => {

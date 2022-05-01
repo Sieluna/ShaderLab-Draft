@@ -1,5 +1,4 @@
 const expect = require("chai").expect;
-
 const path = require("path");
 
 const join = (base, others) => typeof others === "string" ? path.posix.join(base, others) :

@@ -1,4 +1,3 @@
-const jwt = require("jsonwebtoken");
 const { sign, verify } = require("../handle/token.js");
 const expect = require("chai").expect;
 

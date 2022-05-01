@@ -1,4 +1,4 @@
-const flag = process.env.ENABLE_DEBUG || false;
+const flag = process.env.ENABLE_DEBUG || true;
 
 module.exports = {
     log: (...msg) => {

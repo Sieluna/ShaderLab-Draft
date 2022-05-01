@@ -1,13 +1,14 @@
 const userHandle = require("../handle/user.js");
 const state = require("../config/state.js");
+const debug = require("../config/debug.js");
 const sequelize = require("../handle/model");
 const crypto = require("crypto");
 const expect = require("chai").expect;
 
 describe("User handle test", () => {
     let code = true, userCache;
-    before(() => sequelize.sync({ force: true }).then(() => sequelize.authenticate().catch(error => code = error)));
-    after(async () => await sequelize.drop());
+    before("Database create", () => sequelize.sync({ force: true }).then(() => sequelize.authenticate().catch(error => code = error)));
+    after("Database clean", async () => await sequelize.drop());
     it("should return no error", () => expect(code).to.be.true);
     describe("Register test", () => {
         let str = 0;
@@ -69,15 +70,18 @@ describe("User handle test", () => {
             userCache = await userHandle.login("UserHandleTest1", "errorerrorerrorerror");
             expect(userCache).to.be.equal(state.NotCorrect);
         });
-        it
     });
     describe("Get last id test", () => {
-        beforeEach(async () => code = await userHandle.getLastId());
-        it("should return a integer", () => {
-            expect(code).which.is.a("number").not.below(0);
+        before(async () => code = await userHandle.getLastId());
+        it("should return a integer", async () => {
+            let id = await userHandle.getLastId();
+            debug.log(id);
+            expect(id).which.is.a("number").not.below(0);
         });
-        it("should return a integer with 1 offset", () => {
-            expect(code).which.is.a("number").not.below(1);
+        it("should return a integer with 1 offset", async () => {
+            let id = await userHandle.getLastId(1);
+            debug.log(id);
+            expect(id).which.is.a("number").not.below(1);
         });
     });
     describe("Get all user test", () => {

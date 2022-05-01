@@ -54,13 +54,13 @@ const handle = {
         return await user.max("user_id") + offset;
     },
     /**
-     * @param {name|string} [num]
+     * @param {name|string} [limit]
      * @return any[]
      */
-    getAllUsers: async num => {
-        if (num) {
-            if (!isNumber(num)) return state.Empty;
-            return await user.findAll({ limit: num });
+    getAllUsers: async limit => {
+        if (limit) {
+            if (!isNumber(limit)) return state.Empty;
+            return await user.findAll({ limit: limit });
         } else {
             return await user.findAll();
         }

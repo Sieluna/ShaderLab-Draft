@@ -3,32 +3,39 @@ const { user, topic, post, thumb, comment } = require("./model.js").models;
 const userHandle = require("./user.js");
 const topicHandle = require("./topic.js");
 const state = require("../config/state.js");
-const { isNumber, isEmpty } = require("./utils");
+const { isNumber, isEmpty, normalizeId } = require("./utils");
 
 const handle = {
     /**
-     * @param {number} id
-     * @return {any|null}
+     * Get post by id
+     * @param {number|string} id
+     * @return {Promise<post|state>}
      */
     getPostById: async id => {
         const result = await post.findByPk(id);
         return result ? result : state.NotExist;
     },
     /**
+     * Get posts by name
      * @param {string} name
-     * @return {any|null}
+     * @return {Promise<post[]|state>}
      */
     getPostsByName: async name => {
         const result = await post.findAll({ where: { name: name }});
         return result ? result : state.NotExist;
     },
-    /** @return {number} */
+    /**
+     * Get the last index in the table
+     * @param {number} [offset] the offset of the counter
+     * @return {Promise<number>}
+     */
     getLastId: async (offset = 0) => {
         return await post.max("post_id") + offset;
     },
     /**
+     * Get all posts with rank
      * @param {name|string} [limit]
-     * @return {any[]}
+     * @return {Promise<post[]|state>}
      */
     getAllPosts: async limit => {
         if (limit) {
@@ -39,11 +46,12 @@ const handle = {
         }
     },
     /**
+     * Get all posts with rank
      * @param {number} [limit]
      * @param {boolean} [order] true -> asc, false -> desc
-     * @return {any[]}
+     * @return {Promise<post[]|state>}
      */
-    getAllPostByRank: async (limit, order = false) => {
+    getAllPostsByRank: async (limit, order = false) => {
         if (limit) {
             if (!isNumber(limit)) return state.Empty;
             return await post.findAll({
@@ -68,70 +76,92 @@ const handle = {
             });
         }
     },
+    /**
+     * Get rank by id
+     * @param {number|string} id
+     * @return {Promise<number>}
+     */
     getPostRankById: async id => {
         let view = handle.getPostViewsById(id), thumb = handle.getPostThumbsById(id), comment = handle.getPostCommentsById(id);
         return (await view * 0.1) + await thumb + (await comment * 2);
     },
+    /**
+     * Get number of views by id
+     * @param {number|string} id
+     * @return {Promise<post|state>}
+     */
     getPostViewsById: async id => {
         if (!isNumber(id)) return state.Empty
         const result = await post.findByPk(id);
         return isNumber(result.views) ? result.views : state.NotExist;
     },
+    /**
+     * Get number of thumbs by id
+     * @param {number|string} id
+     * @return {Promise<post|state>}
+     */
     getPostThumbsById: async id => {
         if (!isNumber(id)) return state.Empty
         const result = await thumb.count({ where: { postId: id } });
         return isNumber(result) ? result : state.NotExist;
     },
+    /**
+     * Get number of comments by id
+     * @param {number|string} id
+     * @return {Promise<post|state>}
+     */
     getPostCommentsById: async id => {
         if (!isNumber(id)) return state.Empty
         const result = await comment.count({ where: { postId: id } });
         return isNumber(result) ? result : state.NotExist;
     },
+    /**
+     * View a post
+     * @param {number|string} id
+     * @return {Promise<post|state>}
+     */
     viewPost: async id => {
         if (!isNumber(id)) return state.Empty;
         return await post.increment({ views: 1 }, { where: { id: id } });
     },
+    /**
+     * Thumb a post
+     * @param {number|string} user
+     * @param {number|string} post
+     * @return {Promise<[post,boolean]|state>}
+     */
     thumbPost: async (user, post) => {
-        const check = async (target, handle) => {
-            if (isNumber(target)) return target;
-            const ref = await handle(target);
-            return ref ? ref.id : null;
-        }
-        let userId = await check(user, userHandle.getUserByName),
-            postId = await check(post, topicHandle.getTopicByName);
-        if (userId == null || postId == null) return state.NotExist;
-        return await thumb.findOrCreate({ where: { userId: userId, postId: postId } });
+        let userId = await normalizeId(user, userHandle.getUserByName);
+        if (userId == null || !isNumber(post)) return state.NotExist;
+        return await thumb.findOrCreate({ where: { userId: userId, postId: post } });
     },
+    /**
+     * Commont a post
+     * @param {number|string} user
+     * @param {number|string} post
+     * @param {string} content
+     * @return {Promise<[post,boolean]|state>}
+     */
     commentPost: async (user, post, content) => {
         if (isEmpty(content)) return state.Empty;
         if (content.length < 5) return state.TooShort;
-        const check = async (target, handle) => {
-            if (isNumber(target)) return target;
-            const ref = await handle(target);
-            return ref ? ref.id : null;
-        }
-        let userId = await check(user, userHandle.getUserByName),
-            postId = await check(post, topicHandle.getTopicByName);
-        if (userId == null || postId == null) return state.NotExist;
-        return await comment.findOrCreate({ where: { userId: userId, postId: postId }, defaults: { content: content } });
+        let userId = await normalizeId(user, userHandle.getUserByName);
+        if (userId == null || !isNumber(post)) return state.NotExist;
+        return await comment.findOrCreate({ where: { userId: userId, postId: post }, defaults: { content: content } });
     },
     /**
+     * Create a post
      * @param {number|string} user
      * @param {number|string} topic
      * @param {{name:string,preview:string,content:string}} data
+     * @return {Promise<post|state>}
      */
     create: async (user, topic, data) => {
         const { name, preview, content } = data;
         if (isEmpty(user) || isEmpty(topic) || isEmpty(name) || isEmpty(content)) return state.Empty;
-        const check = async (target, handle) => {
-            if (isNumber(target)) return target;
-            const ref = await handle(target);
-            return ref ? ref.id : null;
-        }
-        let userId = await check(user, userHandle.getUserByName),
-            topicId = await check(topic, topicHandle.getTopicByName);
-        if (userId == null || topicId == null) return state.NotExist;
-        return post.create({ name: name, preview: preview, content: content, userId: userId, topicId: topicId });
+        let userId = normalizeId(user, userHandle.getUserByName), topicId = normalizeId(topic, topicHandle.getTopicByName);
+        if ((await userId) == null || (await topicId) == null) return state.NotExist;
+        return await post.create({ name: name, preview: preview, content: content, userId: await userId, topicId: await topicId });
     },
 }
 

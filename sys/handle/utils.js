@@ -21,4 +21,16 @@ const isEmail = data => emailReg.test(data);
  */
 const isNumber = data => numberReg.test(data);
 
-module.exports = { isEmail, isEmpty, isNumber };
+/**
+ * Normalize id
+ * @param {name|string} target
+ * @param {function} handle
+ * @return {number|string}
+ */
+const normalizeId = async (target, handle) => {
+    if (isNumber(target)) return target;
+    const ref = await handle(target);
+    return ref ? ref.id : null;
+}
+
+module.exports = { isEmail, isEmpty, isNumber, normalizeId };

@@ -111,7 +111,8 @@ describe("User handle test", () => {
         });
         describe("Update name by id test", async () => {
             it("should update id 1 user name", async () => {
-                await userHandle.updateNameById(1, "UpdateTest", "UserHandleTestPassword");
+                const data = await userHandle.updateNameById(1, "UpdateTest", "UserHandleTestPassword");
+                debug.log(data, data[1]);
                 let fall = await userHandle.login("UpdateTest", "UserHandleTestPassword");
                 expect(fall).to.have.property("id").to.be.equal(1);
             });
@@ -194,8 +195,10 @@ describe("User handle test", () => {
         });
     });
     describe("Restore user test", () => {
-        beforeEach(async () => { code = await userHandle.getLastId(); await userHandle.restoreById(code + 1) });
         it("should mark user to active", async () => {
+            code = await userHandle.getLastId();
+            const result = await userHandle.restoreById(code + 1);
+            debug.log(result);
             expect(await userHandle.getLastId()).to.be.equal(code + 1);
         });
     });

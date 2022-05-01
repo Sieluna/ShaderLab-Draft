@@ -1,23 +1,30 @@
 const jwt = require("jsonwebtoken");
 const config = require("../config/token.js");
 
-const getVerificationKey = typeof config.secret == "function" ? config.secret : () => config.secret;
-const credentialsRequired = typeof config.credentialsRequired == "undefined" ? true : config.credentialsRequired;
-const requestProperty = typeof config.requestProperty == "string" ? config.requestProperty : "auth";
-
 module.exports = {
     /**
      * @param {object|number} id object or userid
      * @param {number} auth permission level
+     * @param {number} expire expire time
      * @param {string} opts addition json
      * @return {*}
      */
-    sign: (id, auth, opts) => {
-        return jwt.sign(typeof id == "object" ? id : { id: id, auth: auth, opts: opts }, config.secret, {
+    sign: (id, auth, opts = "", expire = 86400) => {
+        return jwt.sign(typeof id == "object" ? id : {
+            id: id,
+            auth: auth,
+            opts: opts
+        }, config.secret, {
             algorithm: config.algorithm,
-            expiresIn: 86400,
+            expiresIn: expire,
         });
     },
+    /**
+     * Vertify token
+     * @param req
+     * @param res
+     * @param next
+     */
     verify: (req, res, next) => {
         let token, decodedToken;
         try {
@@ -30,18 +37,16 @@ module.exports = {
             if (config.getToken && typeof config.getToken == "function") {
                 token = config.getToken(req);
             } else if (req.headers && req.headers[authorizationHeader]) {
-                const parts = (req.headers[authorizationHeader]).split(' ');
+                const parts = (req.headers[authorizationHeader]).split(" ");
                 if (parts.length === 2) {
-                    const scheme = parts[0];
-                    const credentials = parts[1];
-                    if (/^Bearer$/i.test(scheme))
-                        token = credentials;
-                    else
-                        return credentialsRequired ? next({ code: "CREDENTIALS_BAD_SCHEME", status: 401, message: "Format is Authorization: Bearer [token]" }) : next();
-                } else return next({ code: "CREDENTIALS_BAD_FORMAT", message: "Format is Authorization: Bearer [token]" });
+                    const scheme = parts[0], credentials = parts[1];
+                    if (/^Bearer$/i.test(scheme)) token = credentials;
+                    else return next({ code: "CREDENTIALS_BAD_SCHEME", status: 401, message: "Format is Authorization: Bearer [token]" });
+                } else return next({ code: "CREDENTIALS_BAD_FORMAT", status: 401, message: "Format is Authorization: Bearer [token]" });
             }
 
-            if (!token) return credentialsRequired ? next({ code: "CREDENTIALS_REQUIRED", status: 401, message: "No authorization token was found" }) : next();
+            if (!token)
+                return next({ code: "CREDENTIALS_REQUIRED", status: 401, message: "No authorization token was found" });
 
             try {
                 decodedToken = jwt.decode(token, { complete: true });
@@ -49,9 +54,9 @@ module.exports = {
                 return next({ code: "INVALID_TOKEN", status: 401, message: err.message, inner: err });
             }
 
-            const key = getVerificationKey(req, decodedToken);
+            const getVerificationKey = typeof config.secret == "function" ? config.secret : () => config.secret;
             try {
-                jwt.verify(token, key, config);
+                jwt.verify(token, getVerificationKey(req, decodedToken), config);
             } catch (err) {
                 return next({ code: "INVALID_TOKEN", status: 401, message: err.message, inner: err });
             }
@@ -59,6 +64,7 @@ module.exports = {
             const isRevoked = config.isRevoked && config.isRevoked(req, decodedToken) || false;
             if (isRevoked) return next({ code: "REVOKED_TOKEN", status: 401, message: "The token has been revoked." });
 
+            const requestProperty = typeof config.requestProperty == "string" ? config.requestProperty : "auth";
             req[requestProperty] = decodedToken.payload;
             next();
         } catch (err) {

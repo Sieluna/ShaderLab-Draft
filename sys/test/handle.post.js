@@ -9,7 +9,7 @@ const expect = require("chai").expect;
 describe("Post handle test", () => {
     let code = true, postCache;
     before("Database create", () => sequelize.sync({ force: true }).then(() => sequelize.authenticate().catch(error => code = error)));
-    //after("Database clean", async () => await sequelize.drop());
+    after("Database clean", async () => await sequelize.drop());
     it("should return no error", () => expect(code).to.be.true);
     describe("Create post test", () => {
         before(async () => {
@@ -92,12 +92,6 @@ describe("Post handle test", () => {
             debug.log(postCache);
             expect(postCache).to.be.equal(state.NotExist);
         });
-        it("should return result when create none exist topic string", async () => {
-            const assets = [ 1, "Balabalabala", { name: "Creation Test", preview: "http://sssss/sdssda", content: "Creation test text" } ];
-            postCache = await postHandle.create(...assets);
-            debug.log(postCache);
-            expect(postCache).to.be.equal(state.NotExist);
-        });
     });
     describe("Get post test", () => {
         it ("should return post with id 1", async () => {
@@ -117,7 +111,13 @@ describe("Post handle test", () => {
         });
     });
     describe("View post test", () => {
-        it("should increase post views with 1 with id 2", async () => {
+        it("should increase post views with 1 with id 1", async () => {
+            const result = await postHandle.viewPost(1);
+            const fall = await postHandle.getPostById(1);
+            debug.log(result, fall);
+            expect(fall).to.have.property("views").to.be.equal(1);
+        });
+        it("should increase post views with 1 * 100 with id 2", async () => {
             new Promise((resolve, reject) => {
                 for (let i = 0; i < 100; i++)
                     postHandle.viewPost(2).then();
@@ -138,6 +138,7 @@ describe("Post handle test", () => {
         it("should return post views with id 2", async () => {
             postCache = await postHandle.getPostViewsById(2);
             debug.log(postCache);
+            expect(postCache).to.be.above(50);
         });
     });
     describe("Thumb post test", () => {
@@ -182,7 +183,8 @@ describe("Post handle test", () => {
     describe("Get post rank by id", async () => {
         it("should return the rank number", async () => {
             postCache = await postHandle.getPostRankById(1);
-            debug.log(postCache, await postHandle.getPostById(1));
+            const result = (0.1) + 5 + (4 * 2);
+            expect(postCache).to.be.equal(result);
         });
     });
     describe("Get last id test", () => {
@@ -214,15 +216,16 @@ describe("Post handle test", () => {
     });
     describe("Get all post with rank test", () => {
         it("should return some user instance with rank desc", async () => {
-            postCache = await postHandle.getAllPostByRank();
+            postCache = await postHandle.getAllPostsByRank();
             debug.log(postCache);
         });
         it("should return 2 instance with rank desc", async () => {
-            postCache = await postHandle.getAllPostByRank(2);
+            await postHandle.viewPost(2);
+            postCache = await postHandle.getAllPostsByRank(2);
             debug.log(postCache);
         });
         it("should return 2 instance with rank asc", async () => {
-            postCache = await postHandle.getAllPostByRank(2, true);
+            postCache = await postHandle.getAllPostsByRank(2, true);
             debug.log(postCache);
         });
     });

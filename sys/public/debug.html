@@ -6,14 +6,17 @@
 </head>
 <body>
 <h2>User</h2>
-<label>Get data by account:
-    <input type="text" name="account" placeholder="account">
-</label>
 <p></p>
-<label>Get base64 by img:
-    <input type="file" id="debug-toBase64-input" accept="image/*">
-</label>
-<p id="toBase64-output"></p>
+<form id="debug-img-form">
+    <label>Send img by form
+        <input name="img" type="file" id="debug-formdata-input" accept="image/*">
+    </label>
+    <p id="formdata-output"></p>
+    <label>Get base64 by img:
+        <input type="file" id="debug-toBase64-input" accept="image/*">
+    </label>
+    <p id="toBase64-output"></p>
+</form>
 <script>
     const toBase64Input = document.getElementById("debug-toBase64-input");
     toBase64Input.onchange = () => {
@@ -25,6 +28,19 @@
                 document.getElementById("toBase64-output").innerHTML = reader.result;
             }
         }
+    }
+
+    const formdataInput = document.getElementById("debug-formdata-input"); let obj = {};
+    formdataInput.onchange = () => {
+        const target = formdataInput.files[0];
+        console.log(target);
+        const data = new FormData(document.getElementById("debug-img-form"));
+        data.forEach((value, key) => {
+            if(!Reflect.has(obj, key)) { obj[key] = value; return; }
+            if(!Array.isArray(obj[key])) { obj[key] = [obj[key]]; }
+            obj[key].push(value);
+        });
+        document.getElementById("formdata-output").innerHTML = JSON.stringify(data);
     }
 </script>
 </body>

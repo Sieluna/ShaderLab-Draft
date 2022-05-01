@@ -5,10 +5,18 @@ const expect = require("chai").expect;
 describe("Token test", () => {
     let req, res;
     beforeEach(() => { req = {}; res = {}; });
-    it("should sign with one argument", done => {
+    it("should sign with one argument", () => {
         expect(sign({id: "22", other: "22", test: ""})).to.be.ok;
         expect(sign("22", "22", "")).to.be.ok;
-        done();
+    });
+    it("should work with a valid string token", done => {
+        const token = sign({ name: "foo" });
+        req.headers = {};
+        req.headers.authorization = "Bearer " + token;
+        verify(req, res, err => {
+            expect(req.auth.name).to.be.equal("foo");
+            done();
+        });
     });
     it("should skip on CORS preflight", done => {
         const corsReq = {};

@@ -50,8 +50,8 @@ const handle = {
         else return state.OverSize;
     },
     /** @return {number} */
-    getLastId: async () => {
-        return await user.max("user_id");
+    getLastId: async (offset = 0) => {
+        return await user.max("user_id") + offset;
     },
     /**
      * @param {name|string} [num]
@@ -74,8 +74,8 @@ const handle = {
     login: async (account, password) => {
         let tempPsw, user;
         if (isEmpty(account) || isEmpty(password)) return state.Empty;
-        tempPsw = crypto.createHash("md5").update(account + password).digest("hex");
         user = await handle.getUserNameOrEmail(account);
+        tempPsw = crypto.createHash("md5").update(user.name + password).digest("hex");
         return user.password ? user.password === tempPsw ? user : state.NotCorrect : user;
     },
     /**
@@ -88,14 +88,14 @@ const handle = {
         if (isEmpty(account) || isEmpty(password)) return state.Empty;
         if (isEmail(account) && account.length <= 250) {
             if ((await handle.getUserByName(account)).id) return state.Duplicate;
-            return await user.create({email: account, password: password});
+            return await user.create({ name: "User_" + (await handle.getLastId(1)), email: account, password: password });
         } else if (account.length <= 16) {
             if ((await handle.getUserByName(account)).id) return state.Duplicate;
-            return await user.create({name: account, password: password});
+            return await user.create({ name: account, password: password });
         } else return state.OverSize;
     },
     /**
-     * Update user mysql
+     * Update user mysql Admin entrance
      * @param {name|string} id id
      * @param data data
      * @param [data.id] id
@@ -111,11 +111,27 @@ const handle = {
             if (property !== "id" && safeProperty.includes(property))
                 rebuild[property] = data[property];
         });
-        return await user.update(rebuild, { where: { id: id }});
+        return await user.update(rebuild, { where: { id: id }, individualHooks: true});
     },
-    uploadImageById: async (id, image) => {
-        if (!isNumber(id)) return state.Empty;
-        return await user.update({ avatar: image }, { where: { id: id }});
+    updateNameById: async (id, account, password) => {
+        if (!isNumber(id) || isEmpty(account) || isEmpty(password)) return state.Empty;
+        return await user.update({ name: account, password: password }, { where: { id: id }, individualHooks: true });
+    },
+    updateAvatarById: async (id, image) => {
+        if (!isNumber(id) || isEmpty(image)) return state.Empty;
+        return await user.update({ avatar: image }, { where: { id: id }, individualHooks: true });
+    },
+    updateEmailById: async (id, email) => {
+        if (!isNumber(id) || isEmpty(email)) return state.Empty;
+        return await user.update({ email: email }, { where: { id: id }, individualHooks: true });
+    },
+    updatePasswordById: async (id, password) => {
+        if (!isNumber(id) || isEmpty(password)) return state.Empty;
+        return await user.update({ password: password }, { where: { id: id }, individualHooks: true });
+    },
+    updateIntroductionById: async (id, text) => {
+        if (!isNumber(id) || isEmpty(text)) return state.Empty;
+        return await user.update({ introduction: text }, { where: { id: id }, individualHooks: true });
     },
     deprecateById: async id => {
         if (!isNumber(id)) return state.Empty;
@@ -125,7 +141,7 @@ const handle = {
     restoreById: async id => {
         if (!isNumber(id)) return state.Empty;
         const result = await user.restore({ where: { id: id }});
-        return Number(result) > 0 ? result : state.NotCorrect;
+        return Number(result) > 0 ? result : state.NotExist;
     }
 };
 

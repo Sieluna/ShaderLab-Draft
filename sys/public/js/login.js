@@ -1,21 +1,23 @@
-let user = localStorage.getItem("user");
+import path from "path";
+
+let token = localStorage.getItem("token");
 
 const redirect = (existData) => {
     if (existData)
         window.location.href = "../home.html";
 }
 
-const submitInfo = (target) => {
-    fetch(`/api/user/${target}`, {
+const submitInfo = (target="") => {
+    fetch(path.posix.join("/api/user", target), {
         method: "POST",
         body: new URLSearchParams(new FormData(document.getElementById("panel-input"))),
         redirect: "follow"
     }).then(res => {
         return res.json();
     }).then(json => {
-        switch (json.code) {
+        switch (json.status) {
             case 200:
-                localStorage.setItem("user", JSON.stringify(json.data));
+                localStorage.setItem("token", JSON.stringify(json.data));
                 redirect(true);
                 break;
             default:
@@ -24,10 +26,8 @@ const submitInfo = (target) => {
     });
 }
 
-redirect(user != null);
-
 window.onload = () => {
-    document.querySelector(".sl-panel > .panel-login > .register").addEventListener("click", _ => submitInfo("register"));
+    document.querySelector(".sl-panel > .panel-login > .register").addEventListener("click", _ => submitInfo());
     document.querySelector(".sl-panel > .panel-login > .login").addEventListener("click", _ => submitInfo("login"));
     let background = document.querySelector(".sl-background"),
         small = background.querySelector(".small");

@@ -5,7 +5,7 @@ const logger = require("morgan");
 const sequelize = require("./handle/model.js");
 
 sequelize.sync({ force: true }).then(() => {
-    console.log("Database is synchronized.");
+    require("./config/debug.js").log("Database is synchronized.");
 });
 
 const app = express();

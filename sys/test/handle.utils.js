@@ -50,7 +50,6 @@ describe("Utils test", () => {
     });
     describe("is Number test", () => {
         it("undefined should return false", () => {
-            console.log(Number(null));
             expect(isNumber(undef)).to.be.false;
         });
         it("empty should return false", () => {

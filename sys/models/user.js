@@ -13,7 +13,7 @@ module.exports = sequelize => {
         name: {
             type: DataTypes.STRING(16),
             field: "user_name",
-            unique: true,
+            unique: true
         },
         avatar: {
             type: DataTypes.STRING,
@@ -27,11 +27,7 @@ module.exports = sequelize => {
         password: {
             type: DataTypes.STRING(32),
             field: "user_password",
-            allowNull: false,
-            set(value) {
-                this.setDataValue("password",
-                    crypto.createHash("md5").update(this.name + value).digest("hex"));
-            }
+            allowNull: false
         },
         introduction: {
             type: DataTypes.STRING,
@@ -43,6 +39,18 @@ module.exports = sequelize => {
             defaultValue: 1
         }
     }, {
+        hooks: {
+            beforeCreate: (instance, options) => {
+                instance.setDataValue("password", crypto.createHash("md5").
+                update(instance.dataValues.name + instance.dataValues.password).digest("hex"));
+            },
+            beforeUpdate: (instance, options) => {
+                if (instance.changed("name") || instance.changed("password")) {
+                    instance.setDataValue("password", crypto.createHash("md5").
+                    update(instance.name + instance.password).digest("hex"));
+                }
+            },
+        },
         paranoid: true,
         createdAt: "user_create",
         updatedAt: "user_update",

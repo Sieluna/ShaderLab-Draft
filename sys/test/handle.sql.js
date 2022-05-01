@@ -22,8 +22,8 @@ describe("Sql handle test", () => {
                 code = error;
             }
         });
-        it("should return the user data", () => {
-            expect(code).exist;
+        it("should return the error code from mysql", () => {
+            expect(code.parent.errno).to.be.equal(1406);
         });
     });
 });

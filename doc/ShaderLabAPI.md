@@ -9,6 +9,16 @@ version: 0.0.1
 --------------------------------------
 
 **token design**
+ 
+To avoid anonymity visit on a heavy api, such as two table select by union or join and update something. would be quite dangerous.
+An identity of valid request is important. How to make sure a request is a safe request? token might be a good option. 
+
+| Data     | Datatype |     Usage     |
+|----------|:--------:|:-------------:|
+| id       |  number  |    User Id    |
+| auth     |  string  |  permission   |
+| default  |  string  | iat, balabala |
+| addition |  string  |    random     |
 
 ```mermaid
 sequenceDiagram

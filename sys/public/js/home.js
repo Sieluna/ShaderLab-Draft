@@ -74,7 +74,6 @@ const enterAvatar = event => {
 
 const leaveAvatar = event => {
     if (!isParent(userContainer, event.relatedTarget) && avatarLockId < 0) {
-        console.log("lock id > 0")
         if (avatarLock) {
             avatarLock = false;
             avatar.setAttribute("class", "avatar-container small-avatar");

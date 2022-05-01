@@ -1,9 +1,10 @@
 const { Sequelize } = require("sequelize");
-const config = require("../config/sql.js")
+const config = require("../config/sql.js");
 
 const sequelize = new Sequelize(config.database, config.user, config.password, {
     host: config.host,
     dialect: config.dialect,
+    logging: sql => require("../config/debug.js").log(sql),
     pool: {
         max: config.pool.max,
         min: config.pool.min,

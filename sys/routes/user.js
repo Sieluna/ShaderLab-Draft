@@ -1,7 +1,29 @@
 const express = require("express");
 const path = require("path");
+const fs = require("fs");
 const multer = require("multer");
-const upload = multer({ dest: path.join(__dirname, "../public/data/user") });
+
+const upload = multer({
+    fileFilter: (req, file, callback) => {
+        const acceptableMime = [".webp", ".jpeg", ".png", ".jpg", ".gif"];
+        if (acceptableMime.includes(path.extname(file.originalname)))
+            callback(null, true);
+        else
+            callback(null, false);
+    },
+    storage: multer.diskStorage({
+        destination: path.resolve(__dirname, "../static/data/user"), // upload target
+        filename: function (req, file, callback) {
+            let extName = path.extname(file.originalname), fileName = req.auth.id;
+            fs.stat(path.resolve(__dirname, "../static/data/user/", fileName + extName), (err, stat) => {
+                if (err == null)
+                    fs.rm(path.resolve(__dirname, "../static/data/user/", fileName + extName), () => callback(null, fileName + extName));
+                else if (err.code === "ENOENT")
+                    callback(null, fileName + extName);
+            });
+        }
+    })
+});
 
 const state = require("../config/state.js");
 const userHandle = require("../handle/user.js");
@@ -63,21 +85,105 @@ router.post("/", async (req, res) => {
             res.status(400).send("Account or password can not be empty.");
             break;
         default:
-            res.status(200).json({ data: user, token: tokenHandle.sign(user.id, user.permission) });
+            res.status(200).json({ data: userHandle.getUserById(user.id), token: tokenHandle.sign(user.id, user.permission) });
             break;
     }
 });
 
-router.put("/:id", tokenHandle.verify, async (req, res) => {
-    if (req.body.id === req.params.id) {
-        const user = await userHandle.updateById(id, req.body);
-    } else {
-        return res.status(400).send(`Bad request: param ID (${id}) does not match body ID (${req.body.id}).`)
+//router.put("/", tokenHandle.verify, async (req, res) => {
+//    if (req.auth.id == req.body.id) {
+//        const user = await userHandle.updateById(id, req.body);
+//        switch (user) {
+//            case state.Empty:
+//                res.status(400).send("Id could not be empty");
+//                break;
+//            default:
+//                res.status(200).json(user);
+//                break;
+//        }
+//    } else {
+//        return res.status(400).send(`Bad request: param ID (${id}) does not match body ID (${req.body.id}).`)
+//    }
+//});
+
+router.put("/name", tokenHandle.verify, async (req, res) => {
+    const user = await userHandle.updateNameById(req.body.id, req.body.name, req.body.password);
+    switch (user) {
+        case state.Empty:
+            res.status(400).send("Id could not be empty");
+            break;
+        default:
+            res.status(200).json(user);
+            break;
     }
 });
 
-router.delete("/:id", tokenHandle.verify, async (req, res) => {
+router.put("/avatar", tokenHandle.verify, upload.single("avatar"), async (req, res) => {
+    const url = path.relative(path.resolve(__dirname, "../"), req.file.path).replaceAll("\\", "/");
+    const user = await userHandle.updateAvatarById(req.body.id, url);
+    switch (user) {
+        case state.Empty:
+            res.status(400).send("Id could not be empty");
+            break;
+        default:
+            res.status(200).json(user);
+            break;
+    }
+});
+
+router.put("/email", tokenHandle.verify, async (req, res) => {
+    const user = await userHandle.updateEmailById(req.body.id, req.body.email);
+    switch (user) {
+        case state.Empty:
+            res.status(400).send("Id could not be empty");
+            break;
+        default:
+            res.status(200).json(user);
+            break;
+    }
+});
+
+router.put("/password", tokenHandle.verify, async (req, res) => {
+    const user = await userHandle.updatePasswordById(req.body.id, req.body.password);
+    switch (user) {
+        case state.Empty:
+            res.status(400).send("Id could not be empty");
+            break;
+        default:
+            res.status(200).json(user);
+            break;
+    }
+});
+
+router.put("/introduction", tokenHandle.verify, async (req, res) => {
+    const user = await userHandle.updateIntroductionById(req.body.id, req.body.introduction);
+    switch (user) {
+        case state.Empty:
+            res.status(400).send("Id could not be empty");
+            break;
+        default:
+            res.status(200).json(user);
+            break;
+    }
+});
+
+router.delete("/abort/:id", tokenHandle.verify, async (req, res) => {
     const effect = await userHandle.deprecateById(req.params.id);
+    switch (effect) {
+        case state.NotExist:
+            res.status(404).send("User could not find");
+            break;
+        case state.Empty:
+            res.status(404).send("Params not exist");
+            break;
+        default:
+            res.status(200).end();
+            break;
+    }
+});
+
+router.get("/restore/:id", tokenHandle.verify, async (req, res) => {
+    const effect = await userHandle.restoreById(req.params.id);
     switch (effect) {
         case state.NotExist:
             res.status(404).send("User could not find");

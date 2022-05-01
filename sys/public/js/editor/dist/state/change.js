@@ -134,10 +134,11 @@ export class ChangeDesc {
             throw new RangeError("Invalid JSON representation of ChangeDesc");
         return new ChangeDesc(json);
     }
+    // @internal
+    static create(sections) { return new ChangeDesc(sections); }
 }
 /** A change set represents a group of modifications to a document. It stores the document length, and can only be applied to documents with exactly that length. */
 export class ChangeSet extends ChangeDesc {
-    // @internal
     constructor(sections, 
     // @internal
     inserted) {
@@ -195,7 +196,7 @@ export class ChangeSet extends ChangeDesc {
         iterChanges(this, f, individual);
     }
     /** Get a [change description](#state.ChangeDesc) for this change set. */
-    get desc() { return new ChangeDesc(this.sections); }
+    get desc() { return ChangeDesc.create(this.sections); }
     // @internal
     filter(ranges) {
         let resultSections = [], resultInserted = [], filteredSections = [];
@@ -226,7 +227,7 @@ export class ChangeSet extends ChangeDesc {
             }
         }
         return { changes: new ChangeSet(resultSections, resultInserted),
-            filtered: new ChangeDesc(filteredSections) };
+            filtered: ChangeDesc.create(filteredSections) };
     }
     /** Serialize this change set to a JSON-representable value. */
     toJSON() {
@@ -316,6 +317,10 @@ export class ChangeSet extends ChangeDesc {
                 sections.push(part[0], inserted[i].length);
             }
         }
+        return new ChangeSet(sections, inserted);
+    }
+    // @internal
+    static createSet(sections, inserted) {
         return new ChangeSet(sections, inserted);
     }
 }
@@ -421,7 +426,7 @@ function mapSet(setA, setB, before, mkSet = false) {
             a.next();
         }
         else if (a.done && b.done) {
-            return insert ? new ChangeSet(sections, insert) : new ChangeDesc(sections);
+            return insert ? ChangeSet.createSet(sections, insert) : ChangeDesc.create(sections);
         }
         else {
             throw new Error("Mismatched change set lengths");
@@ -434,7 +439,7 @@ function composeSets(setA, setB, mkSet = false) {
     let a = new SectionIter(setA), b = new SectionIter(setB);
     for (let open = false;;) {
         if (a.done && b.done) {
-            return insert ? new ChangeSet(sections, insert) : new ChangeDesc(sections);
+            return insert ? ChangeSet.createSet(sections, insert) : ChangeDesc.create(sections);
         }
         else if (a.ins == 0) { // Deletion in A
             addSection(sections, a.len, 0, open);

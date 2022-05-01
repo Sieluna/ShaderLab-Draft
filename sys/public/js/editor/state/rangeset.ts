@@ -30,7 +30,7 @@ export abstract class RangeValue {
     point!: boolean
 
     /** Create a [range](#state.Range) with this value. */
-    range(from: number, to = from) { return new Range(from, to, this) }
+    range(from: number, to = from) { return Range.create(from, to, this) }
 }
 
 RangeValue.prototype.startSide = RangeValue.prototype.endSide = 0
@@ -39,14 +39,18 @@ RangeValue.prototype.mapMode = MapMode.TrackDel
 
 /** A range associates a value with a range of positions. */
 export class Range<T extends RangeValue> {
-    // @internal
-    constructor(
+    private constructor(
         /** The range's start position. */
         readonly from: number,
         /** Its end position. */
         readonly to: number,
         /** The value associated with this range. */
         readonly value: T) {}
+
+    // @internal
+    static create<T extends RangeValue>(from: number, to: number, value: T) {
+        return new Range<T>(from, to, value)
+    }
 }
 
 function cmpRange<T extends RangeValue>(a: Range<T>, b: Range<T>) {
@@ -165,7 +169,7 @@ export interface RangeCursor<T> {
 type RangeSetUpdate<T extends RangeValue> = {
     /**
      * An array of ranges to add. If given, this should be sorted by `from` position and `startSide` unless
-     * [`sort`]{@link update.updateSpec.sort} is given as `true`.
+     * [`sort`]{@link update.sort} is given as `true`.
      */
     add?: readonly Range<T>[]
     /** Indicates whether the library should sort the ranges in `add`. Defaults to `false`. */
@@ -186,17 +190,21 @@ type RangeSetUpdate<T extends RangeValue> = {
  * [map]{@link map} and [update]{@link update}. This is an immutable data structure.
  */
 export class RangeSet<T extends RangeValue> {
-    // @internal
-    constructor(
+    private constructor(
         // @internal
         readonly chunkPos: readonly number[],
         // @internal
         readonly chunk: readonly Chunk<T>[],
         // @internal
-        readonly nextLayer: RangeSet<T> = RangeSet.empty,
+        readonly nextLayer: RangeSet<T>,
         // @internal
         readonly maxPoint: number
     ) {}
+
+    // @internal
+    static create<T extends RangeValue>(chunkPos: readonly number[], chunk: readonly Chunk<T>[], nextLayer: RangeSet<T>, maxPoint: number) {
+        return new RangeSet<T>(chunkPos, chunk, nextLayer, maxPoint)
+    }
 
     // @internal
     get length(): number {
@@ -239,7 +247,7 @@ export class RangeSet<T extends RangeValue> {
             } else {
                 if (!filter || filterFrom > cur.to || filterTo < cur.from || filter(cur.from, cur.to, cur.value!)) {
                     if (!builder.addInner(cur.from, cur.to, cur.value!))
-                        spill.push(new Range(cur.from, cur.to, cur.value!))
+                        spill.push(Range.create(cur.from, cur.to, cur.value!))
                 }
                 cur.next()
             }
@@ -271,7 +279,7 @@ export class RangeSet<T extends RangeValue> {
             }
         }
         let next = this.nextLayer.map(changes)
-        return chunks.length == 0 ? next : new RangeSet(chunkPos, chunks, next, maxPoint)
+        return chunks.length == 0 ? next : new RangeSet(chunkPos, chunks, next || RangeSet.empty, maxPoint)
     }
 
     /**
@@ -478,8 +486,8 @@ export class RangeSetBuilder<T extends RangeValue> {
     finishInner(next: RangeSet<T>): RangeSet<T> {
         if (this.from.length) this.finishChunk(false)
         if (this.chunks.length == 0) return next
-        let result = new RangeSet(this.chunkPos, this.chunks,
-            this.nextLayer ? this.nextLayer.finishInner(next) : next, this.setMaxPoint)
+        let result = RangeSet.create(this.chunkPos, this.chunks,
+                             this.nextLayer ? this.nextLayer.finishInner(next) : next, this.setMaxPoint)
         this.from = null as any // Make sure further `add` calls produce errors
         return result
     }

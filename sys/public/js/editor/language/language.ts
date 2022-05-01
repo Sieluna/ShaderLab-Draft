@@ -267,8 +267,7 @@ export class ParseContext {
     // @internal
     tempSkipped: {from: number, to: number}[] = []
 
-    // @internal
-    constructor(
+    private constructor(
         private parser: Parser,
         /** The current editor state. */
         readonly state: EditorState,
@@ -292,6 +291,11 @@ export class ParseContext {
          */
         public scheduleOn: Promise<unknown> | null
     ) {}
+
+    // @internal
+    static create(parser: Parser, state: EditorState, viewport: {from: number, to: number}) {
+        return new ParseContext(parser, state, [], Tree.empty, 0, viewport, [], null)
+    }
 
     private startParse() {
         return this.parser.startParse(new DocInput(this.state.doc), this.fragments)
@@ -485,8 +489,7 @@ class LanguageState {
 
     static init(state: EditorState) {
         let vpTo = Math.min(Work.InitViewport, state.doc.length)
-        let parseState = new ParseContext(state.facet(language)!.parser, state, [],
-            Tree.empty, 0, {from: 0, to: vpTo}, [], null)
+        let parseState = ParseContext.create(state.facet(language)!.parser, state, {from: 0, to: vpTo})
         if (!parseState.work(Work.Apply, vpTo)) parseState.takeTree()
         return new LanguageState(parseState)
     }

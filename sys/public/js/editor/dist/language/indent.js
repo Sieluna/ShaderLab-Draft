@@ -112,18 +112,21 @@ function indentFrom(node, pos, base) {
     for (; node; node = node.parent) {
         let strategy = indentStrategy(node);
         if (strategy)
-            return strategy(new TreeIndentContext(base, pos, node));
+            return strategy(TreeIndentContext.create(base, pos, node));
     }
     return null;
 }
 function topIndent() { return 0; }
 export class TreeIndentContext extends IndentContext {
-    // @internal
     constructor(base, pos, node) {
         super(base.state, base.options);
         this.base = base;
         this.pos = pos;
         this.node = node;
+    }
+    // @internal
+    static create(base, pos, node) {
+        return new TreeIndentContext(base, pos, node);
     }
     get textAfter() {
         return this.textAfterPos(this.pos);

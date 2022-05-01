@@ -124,7 +124,7 @@ function indentStrategy(tree: SyntaxNode): ((context: TreeIndentContext) => numb
 function indentFrom(node: SyntaxNode | null, pos: number, base: IndentContext) {
     for (; node; node = node.parent) {
         let strategy = indentStrategy(node)
-        if (strategy) return strategy(new TreeIndentContext(base, pos, node))
+        if (strategy) return strategy(TreeIndentContext.create(base, pos, node))
     }
     return null
 }
@@ -133,12 +133,17 @@ function indentFrom(node: SyntaxNode | null, pos: number, base: IndentContext) {
 function topIndent() { return 0 }
 
 export class TreeIndentContext extends IndentContext {
-    // @internal
-    constructor(
+    private constructor(
         private base: IndentContext,
         readonly pos: number,
-        readonly node: SyntaxNode) {
+        readonly node: SyntaxNode
+    ) {
         super(base.state, base.options)
+    }
+
+    // @internal
+    static create(base: IndentContext, pos: number, node: SyntaxNode) {
+        return new TreeIndentContext(base, pos, node)
     }
 
     get textAfter() {

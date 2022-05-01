@@ -8,14 +8,13 @@ export class RangeValue {
      */
     eq(other) { return this == other; }
     /** Create a [range](#state.Range) with this value. */
-    range(from, to = from) { return new Range(from, to, this); }
+    range(from, to = from) { return Range.create(from, to, this); }
 }
 RangeValue.prototype.startSide = RangeValue.prototype.endSide = 0;
 RangeValue.prototype.point = false;
 RangeValue.prototype.mapMode = MapMode.TrackDel;
 /** A range associates a value with a range of positions. */
 export class Range {
-    // @internal
     constructor(
     /** The range's start position. */
     from, 
@@ -26,6 +25,10 @@ export class Range {
         this.from = from;
         this.to = to;
         this.value = value;
+    }
+    // @internal
+    static create(from, to, value) {
+        return new Range(from, to, value);
     }
 }
 function cmpRange(a, b) {
@@ -105,20 +108,23 @@ class Chunk {
  * [map]{@link map} and [update]{@link update}. This is an immutable data structure.
  */
 export class RangeSet {
-    // @internal
     constructor(
     // @internal
     chunkPos, 
     // @internal
     chunk, 
     // @internal
-    nextLayer = RangeSet.empty, 
+    nextLayer, 
     // @internal
     maxPoint) {
         this.chunkPos = chunkPos;
         this.chunk = chunk;
         this.nextLayer = nextLayer;
         this.maxPoint = maxPoint;
+    }
+    // @internal
+    static create(chunkPos, chunk, nextLayer, maxPoint) {
+        return new RangeSet(chunkPos, chunk, nextLayer, maxPoint);
     }
     // @internal
     get length() {
@@ -165,7 +171,7 @@ export class RangeSet {
             else {
                 if (!filter || filterFrom > cur.to || filterTo < cur.from || filter(cur.from, cur.to, cur.value)) {
                     if (!builder.addInner(cur.from, cur.to, cur.value))
-                        spill.push(new Range(cur.from, cur.to, cur.value));
+                        spill.push(Range.create(cur.from, cur.to, cur.value));
                 }
                 cur.next();
             }
@@ -196,7 +202,7 @@ export class RangeSet {
             }
         }
         let next = this.nextLayer.map(changes);
-        return chunks.length == 0 ? next : new RangeSet(chunkPos, chunks, next, maxPoint);
+        return chunks.length == 0 ? next : new RangeSet(chunkPos, chunks, next || RangeSet.empty, maxPoint);
     }
     /**
      * Iterate over the ranges that touch the region `from` to `to`, calling `f` for each. There
@@ -399,7 +405,7 @@ export class RangeSetBuilder {
             this.finishChunk(false);
         if (this.chunks.length == 0)
             return next;
-        let result = new RangeSet(this.chunkPos, this.chunks, this.nextLayer ? this.nextLayer.finishInner(next) : next, this.setMaxPoint);
+        let result = RangeSet.create(this.chunkPos, this.chunks, this.nextLayer ? this.nextLayer.finishInner(next) : next, this.setMaxPoint);
         this.from = null; // Make sure further `add` calls produce errors
         return result;
     }

@@ -14,7 +14,6 @@ import { CharCategory, makeCategorizer } from "./charcategory.js";
  * As such, _never_ mutate properties of a state directly. That'll just break things.
  */
 export class EditorState {
-    // @internal
     constructor(
     // @internal
     config, 

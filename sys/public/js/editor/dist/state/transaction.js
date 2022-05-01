@@ -104,9 +104,9 @@ export class Transaction {
      * @param changes The document changes made by this transaction.
      * @param selection The selection set by this transaction, or undefined if it doesn't explicitly set a selection.
      * @param effects The effects added to the transaction.
+     * @param annotations
      * @param scrollIntoView Whether the selection should be scrolled into view after this transaction is dispatched.
      */
-    // @internal
     constructor(startState, changes, selection, effects, 
     // @internal
     annotations, scrollIntoView) {
@@ -124,6 +124,10 @@ export class Transaction {
             checkSelection(selection, changes.newLength);
         if (!annotations.some((a) => a.type == Transaction.time))
             this.annotations = annotations.concat(Transaction.time.of(Date.now()));
+    }
+    // @internal
+    static create(startState, changes, selection, effects, annotations, scrollIntoView) {
+        return new Transaction(startState, changes, selection, effects, annotations, scrollIntoView);
     }
     /**
      * The new document produced by the transaction. Contrary to [`.state`]{@link Transaction.state}`.doc`,
@@ -275,7 +279,7 @@ export function resolveTransaction(state, specs, filter) {
         let seq = !!specs[i].sequential;
         s = mergeTransaction(s, resolveTransactionInner(state, specs[i], seq ? s.changes.newLength : state.doc.length), seq);
     }
-    let tr = new Transaction(state, s.changes, s.selection, s.effects, s.annotations, s.scrollIntoView);
+    let tr = Transaction.create(state, s.changes, s.selection, s.effects, s.annotations, s.scrollIntoView);
     return extendTransaction(filter ? filterTransaction(tr) : tr);
 }
 // Finish a transaction by applying filters if necessary.
@@ -303,7 +307,7 @@ function filterTransaction(tr) {
             changes = filtered.changes;
             back = filtered.filtered.invertedDesc;
         }
-        tr = new Transaction(state, changes, tr.selection && tr.selection.map(back), StateEffect.mapEffects(tr.effects, back), tr.annotations, tr.scrollIntoView);
+        tr = Transaction.create(state, changes, tr.selection && tr.selection.map(back), StateEffect.mapEffects(tr.effects, back), tr.annotations, tr.scrollIntoView);
     }
     // Transaction filters
     let filters = state.facet(transactionFilter);
@@ -325,7 +329,7 @@ function extendTransaction(tr) {
         if (extension && Object.keys(extension).length)
             spec = mergeTransaction(tr, resolveTransactionInner(state, extension, tr.changes.newLength), true);
     }
-    return spec == tr ? tr : new Transaction(state, tr.changes, tr.selection, spec.effects, spec.annotations, spec.scrollIntoView);
+    return spec == tr ? tr : Transaction.create(state, tr.changes, tr.selection, spec.effects, spec.annotations, spec.scrollIntoView);
 }
 const none = [];
 export function asArray(value) {

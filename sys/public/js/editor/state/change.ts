@@ -17,7 +17,7 @@ export enum MapMode {
 /** A change description is a variant of [change set]{@link ChangeSet} that doesn't store the inserted text. As such, it can't be applied, but is cheaper to store and manipulate. */
 export class ChangeDesc {
     // @internal
-    constructor(
+    protected constructor(
         // @internal
         readonly sections: readonly number[]
     ) {}
@@ -150,14 +150,16 @@ export class ChangeDesc {
             throw new RangeError("Invalid JSON representation of ChangeDesc")
         return new ChangeDesc(json as number[])
     }
+
+    // @internal
+    static create(sections: readonly number[]) { return new ChangeDesc(sections) }
 }
 
 export type ChangeSpec = {from: number, to?: number, insert?: string | Text} | ChangeSet | readonly ChangeSpec[]
 
 /** A change set represents a group of modifications to a document. It stores the document length, and can only be applied to documents with exactly that length. */
 export class ChangeSet extends ChangeDesc {
-    // @internal
-    constructor(
+    private constructor(
         sections: readonly number[],
         // @internal
         readonly inserted: readonly Text[]
@@ -219,7 +221,7 @@ export class ChangeSet extends ChangeDesc {
     }
 
     /** Get a [change description](#state.ChangeDesc) for this change set. */
-    get desc() { return new ChangeDesc(this.sections) }
+    get desc() { return ChangeDesc.create(this.sections) }
 
     // @internal
     filter(ranges: readonly number[]) {
@@ -248,7 +250,7 @@ export class ChangeSet extends ChangeDesc {
             }
         }
         return {changes: new ChangeSet(resultSections, resultInserted),
-                filtered: new ChangeDesc(filteredSections)}
+                filtered: ChangeDesc.create(filteredSections)}
     }
 
     /** Serialize this change set to a JSON-representable value. */
@@ -326,6 +328,11 @@ export class ChangeSet extends ChangeDesc {
                 sections.push(part[0], inserted[i].length)
             }
         }
+        return new ChangeSet(sections, inserted)
+    }
+
+    // @internal
+    static createSet(sections: readonly number[], inserted: readonly Text[]) {
         return new ChangeSet(sections, inserted)
     }
 }
@@ -415,7 +422,7 @@ function mapSet(setA: ChangeDesc, setB: ChangeDesc, before: boolean, mkSet = fal
             posA = end
             a.next()
         } else if (a.done && b.done) {
-            return insert ? new ChangeSet(sections, insert) : new ChangeDesc(sections)
+            return insert ? ChangeSet.createSet(sections, insert) : ChangeDesc.create(sections)
         } else {
             throw new Error("Mismatched change set lengths")
         }
@@ -430,7 +437,7 @@ function composeSets(setA: ChangeDesc, setB: ChangeDesc, mkSet = false): ChangeD
     let a = new SectionIter(setA), b = new SectionIter(setB)
     for (let open = false;;) {
         if (a.done && b.done) {
-            return insert ? new ChangeSet(sections, insert) : new ChangeDesc(sections)
+            return insert ? ChangeSet.createSet(sections, insert) : ChangeDesc.create(sections)
         } else if (a.ins == 0) { // Deletion in A
             addSection(sections, a.len, 0, open)
             a.next()

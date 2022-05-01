@@ -16,7 +16,7 @@ function countCol(string, end, tabSize, startIndex = 0, startValue = 0) {
 }
 /** Encapsulates a single line of input. Given to stream syntax code, which uses it to tokenize the content. */
 export class StringStream {
-    // @internal
+    /** Create a stream. */
     constructor(
     /** The line. */
     string, tabSize, 

@@ -204,7 +204,6 @@ class DocInput {
 let currentContext = null;
 /** A parse context provided to parsers working on the editor content. */
 export class ParseContext {
-    // @internal
     constructor(parser, 
     /** The current editor state. */
     state, 
@@ -238,6 +237,10 @@ export class ParseContext {
         this.parse = null;
         // @internal
         this.tempSkipped = [];
+    }
+    // @internal
+    static create(parser, state, viewport) {
+        return new ParseContext(parser, state, [], Tree.empty, 0, viewport, [], null);
     }
     startParse() {
         return this.parser.startParse(new DocInput(this.state.doc), this.fragments);
@@ -425,7 +428,7 @@ class LanguageState {
     }
     static init(state) {
         let vpTo = Math.min(3000 /* InitViewport */, state.doc.length);
-        let parseState = new ParseContext(state.facet(language).parser, state, [], Tree.empty, 0, { from: 0, to: vpTo }, [], null);
+        let parseState = ParseContext.create(state.facet(language).parser, state, { from: 0, to: vpTo });
         if (!parseState.work(20 /* Apply */, vpTo))
             parseState.takeTree();
         return new LanguageState(parseState);

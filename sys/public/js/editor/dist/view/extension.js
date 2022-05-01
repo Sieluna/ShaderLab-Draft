@@ -1,6 +1,5 @@
 import { ChangeSet, Facet, StateEffect } from "../state/index.js";
 import { Decoration } from "./decoration.js";
-const none = [];
 export const clickAddsSelectionRange = Facet.define();
 export const dragMovesSelection = Facet.define();
 export const mouseSelectionStyle = Facet.define();
@@ -195,14 +194,13 @@ export class ChangedRange {
 }
 /** View [plugins](#view.ViewPlugin) are given instances of this class, which describe what happened, whenever the view is updated. */
 export class ViewUpdate {
-    // @internal
     constructor(
     /** The editor view that the update is associated with. */
     view, 
     /** The new editor state. */
     state, 
     /** The transactions involved in the update. May be empty. */
-    transactions = none) {
+    transactions) {
         this.view = view;
         this.state = state;
         this.transactions = transactions;
@@ -220,6 +218,10 @@ export class ViewUpdate {
             view.inputState.notifiedFocused = focus;
             this.flags |= 1 /* Focus */;
         }
+    }
+    // @internal
+    static create(view, state, transactions) {
+        return new ViewUpdate(view, state, transactions);
     }
     /** Tells you whether the [viewport]{@link EditorView.viewport} or [visible ranges]{@link EditorView.visibleRanges} changed in this update. */
     get viewportChanged() {

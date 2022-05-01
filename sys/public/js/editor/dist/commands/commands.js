@@ -131,10 +131,12 @@ function cursorByLine(view, forward) {
 export const cursorLineUp = view => cursorByLine(view, false);
 /** Move the selection one line down. */
 export const cursorLineDown = view => cursorByLine(view, true);
+function pageHeight(view) {
+    return Math.max(view.defaultLineHeight, Math.min(view.dom.clientHeight, innerHeight) - 5);
+}
 function cursorByPage(view, forward) {
     let { state } = view, selection = updateSel(state.selection, range => {
-        return range.empty ? view.moveVertically(range, forward, Math.min(view.dom.clientHeight, innerHeight))
-            : rangeEnd(range, forward);
+        return range.empty ? view.moveVertically(range, forward, pageHeight(view)) : rangeEnd(range, forward);
     });
     if (selection.eq(state.selection))
         return false;
@@ -242,7 +244,7 @@ export const selectLineUp = view => selectByLine(view, false);
 /** Move the selection head one line down. */
 export const selectLineDown = view => selectByLine(view, true);
 function selectByPage(view, forward) {
-    return extendSel(view, range => view.moveVertically(range, forward, Math.min(view.dom.clientHeight, innerHeight)));
+    return extendSel(view, range => view.moveVertically(range, forward, pageHeight(view)));
 }
 /** Move the selection head one page up. */
 export const selectPageUp = view => selectByPage(view, false);

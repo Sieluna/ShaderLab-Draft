@@ -15,8 +15,6 @@ import {MakeSelectionStyle} from "./input"
  */
 export type Command = (target: EditorView) => boolean
 
-const none: readonly any[] = []
-
 export const clickAddsSelectionRange = Facet.define<(event: MouseEvent) => boolean>()
 
 export const dragMovesSelection = Facet.define<(event: MouseEvent) => boolean>()
@@ -100,9 +98,9 @@ export interface PluginSpec<V extends PluginValue> {
     provide?: (plugin: ViewPlugin<V>) => Extension
 
     /**
-     * Allow the plugin to provide decorations. When given, this should a function that take the
-     * plugin value and return a [decoration set]{@link DecorationSet}. See also the caveat about
-     * [layout-changing decorations]{@link EditorView.decorations} that depend on the view.
+     * Allow the plugin to provide decorations. When given, this should be a function that take
+     * the plugin value and return a [decoration set]{@link DecorationSet}. See also the caveat
+     * about [layout-changing decorations]{@link EditorView.decorations} that depend on the view.
      */
     decorations?: (value: V) => DecorationSet
 }
@@ -269,14 +267,13 @@ export class ViewUpdate {
     // @internal
     changedRanges: readonly ChangedRange[]
 
-    // @internal
-    constructor(
+    private constructor(
         /** The editor view that the update is associated with. */
         readonly view: EditorView,
         /** The new editor state. */
         readonly state: EditorState,
         /** The transactions involved in the update. May be empty. */
-        readonly transactions: readonly Transaction[] = none
+        readonly transactions: readonly Transaction[]
     ) {
         this.startState = view.state
         this.changes = ChangeSet.empty(this.startState.doc.length)
@@ -289,6 +286,11 @@ export class ViewUpdate {
             view.inputState.notifiedFocused = focus
             this.flags |= UpdateFlag.Focus
         }
+    }
+
+    // @internal
+    static create(view: EditorView, state: EditorState, transactions: readonly Transaction[]) {
+        return new ViewUpdate(view, state, transactions)
     }
 
     /** Tells you whether the [viewport]{@link EditorView.viewport} or [visible ranges]{@link EditorView.visibleRanges} changed in this update. */

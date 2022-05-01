@@ -57,7 +57,6 @@ export var BlockType;
 // [`Range`](#state.Range), which adds a start and end position.
 // @nonabstract
 export class Decoration extends RangeValue {
-    // @internal
     constructor(
     // @internal
     startSide, 

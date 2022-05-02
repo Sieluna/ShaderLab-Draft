@@ -4,7 +4,7 @@
 .sl-nav > .sl-nav_filter {
     display: flex;
     flex-direction: column;
-    background: var(--bg1);
+    background: var(--bg_1);
     width: calc(100% - 128px);
     padding: 0 64px;
 }
@@ -32,7 +32,7 @@
     border: 1px solid var(--line_light);
     border-radius: 6px;
     background-color: var(--graph_bg_thin);
-    color: var(--text2);
+    color: var(--text_mid_dark);
     text-align: center;
     align-items: center;
     overflow: hidden;

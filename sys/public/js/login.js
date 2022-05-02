@@ -1,5 +1,3 @@
-import path from "path";
-
 let token = localStorage.getItem("token");
 
 const redirect = (existData) => {
@@ -7,8 +5,8 @@ const redirect = (existData) => {
         window.location.href = "../home.html";
 }
 
-const submitInfo = (target="") => {
-    fetch(path.posix.join("/api/user", target), {
+const submitInfo = (target = "") => {
+    fetch("/api/user" + target, {
         method: "POST",
         body: new URLSearchParams(new FormData(document.getElementById("panel-input"))),
         redirect: "follow"
@@ -27,8 +25,8 @@ const submitInfo = (target="") => {
 }
 
 window.onload = () => {
-    document.querySelector(".sl-panel > .panel-login > .register").addEventListener("click", _ => submitInfo());
-    document.querySelector(".sl-panel > .panel-login > .login").addEventListener("click", _ => submitInfo("login"));
+    document.querySelector(".sl-panel > .panel-login > .register").addEventListener("click", () => submitInfo());
+    document.querySelector(".sl-panel > .panel-login > .login").addEventListener("click", () => submitInfo("/login"));
     let background = document.querySelector(".sl-background"),
         small = background.querySelector(".small");
 

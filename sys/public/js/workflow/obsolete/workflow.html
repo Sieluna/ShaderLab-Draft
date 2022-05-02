@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Work flow test</title>
+</head>
+<body>
+
+<canvas id="test" width="1200" height="800" style="border: solid 1px;"></canvas>
+<script type="module">
+    import {Start, Step, Condition} from "./step.js";
+
+    const canvas = document.getElementById("test");
+    const ctx = canvas.getContext("2d");
+
+    //region Draw
+    let start = new Start(ctx, 600, 25);
+    let step1 = new Step(ctx, 600, 105);
+
+    start.drawBottomToTop(step1);
+
+    let condition1 = new Condition(ctx, 300, 200);
+    let condition2 = new Condition(ctx, 450, 200);
+    let condition3 = new Condition(ctx, 600, 200);
+    let condition4 = new Condition(ctx, 750, 200);
+    let condition5 = new Condition(ctx, 900, 200);
+
+    step1.drawBottomToTop(condition1);
+    step1.drawBottomToTop(condition2);
+    step1.drawBottomToTop(condition3);
+    step1.drawBottomToTop(condition4);
+    step1.drawBottomToTop(condition5);
+
+    let step2 = new Step(ctx, 450, 295);
+    let step3 = new Step(ctx, 750, 295);
+
+    condition1.drawBottomToTop(step2);
+    condition2.drawBottomToTop(step2);
+    condition3.drawBottomToTop(step2);
+    condition4.drawBottomToTop(step3);
+    condition5.drawBottomToTop(step3);
+
+    let condition6 = new Condition(ctx, 300, 400);
+    let condition7 = new Condition(ctx, 450, 400);
+    let condition8 = new Condition(ctx, 750, 400);
+    let condition9 = new Condition(ctx, 900, 400);
+    let condition10 = new Condition(ctx, 450, 500);
+    let condition11 = new Condition(ctx, 900, 500);
+    let condition12 = new Condition(ctx, 450, 600);
+    let condition13 = new Condition(ctx, 900, 600);
+
+    step2.drawBottomToTop(condition6);
+    step3.drawBottomToTop(condition9);
+
+    let step4 = new Step(ctx, 300, 725);
+    let step5 = new Step(ctx, 450, 725);
+    let step6 = new Step(ctx, 600, 725);
+    let step7 = new Step(ctx, 750, 725);
+    let step8 = new Step(ctx, 900, 725);
+
+    condition6.drawBottomToTop(step4);
+    condition6.drawRightToLeft(condition7);
+    condition7.drawRightToTop(step6);
+    condition7.drawBottomToTop(condition10);
+    condition8.drawBottomToTop(step7);
+    condition9.drawLeftToRight(condition8);
+    condition9.drawBottomToTop(condition11);
+    condition10.drawBottomToTop(condition12);
+    condition11.drawBottomToTop(condition13);
+    condition12.drawBottomToTop(step5);
+    condition13.drawBottomToTop(step8);
+
+    step4.drawLeftToRight(step5);
+    step5.drawLeftToRight(step6);
+    step6.drawLeftToRight(step7);
+    step7.drawLeftToRight(step8);
+
+    //endregion
+
+    // canvas.onclick = function (e) {
+    //     let x = e.clientX - canvas.offsetLeft;
+    //     let y = e.clientY - canvas.offsetTop;
+    //     alert('x:' + x + "y:" + y);
+    //     if (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h) {
+    //         alert('clicked')
+    //     }
+    // }
+</script>
+</body>
+</html>

@@ -35,7 +35,7 @@
     width: calc(100% - 2px);
     max-height: 612px;
     overflow-y: auto;
-    background: var(--bg1);
+    background: var(--bg_1);
     border: 1px solid var(--line_regular);
     border-top: none;
     border-radius: 0 0 8px 8px;
@@ -60,12 +60,12 @@
 #nav-search.is-focus {
     border: 1px solid var(--line_regular);
     border-bottom: none;
-    background: var(--bg1);
+    background: var(--bg_1);
     opacity: .97
 }
 
 #nav-search:hover {
-    background-color: var(--bg1);
+    background-color: var(--bg_1);
     opacity: 1
 }
 
@@ -88,7 +88,7 @@
     border: none;
     background-color: transparent;
     box-shadow: none;
-    color: var(--text2);
+    color: var(--text_mid_dark);
     font-size: 14px;
     line-height: 20px;
 }
@@ -96,7 +96,7 @@
 #nav-search > .nav-search-content > .nav-search-input:focus {
     outline: none;
     background: var(--graph_bg_thick);
-    color: var(--text1);
+    color: var(--text_dark);
 }
 
 #nav-search > .nav-search-content > .nav-search-clean {
@@ -128,7 +128,7 @@
     height: 32px;
     border: none;
     border-radius: 6px;
-    color: var(--text1);
+    color: var(--text_dark);
     line-height: 32px;
     cursor: pointer;
     transition: background-color .3s;

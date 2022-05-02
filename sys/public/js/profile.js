@@ -1,4 +1,3 @@
-
 const submitAvatar = () => {
     fetch("/api/user/avatar", {
         method: "PUT",

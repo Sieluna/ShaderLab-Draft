@@ -1,0 +1,40 @@
+.sl-editor {
+    display: grid;
+    grid-template-areas:
+            "view view title"
+            "view view editor"
+            "work info editor";
+    grid-template-columns: 1.6fr 0.5fr 2.3fr;
+    grid-template-rows: 30px max(28vw, 45%);
+    margin: 30px;
+}
+
+.sl-editor .renderer {
+    grid-area: view;
+}
+
+.sl-editor .workflow {
+    grid-area: work;
+}
+
+.sl-editor .pipeline {
+    grid-area: info;
+}
+
+.sl-editor .header {
+    grid-area: title;
+}
+
+.sl-editor .code {
+    grid-area: editor;
+}
+
+@media (max-width: 799.98px) {
+    .sl-editor {
+        grid-template-areas:
+                "title"
+                "editor"
+                "work"
+                "info"
+    }
+}

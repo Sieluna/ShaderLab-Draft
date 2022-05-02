@@ -17,6 +17,7 @@ if (user != null) {
     avatar.setAttribute("style", "display: none");
 }
 
+
 let onTop;
 window.onscroll = () => {
     if (onTop !== !(document.documentElement.scrollTop || document.body.scrollTop)) {

@@ -8,39 +8,33 @@
 </head>
 <body>
 
+<div class="sl-nav">
 
-
-<div id="vertShaderCode" class="hidden"></div>
-<div id="fragShaderCode" class="hidden"></div>
-
-<div id="renderContainer">
-    <div id="loading" class="hidden">Loading...</div>
-    <div id="renderCanvasContainer">
-        <canvas id="renderCanvas"></canvas>
-    </div>
-    <div id="errorLog"></div>
 </div>
 
-<div id="shadersContainer">
-    <div id="vertexRow" class="row">
-        <div class="rowHeader">
-            <span class="headerTitle">PIXEL (FRAGMENT) SHADER</span>
-        </div>
-        <div class="rowEditor">
-            <div class="shaderCode" id="fragmentShaderEditor"></div>
-        </div>
-    </div>
-    <div id="fragmentRow" class="row">
-        <div class="rowHeader">
-            <span class="headerTitle">VERTEX SHADER</span>
-        </div>
-        <div class="rowEditor">
-            <div class="shaderCode" id="vertexShaderEditor"></div>
+<main class="sl-editor">
+    <div class="renderer">
+        <canvas id="render-canvas"></canvas>
+        <div class="render-info">
+            <div class="renderer-state">********</div>
+            <div class="renderer-time">123456789</div>
+            <div class="renderer-fps">60fps</div>
+            <div class="renderer-">******</div>
         </div>
     </div>
-</div>
+    <div class="workflow">
+        <canvas class="workflow-canvas"></canvas>
+    </div>
+    <div class="pipeline">
+
+    </div>
+    <div class="header">Shader</div>
+    <div class="code">
+        <div id="panel"></div>
+    </div>
+</main>
 
 </body>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
-<script src="./js/editor/ace.js" type="text/javascript" charset="utf-8"></script>
+<script type="module" src="./js/editor.js"></script>
 </html>

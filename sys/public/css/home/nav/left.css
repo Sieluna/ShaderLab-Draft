@@ -41,5 +41,5 @@
 
 /** Slide down case */
 .sl-nav .slide-down .left-entry .home-entry {
-    color: var(--text1);
+    color: var(--text_dark);
 }

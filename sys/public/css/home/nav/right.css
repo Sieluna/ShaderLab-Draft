@@ -57,7 +57,7 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    color: var(--brand_blue);
+    color: #00AEEC;
     background: #f6f6f6;
     text-align: center;
     letter-spacing: 0;
@@ -218,11 +218,11 @@
 .sl-nav .userinfo-container {
     position: relative;
     width: 300px;
-    background-color: var(--bg1_float);
+    background-color: #fff;
     box-shadow: 0 0 30px rgb(0 0 0 / 10%);
     border-radius: 8px;
     border: 1px solid var(--line_regular);
-    color: var(--text1);
+    color: var(--text_dark);
 }
 
 .sl-nav .upload-entry {
@@ -298,9 +298,9 @@
 
 /** Slide down case */
 .sl-nav .slide-down .right-entry .right-entry-icon {
-    color: var(--text1);
+    color: var(--text_dark);
 }
 
 .sl-nav .slide-down .right-entry .right-entry-text {
-    color: var(--text2);
+    color: var(--text_mid_dark);
 }

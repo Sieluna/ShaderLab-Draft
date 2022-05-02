@@ -7,7 +7,7 @@ import { searchKeymap, highlightSelectionMatches } from "./dist/search/index.js"
 import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from "./dist/autocomplete/index.js";
 import { lintKeymap } from "./dist/lint/index.js";
 
-export const config = [
+export const defaultConfig = [
     lineNumbers(),
     highlightActiveLineGutter(),
     highlightSpecialChars(),

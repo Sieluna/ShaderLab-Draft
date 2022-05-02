@@ -23,8 +23,9 @@ export const HoverRef = hoverTooltip((view, pos, side) => {
             let ref;
             if ((ref = glslRef[target])) {
                 dom.textContent = ref;
-                return {dom};
+                return { dom };
             } else {
+                return { dom };
             }
         }
     }

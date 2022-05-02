@@ -6,7 +6,7 @@
             "work info editor";
     grid-template-columns: 1.6fr 0.5fr 2.3fr;
     grid-template-rows: 30px max(28vw, 45%);
-    margin: 30px;
+    margin: 25px;
 }
 
 .sl-editor .renderer {

@@ -1,7 +1,8 @@
-import { EditorState, EditorView, config } from "./editor/loader.js";
+import { EditorState, EditorView, defaultConfig } from "./editor/loader.js";
 import { javascript } from "./editor/dist/javascript.js";
 import { glsl } from "./editor/dist/glsl.js";
 import { HoverRef } from "./editor/hover.js";
+import { wordCounter } from "./editor/count.js";
 
 let glState = EditorState.create({ doc:
         '#ifdef GL_ES\n' +
@@ -17,8 +18,10 @@ let glState = EditorState.create({ doc:
         '   color = vec3(st.x,st.y,abs(sin(u_time)));\n\n' +
         '   gl_FragColor = vec4(color,1.0);\n' +
         '}', extensions: [
-        config,
-        glsl(),
+        defaultConfig,
+        EditorView.lineWrapping, // css white-space
+        glsl,
+        wordCounter(),
         HoverRef
     ] });
 window.view = new EditorView({ state: glState, parent: document.getElementById("panel") });

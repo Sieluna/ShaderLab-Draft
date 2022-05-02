@@ -147,7 +147,7 @@ declarator {
 
 FunctionDeclarator {
   declarator !params ParameterList !specifiers AttributeSpecifier*
-  (!specifiers (typeQualifier | virtualSpecifier | Noexcept | ThrowSpecifier | TrailingReturnType))*
+  (!specifiers (typeQualifier | virtualSpecifier | TrailingReturnType))*
 }
 
 fieldDeclarator {
@@ -155,7 +155,7 @@ fieldDeclarator {
     MsBasedModifier? "*" msPointerModifier* typeQualifier* fieldDeclarator
   } |
   FunctionDeclarator {
-    fieldDeclarator !params ParameterList (typeQualifier | virtualSpecifier | Noexcept | ThrowSpecifier | TrailingReturnType)*
+    fieldDeclarator !params ParameterList (typeQualifier | virtualSpecifier | TrailingReturnType)*
   } |
   ArrayDeclarator {
     fieldDeclarator !array "[" typeQualifier* (expression | "*")? "]"
@@ -204,7 +204,7 @@ abstractDeclarator {
 }
 
 AbstractFunctionDeclarator {
-  abstractDeclarator? !params ParameterList (typeQualifier | Noexcept | ThrowSpecifier)* !return TrailingReturnType?
+  abstractDeclarator? !params ParameterList (typeQualifier)* !return TrailingReturnType?
 }
 
 InitDeclarator {
@@ -307,8 +307,7 @@ statement[@isGroup=Statement] {
   CaseStatement |
   nonCaseStatement |
   ForRangeLoop |
-  TryStatement |
-  ThrowStatement
+  TryStatement
 }
 
 nonCaseStatement {
@@ -604,14 +603,6 @@ TrailingReturnType {
   "->" typeQualifier? typeSpecifier abstractDeclarator?
 }
 
-Noexcept {
-  kw<"noexcept"> (!arguments "(" expression? ")")?
-}
-
-ThrowSpecifier {
-  kw<"throw"> "(" commaSep<TypeDescriptor> ")"
-}
-
 TemplateType {
   (TypeIdentifier | ScopedTypeIdentifier) ~identifier TemplateArgumentList
 }
@@ -641,10 +632,6 @@ ConditionClause {
 
 ForRangeLoop {
   kw<"for"> "(" declarationSpecifiers declarator ":" (expression | InitializerList) ")" statement
-}
-
-ThrowStatement {
-  kw<"throw"> expression? ";"
 }
 
 TryStatement {

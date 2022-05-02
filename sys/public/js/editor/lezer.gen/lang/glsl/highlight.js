@@ -1,10 +1,10 @@
 import {styleTags, tags as t} from "@lezer/highlight"
 
 export const glslHighlighting = styleTags({
-    "typedef struct union enum class typename decltype auto template operator friend noexcept namespace using __attribute__ __declspec __based": t.definitionKeyword,
+    "typedef struct union enum class typename decltype auto template operator friend noexcept __attribute__ __declspec __based": t.definitionKeyword,
     "extern MsCallModifier MsPointerModifier extern static register inline const volatile restrict _Atomic mutable constexpr virtual explicit VirtualSpecifier Access": t.modifier,
-    "if else switch for while do case default return discard break continue goto throw try catch": t.controlKeyword,
-    "new sizeof delete static_assert": t.operatorKeyword,
+    "if else switch for while do case default return break continue goto throw try catch": t.controlKeyword,
+    "new sizeof delete": t.operatorKeyword,
     "NULL nullptr": t.null,
     this: t.self,
     "True False": t.bool,

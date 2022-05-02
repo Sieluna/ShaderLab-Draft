@@ -16,7 +16,7 @@
 <div id="js-editor"></div>
 </body>
 <script type=module>
-    import { EditorState, EditorView, config } from "./loader.js";
+    import { EditorState, EditorView, defaultConfig } from "./loader.js";
     import { javascript } from "./dist/javascript.js";
     import { glsl } from "./dist/glsl.js";
     import { HoverRef } from "./hover.js";
@@ -35,8 +35,8 @@
             '   color = vec3(st.x,st.y,abs(sin(u_time)));\n\n' +
             '   gl_FragColor = vec4(color,1.0);\n' +
             '}', extensions: [
-            config,
-            glsl(),
+            defaultConfig,
+            glsl,
             HoverRef
         ] });
     window.view = new EditorView({ state: glState, parent: document.querySelector("#glsl-editor") });
@@ -45,7 +45,7 @@
             'function hello(who = "world") {\n' +
             '   console.log(`Hello, ${who}!`)\n' +
             '}', extensions: [
-            config,
+            defaultConfig,
             javascript(),
         ] });
     window.view = new EditorView({ state: jsState, parent: document.querySelector("#js-editor") });

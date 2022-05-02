@@ -1,5 +1,5 @@
 // Editor
-export { EditorState, EditorView, config } from "./editor/loader.js";
+export { EditorState, EditorView, defaultConfig } from "./editor/loader.js";
 
 // Maths
 export { Color } from './math/color.js';

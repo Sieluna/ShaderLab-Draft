@@ -229,4 +229,26 @@ describe("Post handle test", () => {
             debug.log(postCache);
         });
     });
+    describe("Count post", () => {
+        it("should return the number of post", async () => {
+            let count = await postHandle.countPost(),
+                lastId = await postHandle.getLastId();
+            debug.log(count, lastId)
+            expect(count).to.be.equal(lastId);
+        });
+    });
+    describe("Deprecate post test", () => {
+        beforeEach(async () => code = await postHandle.countPost());
+        it("should lower down 1 index", async () => {
+            await postHandle.deprecateById(1);
+            expect(await postHandle.countPost()).to.be.equal(code - 1);
+        });
+    });
+    describe("Restore post test", () => {
+        beforeEach(async () => code = await postHandle.countPost());
+        it("should lower down 1 index", async () => {
+            await postHandle.restoreById(1);
+            expect(await postHandle.countPost()).to.be.equal(code + 1);
+        });
+    });
 })

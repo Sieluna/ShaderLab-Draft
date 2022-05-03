@@ -29,7 +29,9 @@ module.exports = sequelize => {
             defaultValue: 0
         }
     }, {
+        paranoid: true,
         createdAt: "post_create",
-        updatedAt: "post_update"
+        updatedAt: "post_update",
+        deleteAt: "post_abort"
     });
 }

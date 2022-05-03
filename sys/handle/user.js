@@ -176,7 +176,7 @@ const handle = {
         return await user.update({ introduction: text }, { where: { id: id }, individualHooks: true });
     },
     /**
-     * Update user password by id
+     * Deprecate user by id
      * @param {number|string} id
      * @return {Promise<number|state>} number of rows effected
      */
@@ -186,7 +186,7 @@ const handle = {
         return Number(result) > 0 ?  result : state.NotExist;
     },
     /**
-     * Update user password by id
+     * Restore user by id
      * @param {number|string} id
      * @return {Promise<number|state>} number of rows effected
      */

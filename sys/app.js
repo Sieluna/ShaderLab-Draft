@@ -19,5 +19,6 @@ app.get("/", (req, res) => res.render("index", { title: "Shader Lab" }));
 
 app.use("/api/user", require("./routes/user.js"));
 app.use("/api/topic", require("./routes/topic.js"));
+app.use("/api/post", require("./routes/post.js"));
 
 module.exports = app;

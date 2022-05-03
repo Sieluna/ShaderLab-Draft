@@ -106,6 +106,19 @@ describe("User APIs", () => {
             });
         });
     });
+    describe("User update avatar test", () => {
+        it("should update avatar", done => {
+            chai.request(app).put("/api/user/avatar").
+            set("Authorization", "Bearer " + code).
+            attach("avatar", "sys/public/img/home/sponza.jpg").
+            field({ id: "1", password: "psw23333" }).
+            end((err, res) => {
+                debug.log("Update password", res.body);
+                expect(res.status).to.be.equal(200);
+                done();
+            });
+        });
+    });
     describe("User update introduction test", () => {
         it("should update introduction", done => {
             chai.request(app).put("/api/user/introduction").

@@ -115,6 +115,9 @@ const handle = {
         const result = await comment.count({ where: { postId: id } });
         return isNumber(result) ? result : state.NotExist;
     },
+    countPost: async () => {
+        return await post.count();
+    },
     /**
      * View a post
      * @param {number|string} id
@@ -163,6 +166,26 @@ const handle = {
         if ((await userId) == null || (await topicId) == null) return state.NotExist;
         return await post.create({ name: name, preview: preview, content: content, userId: await userId, topicId: await topicId });
     },
+    /**
+     * Deprecate post by id
+     * @param {number|string} id
+     * @return {Promise<number|state>} number of rows effected
+     */
+    deprecateById: async id => {
+        if (!isNumber(id)) return state.Empty;
+        const result = await post.destroy({ where: { id: id }});
+        return Number(result) > 0 ?  result : state.NotExist;
+    },
+    /**
+     * Restore post by id
+     * @param {number|string} id
+     * @return {Promise<number|state>} number of rows effected
+     */
+    restoreById: async id => {
+        if (!isNumber(id)) return state.Empty;
+        const result = await post.restore({ where: { id: id }});
+        return Number(result) > 0 ? result : state.NotExist;
+    }
 }
 
 module.exports = handle;

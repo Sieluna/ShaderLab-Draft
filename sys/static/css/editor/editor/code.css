@@ -1,0 +1,25 @@
+.sl-editor .header {
+    height: 40px;
+}
+
+.sl-editor .title {
+    height: 30px;
+}
+
+.sl-editor .code {
+    height: calc(100vh - 80px);
+    border-radius: 15px;
+}
+
+.sl-editor #panel {
+    height: 100%
+}
+
+.cm-editor {
+    height: 100%;
+    border: 1px solid #ddd;
+}
+
+.cm-scroller {
+    overflow-y: scroll;
+}

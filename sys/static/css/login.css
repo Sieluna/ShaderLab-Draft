@@ -1,0 +1,31 @@
+@import "./shared.css";
+@import "./theme.css";
+@import "./login/nav.css";
+@import "./login/panel.css";
+
+.sl-background {
+    background-color: var(--bg_2);
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    z-index: -10;
+}
+
+.sl-background img {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    left:50%;
+    opacity: 0;
+    transition: opacity 0.5s ease-in;
+    transform: translate(-50%);
+}
+
+.sl-background img.loaded {
+    opacity: 1;
+}
+
+.sl-background small {
+    filter: blur(250px);
+}

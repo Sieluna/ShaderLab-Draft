@@ -1,23 +1,27 @@
-.sl-editor .header {
-    height: 40px;
-}
-
-.sl-editor .title {
-    height: 30px;
-}
-
 .sl-editor .code {
-    height: calc(100vh - 80px);
+    display: flex;
+    flex-direction: column;
     border-radius: 15px;
+    border: 1px solid var(--graph_bg_thick);
+    box-shadow: 1px 1px 2px var(--graph_weak);
+}
+
+.sl-editor .header {
+    line-height: 40px;
+    padding: 0 20px 0 20px;
 }
 
 .sl-editor #panel {
-    height: 100%
+    flex: 1;
+    margin: 2px 5px 10px 5px;
+    height: calc(100vh - 140px);
+    max-height: 600px;
+    border-radius: 10px;
 }
 
 .cm-editor {
     height: 100%;
-    border: 1px solid #ddd;
+    border-radius: 5px;
 }
 
 .cm-scroller {

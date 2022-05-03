@@ -3,6 +3,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = {
     entry: {
+        login: path.join(__dirname, "js/login.js"),
         home: path.join(__dirname, "js/home.js")
     },
     output: {
@@ -17,7 +18,12 @@ module.exports = {
             chunks: ["home"],
             filename: "home.html",
             template: path.join(__dirname, "home.html")
-        })
+        }),
+        new HtmlWebpackPlugin({
+            chunks: ["home"],
+            filename: "login.html",
+            template: path.join(__dirname, "login.html")
+        }),
     ],
     module: {
         rules: [{

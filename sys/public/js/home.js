@@ -1,6 +1,6 @@
 import { scrollTopFeature } from "./element/home/navbar.js";
-import { searchFeature } from "./element/home/search.js";
-import { userFeature } from "./element/home/user.js";
+import { searchFeature } from "./element/shared/search.js";
+import { userFeature } from "./element/shared/user.js";
 
 //const user = localStorage.getItem("user");
 

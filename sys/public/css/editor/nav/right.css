@@ -1,0 +1,11 @@
+.sl-nav .upload-entry {
+    background: linear-gradient(56deg, #5bd0b3 0%, #4badea 100%);
+}
+
+.sl-nav .right-entry .right-entry-icon {
+    color: var(--text_dark);
+}
+
+.sl-nav .right-entry .right-entry-text {
+    color: var(--text_mid_dark);
+}

@@ -1,0 +1,45 @@
+/**
+ * Filter Bar
+ */
+.sl-nav > .sl-nav_filter {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg_1);
+    width: calc(100% - 128px);
+    padding: 0 64px;
+}
+
+.sl-nav .topic-filter {
+    display: flex;
+    height: 26%;
+    align-items: center;
+    padding: 12px 0 5px;
+}
+
+.sl-nav .tag-filter {
+    display: flex;
+    height: 26%;
+    align-items: center;
+    padding: 5px 0 12px;
+}
+
+.sl-nav .filter-item {
+    display: inline-block;
+    box-sizing: content-box;
+    width: 100%;
+    height: 100%;
+    margin: 0 6px;
+    border: 1px solid var(--line_light);
+    border-radius: 6px;
+    background-color: var(--graph_bg_thin);
+    color: var(--text_mid_dark);
+    text-align: center;
+    align-items: center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-weight: 400;
+    line-height: 29px;
+    transition: background-color 0.3s, color 0.3s;
+    cursor: pointer;
+}

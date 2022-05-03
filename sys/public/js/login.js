@@ -7,6 +7,8 @@ const redirect = (existData) => {
         window.location.href = "../home.html";
 }
 
+redirect(token);
+
 const submitInfo = (target = "") => {
     fetch("/api/user" + target, {
         method: "POST",

@@ -1,0 +1,22 @@
+.sl-nav {
+    position: relative;
+    width: 100%;
+    min-height: 55px;
+    margin: 0 auto;
+}
+
+.sl-nav .left-entry {
+    width: 25%;
+}
+
+.sl-nav > .sl-nav_bar {
+    position: absolute;
+    top: 0;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    width: calc(100% - 48px);
+    height: 55px;
+}

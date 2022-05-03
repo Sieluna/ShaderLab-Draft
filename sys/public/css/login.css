@@ -13,7 +13,9 @@
 
 .sl-background img {
     position: absolute;
-    width: 100%;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
     left:50%;
     opacity: 0;
     transition: opacity 0.5s ease-in;

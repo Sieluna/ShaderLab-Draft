@@ -1,6 +1,13 @@
 @import "./shared.css";
 @import "./theme.css";
 
+@import "./editor/nav.css";
+@import "./shared/center.css";
+@import "./shared/right.css";
+/** Override */
+@import "./editor/nav/center.css";
+@import "./editor/nav/right.css";
+
 @import "./editor/editor.css";
 @import "./editor/editor/renderer.css";
 @import "./editor/editor/workflow.css";

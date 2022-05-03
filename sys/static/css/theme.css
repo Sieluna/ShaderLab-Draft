@@ -1,0 +1,23 @@
+:root {
+    --bg_1: #FFFFFF;
+    --bg_2: #EDFBFB;
+    --bg_3: #E2F8F8;
+    --text_white: #FFFFFF;
+    --text_dark: #1e1f23;
+    --text_mid_dark: #61666D;
+    --text_mid_light: #9499A0;
+    --text_light: #C9CCD0;
+    --text_link: #008AC5;
+    --text_notice: #E58900;
+    --line_light: #F1F2F3;
+    --line_regular: #E3E5E7;
+    --line_bold: #C9CCD0;
+    --graph_white: #FFFFFF;
+    --graph_bg_thin: #F6F7F8;
+    --graph_bg_regular: #F1F2F3;
+    --graph_bg_thick: #E3E5E7;
+    --graph_weak: #C9CCD0;
+    --graph_medium: #9499A0;
+    --graph_icon: #61666D;
+    --shadow: #000000;
+}

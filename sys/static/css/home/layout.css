@@ -1,0 +1,45 @@
+.sl-layout {
+    position: relative;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.sl-holder {
+    position: relative;
+    width: 100%;
+    display: grid;
+    grid-gap: 20px 12px;
+}
+
+.card {
+    position: relative;
+    --title-font-size: 15px;
+    --title-line-height: 22px;
+    --subtitle-font-size: 13px;
+    --subtitle-line-height: 16px;
+    --info-margin-top: 8px;
+    --avatar-size: 36px;
+    --avatar-margin-right: 8px;
+    --icon-size: 18px;
+    --title-padding-right: 16px;
+    --follow-icon-font-size: 12px;
+    --follow-icon-line-height: 17px;
+}
+
+@media (max-width: 399.98px) {
+    .sl-holder {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 400px) and (max-width: 799.98px) {
+    .sl-holder {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (min-width: 800px) {
+    .sl-holder {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}

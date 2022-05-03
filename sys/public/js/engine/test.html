@@ -23,7 +23,7 @@
 </style>
 <body>
 <script type="module">
-    import {Renderer, Camera, Transform, Texture, Program, Color, Geometry, Mesh, Vec3, Orbit, Cylinder, NormalProgram} from './js/index.mjs';
+    import {Renderer, Camera, Transform, Texture, Program, Color, Geometry, Mesh, Vec3, Orbit, Cylinder, NormalProgram} from '../index.mjs';
 
     const vertex = /* glsl */ `
                 attribute vec2 uv;
@@ -89,7 +89,7 @@
         const texture = new Texture(gl);
         const img = new Image();
         img.onload = () => (texture.image = img);
-        img.src = 'res/forest.jpg';
+        img.src = '../../res/forest.jpg';
 
         const program = new Program(gl, {
             vertex: vertex,
@@ -113,7 +113,7 @@
         addCameraShape();
 
         async function loadForest() {
-            const data = await (await fetch(`res/forest.json`)).json();
+            const data = await (await fetch(`../../res/forest.json`)).json();
             const size = 20;
             const num = size * size;
 

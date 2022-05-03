@@ -1,6 +1,3 @@
-// Editor
-export { EditorState, EditorView, defaultConfig } from "./editor/loader.js";
-
 // Maths
 export { Color } from './math/color.js';
 export { Euler } from './math/euler.js';

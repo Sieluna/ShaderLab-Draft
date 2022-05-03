@@ -1,3 +1,5 @@
+import { lazyLoadFeature } from "./element/login/image.js"
+
 let token = localStorage.getItem("token");
 
 const redirect = (existData) => {
@@ -25,18 +27,7 @@ const submitInfo = (target = "") => {
 }
 
 window.onload = () => {
+    lazyLoadFeature();
     document.querySelector(".sl-panel > .panel-login > .register").addEventListener("click", () => submitInfo());
     document.querySelector(".sl-panel > .panel-login > .login").addEventListener("click", () => submitInfo("/login"));
-    let background = document.querySelector(".sl-background"),
-        small = background.querySelector(".small");
-
-    let img = new Image();
-    img.src = small.src;
-    img.onload = () => small.classList.add("loaded");
-
-    let imgLarge = new Image();
-    imgLarge.src = background.dataset.large;
-    imgLarge.onload = () => imgLarge.classList.add("loaded");
-
-    background.appendChild(imgLarge);
 }

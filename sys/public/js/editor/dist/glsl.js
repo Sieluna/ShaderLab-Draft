@@ -63,18 +63,27 @@ function langHook(stream, state) {
     return "meta";
 }
 
+export const glslKeywords = words(
+    "sampler1D sampler2D sampler3D samplerCube " +
+    "sampler1DShadow sampler2DShadow " +
+    "const attribute uniform varying " +
+    "break continue discard return " +
+    "for while do if else struct " +
+    "in out inout");
+
+export const glslTypes = words(
+    "float int bool void " +
+    "vec2 vec3 vec4 ivec2 ivec3 ivec4 bvec2 bvec3 bvec4 " +
+    "mat2 mat3 mat4"
+);
+
+export const glslParams = words("ifdef endif def")
+
 export const shaderLanguage = (parserConfig = {}) => {
     let statementIndentUnit = parserConfig.statementIndentUnit,
         dontAlignCalls = parserConfig.dontAlignCalls,
-        keywords = words("sampler1D sampler2D sampler3D samplerCube " +
-            "sampler1DShadow sampler2DShadow " +
-            "const attribute uniform varying " +
-            "break continue discard return " +
-            "for while do if else struct " +
-            "in out inout"),
-        types = words("float int bool void " +
-            "vec2 vec3 vec4 ivec2 ivec3 ivec4 bvec2 bvec3 bvec4 " +
-            "mat2 mat3 mat4"),
+        keywords = glslKeywords,
+        types = glslTypes,
         builtin = words("radians degrees sin cos tan asin acos atan " +
             "pow exp log exp2 sqrt inversesqrt " +
             "abs sign floor ceil fract mod min max clamp mix step smoothstep " +

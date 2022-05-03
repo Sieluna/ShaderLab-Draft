@@ -35,6 +35,3 @@ export const defaultConfig = [
         ...lintKeymap
     ])
 ];
-
-export { EditorView } from "./dist/view/index.js";
-export { EditorState } from "./dist/state/index.js";

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <style>
+        .cm-editor { height: 300px; border: 1px solid #ddd}
+        .cm-scroller { overflow: auto; }
+    </style>
+    <title>Editor</title>
+</head>
+<body>
+<h1>GLSL Test</h1>
+<div id=glsl-editor></div>
+<h1>JavaScript Test</h1>
+<div id="js-editor"></div>
+</body>
+<script type=module>
+    import { EditorState, EditorView, glslInstance, javascriptInstance, instances } from "./instance.js";
+
+    new EditorView({ state: glslInstance("glslEditor"), parent: document.querySelector("#glsl-editor") });
+    new EditorView({ state: javascriptInstance("jsEditor"), parent: document.querySelector("#js-editor") });
+</script>
+</html>

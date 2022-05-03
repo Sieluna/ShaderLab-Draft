@@ -18,6 +18,23 @@
     border-radius: 0 0 12px 12px;
 }
 
-.sl-editor .render-info div {
+.sl-editor .renderer-state {
+    width: 25px;
+    height: 25px;
+    padding: 2px 15px 2px 15px;
+    fill: var(--graph_icon);
+}
+
+.sl-editor .renderer-time {
     padding: 5px 20px 5px 20px;
 }
+
+.sl-editor .renderer-fps {
+    padding: 5px 20px 5px 20px;
+}
+
+.sl-editor .renderer-full {
+    padding: 5px 20px 5px 20px;
+}
+
+

@@ -35,12 +35,24 @@
             <div class="renderer-full">******</div>
         </div>
     </div>
-    <div class="workflow">
-        <canvas class="workflow-canvas"></canvas>
-    </div>
     <div class="pipeline">
-
+        <div class="drag-flow" draggable="true" data-node="vertex-shader">
+            <span>VS</span>
+        </div>
+        <div class="drag-flow" draggable="true" data-node="hull-shader">
+            <span>HS</span>
+        </div>
+        <div class="drag-flow" draggable="true" data-node="domain-shader">
+            <span>DS</span>
+        </div>
+        <div class="drag-flow" draggable="true" data-node="tessellation-shader">
+            <span>TS</span>
+        </div>
+        <div class="drag-flow" draggable="true" data-node="fragment-shader">
+            <span>FS</span>
+        </div>
     </div>
+    <div id="workflow"></div>
     <div class="header">Shader</div>
     <div class="code"><div id="panel"></div></div>
 </main>

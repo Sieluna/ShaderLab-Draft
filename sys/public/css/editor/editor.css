@@ -3,8 +3,8 @@
     grid-template-areas:
             "view view title"
             "view view editor"
-            "work info editor";
-    grid-template-columns: 1.6fr 0.5fr 2.3fr;
+            "pipe work editor";
+    grid-template-columns: 0.4fr 1.7fr 2.3fr;
     grid-template-rows: 30px max(28vw, 45%);
     margin: 25px;
 }
@@ -18,7 +18,7 @@
 }
 
 .sl-editor .pipeline {
-    grid-area: info;
+    grid-area: pipe;
 }
 
 .sl-editor .header {
@@ -32,9 +32,12 @@
 @media (max-width: 799.98px) {
     .sl-editor {
         grid-template-areas:
+                "view"
                 "title"
                 "editor"
                 "work"
-                "info"
+                "info";
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr;
     }
 }

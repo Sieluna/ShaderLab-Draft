@@ -1,6 +1,6 @@
 .sl-editor .renderer {
     display: flex;
-    margin: 12px;
+    margin: 12px 12px 0 12px;
     flex-direction: column;
 }
 

@@ -21,9 +21,6 @@ export const baseTheme = buildTheme("." + baseThemeID, {
     "&.cm-editor": {
         position: "relative !important",
         boxSizing: "border-box",
-        "&.cm-focused": {
-            outline: "1px dotted #212121"
-        },
         display: "flex !important",
         flexDirection: "column"
     },
@@ -120,7 +117,7 @@ export const baseTheme = buildTheme("." + baseThemeID, {
         zIndex: 200
     },
     "&light .cm-gutters": {
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "#fcfcfc",
         color: "#6c6c6c",
         borderRight: "1px solid #ddd"
     },

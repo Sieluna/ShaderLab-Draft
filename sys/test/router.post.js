@@ -28,7 +28,7 @@ describe("Post APIs", () => {
     });
     describe("Post router create test", () => {
         it ("should return code 200, and user info", done => {
-            chai.request(app).post("/api/post/").
+            chai.request(app).post("/api/post").
             set("Authorization", "Bearer " + code).
             attach("preview", "sys/public/img/home/sponza.jpg").
             field({ topic: "PostTopicTest", name: "PostTest", content: "123456789" }).

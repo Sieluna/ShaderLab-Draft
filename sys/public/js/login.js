@@ -19,7 +19,7 @@ const submitInfo = (target = "") => {
     }).then(json => {
         switch (json.status) {
             case 200:
-                localStorage.setItem("token", JSON.stringify(json.data));
+                localStorage.setItem("token", json.data.token);
                 redirect(true);
                 break;
             default:

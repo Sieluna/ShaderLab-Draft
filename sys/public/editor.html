@@ -10,6 +10,9 @@
 </head>
 <body>
 
+<div id="vertexShaderCode" style="display: none"></div>
+<div id="fragmentShaderCode" style="display: none"></div>
+
 <div class="sl-nav">
     <div class="sl-nav_bar">
         <ul class="left-entry"></ul>
@@ -125,16 +128,14 @@
         </div>
     </div>
     <div class="pipeline">
-        <div class="drag-flow" draggable="true" data-node="vertex-shader">
-            <span>VS</span>
-        </div>
-        <div class="drag-flow" draggable="true" data-node="fragment-shader">
-            <span>FS</span>
-        </div>
+        <div class="flow-create">Create + </div>
+        <diV class="flow-holder"></div>
     </div>
     <div id="workflow"></div>
     <div class="code">
-        <div class="header">Shader</div>
+        <div class="title">
+            <input class="post-input" type="text" accesskey="t" maxlength="32" placeholder="Enter shader name: My Shader">
+        </div>
         <div id="panel"></div>
     </div>
 </main>

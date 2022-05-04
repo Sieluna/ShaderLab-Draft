@@ -1,5 +1,7 @@
 .sl-editor {
     display: grid;
+    grid-gap: 12px;
+    overflow: hidden
 }
 
 .sl-editor .renderer {

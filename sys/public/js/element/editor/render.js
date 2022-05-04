@@ -1,16 +1,24 @@
+import { structure } from "../../editor.js";
+
 import { playState } from "./state.js";
 
 const canvasElement = document.getElementById("render-canvas");
 const timeElement = document.querySelector(".sl-editor .renderer-time");
 const fpsElement = document.querySelector(".sl-editor .renderer-fps");
-let time = "--", engine, scene, shaderMaterial, mesh;
 
-const compile = (vertex, fragment) => {
+let time = 0, engine, scene, camera, shaderMaterial, mesh;
+
+export const compile = () => {
     if (shaderMaterial) shaderMaterial.dispose(true);
 
+    console.log(localStorage.getItem("glsl_" + structure.indexOf("vertex")), localStorage.getItem("glsl_" + structure.indexOf("fragment")))
+
+    document.getElementById("vertexShaderCode").innerHTML = localStorage.getItem("glsl_" + structure.indexOf("vertex"));
+    document.getElementById("fragmentShaderCode").innerHTML = localStorage.getItem("glsl_" + structure.indexOf("fragment"));
+
     shaderMaterial = new BABYLON.ShaderMaterial("shader", scene, {
-        vertexSource: localStorage.getItem(vertex),
-        fragmentSource: localStorage.getItem(fragment)
+        vertexElement: "vertexShaderCode",
+        fragmentElement: "fragmentShaderCode",
     }, {
         attributes: ["position", "normal", "uv"],
         uniforms: ["world", "worldView", "worldViewProjection", "view", "projection"]
@@ -34,6 +42,12 @@ const compile = (vertex, fragment) => {
     shaderMaterial.onError = (sender, errors) => console.log("Fail");
 }
 
+export const screenShotFeature = (width, height) => {
+    BABYLON.Tools.CreateScreenshot(engine, camera, { width: width, height: height }, function (data) {
+        console.log(data);
+    });
+}
+
 export const babylonFeature = () => {
     if (BABYLON.Engine.isSupported()) {
         engine = new BABYLON.Engine(canvasElement, true);
@@ -41,7 +55,7 @@ export const babylonFeature = () => {
 
         mesh = BABYLON.Mesh.CreateTorusKnot("mesh", 2, 0.5, 128, 64, 2, 3, scene)
 
-        let camera = new BABYLON.ArcRotateCamera("Camera", 0, Math.PI / 2, 12, BABYLON.Vector3.Zero(), scene);
+        camera = new BABYLON.ArcRotateCamera("Camera", 0, Math.PI / 2, 12, BABYLON.Vector3.Zero(), scene);
 
         camera.attachControl(canvasElement, false);
         camera.lowerRadiusLimit = 1;
@@ -60,7 +74,7 @@ export const babylonFeature = () => {
         window.addEventListener("resize", () => engine.resize());
 
         setInterval(() => {
-            timeElement.textContent = isNaN(time) ? time : time.toFixed(1);
+            timeElement.textContent = isNaN(time) ? "--" : time.toFixed(1);
             fpsElement.textContent = engine.getFps().toFixed() + " fps";
         }, 100);
     }

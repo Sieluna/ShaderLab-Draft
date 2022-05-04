@@ -1,0 +1,25 @@
+.sl-editor .pipeline {
+    overflow: hidden;
+}
+
+.sl-editor .flow-create {
+    border-bottom: 2px solid #ccc;
+    line-height: 35px;
+    text-align: center;
+    font-weight: bolder;
+    cursor: pointer;
+    user-select: none;
+}
+
+.sl-editor .flow-drag {
+    line-height: 35px;
+    border-bottom: 1px solid var(--line_bold);
+    padding-left: 10px;
+    cursor: move;
+    user-select: none;
+}
+
+.sl-editor .pipeline .flow-holder {
+    height: 100%;
+    overflow-y: scroll;
+}

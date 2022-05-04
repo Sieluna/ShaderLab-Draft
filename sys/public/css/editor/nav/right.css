@@ -1,3 +1,7 @@
+.sl-nav .right-entry {
+    margin-block-end: 1rem;
+}
+
 .sl-nav .upload-entry {
     background: linear-gradient(56deg, #5bd0b3 0%, #4badea 100%);
 }

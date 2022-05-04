@@ -10,5 +10,6 @@
 
 @import "./editor/editor.css";
 @import "./editor/editor/renderer.css";
-@import "./editor/editor/workflow.css";
+@import "./editor/editor/pipeline.css";
+@import "./editor/editor/action.css";
 @import "./editor/editor/code.css";

@@ -18,7 +18,7 @@ const upload = multer({
             postHandle.getLastId(1).then(fileName => {
                 fs.stat(path.resolve(__dirname, "../static/data/post/", fileName + extName), (err, stat) => {
                     if (err == null)
-                        fs.rm(path.resolve(__dirname, "../static/data/post/", fileName + extName), () => callback(null, fileName + extName));
+                        fs.unlink(path.resolve(__dirname, "../static/data/post/", fileName + extName), () => callback(null, fileName + extName));
                     else if (err.code === "ENOENT")
                         callback(null, fileName + extName);
                 });

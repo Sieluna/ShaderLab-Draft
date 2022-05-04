@@ -17,7 +17,7 @@ const upload = multer({
             let extName = path.extname(file.originalname), fileName = req.auth.id;
             fs.stat(path.resolve(__dirname, "../static/data/user/", fileName + extName), (err, stat) => {
                 if (err == null)
-                    fs.rm(path.resolve(__dirname, "../static/data/user/", fileName + extName), () => callback(null, fileName + extName));
+                    fs.unlink(path.resolve(__dirname, "../static/data/user/", fileName + extName), () => callback(null, fileName + extName));
                 else if (err.code === "ENOENT")
                     callback(null, fileName + extName);
             });

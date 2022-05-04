@@ -2,7 +2,7 @@ const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = {
-    mode: process.env.NODE_ENV.toString().trim() || "production",
+    mode: "production",
     entry: {
         login: path.join(__dirname, "js/login.js"),
         home: path.join(__dirname, "js/home.js"),

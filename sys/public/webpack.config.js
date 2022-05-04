@@ -2,9 +2,11 @@ const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = {
+    mode: process.env.NODE_ENV.toString().trim() || "production",
     entry: {
         login: path.join(__dirname, "js/login.js"),
-        home: path.join(__dirname, "js/home.js")
+        home: path.join(__dirname, "js/home.js"),
+        editor: path.join(__dirname, "js/editor.js"),
     },
     output: {
         path: path.join(__dirname, "../static"),
@@ -15,29 +17,19 @@ module.exports = {
     },
     plugins: [
         new HtmlWebpackPlugin({
+            chunks: ["login"],
+            filename: "login.html",
+            template: path.join(__dirname, "login.html")
+        }),
+        new HtmlWebpackPlugin({
             chunks: ["home"],
             filename: "home.html",
             template: path.join(__dirname, "home.html")
         }),
         new HtmlWebpackPlugin({
-            chunks: ["home"],
-            filename: "login.html",
-            template: path.join(__dirname, "login.html")
-        }),
-    ],
-    module: {
-        rules: [{
-            test: /\.(css)$/,
-            use: ["css-loader"]
-        }, {
-            test: /\.(png|svg|jpg|gif|mp4)$/,
-            use: [{
-                loader: "file-loader",
-                options: {
-                    outputPath: "./img",
-                    publicPath: "./img"
-                }
-            }]
-        }]
-    }
+            chunks: ["editor"],
+            filename: "editor.html",
+            template: path.join(__dirname, "editor.html")
+        })
+    ]
 }

@@ -240,6 +240,7 @@
     line-height: 20px;
     cursor: pointer;
     transition: background-color .3s;
+    text-decoration: none;
 }
 
 @media (max-width: 479.98px) {

@@ -1,25 +1,51 @@
-.sl-editor .title {
-    height: 40px;
-}
-
-.sl-editor .title {
-    height: 30px;
-}
-
 .sl-editor .code {
-    height: calc(100vh - 80px);
+    display: flex;
+    flex-direction: column;
     border-radius: 15px;
+    border: 1px solid var(--graph_bg_thick);
+    box-shadow: 1px 1px 2px var(--graph_weak);
+    height: calc(100vh - 130px + 43px);
+    max-height: 1043px;
+}
+
+.sl-editor .title {
+    line-height: 40px;
+    padding: 0 20px 0 20px;
+}
+
+.sl-editor .post-input {
+    overflow: hidden;
+    border: none;
+    outline: none;
+    width: 100%;
+    box-shadow: none;
 }
 
 .sl-editor #panel {
-    height: 100%
+    flex: 1;
+    margin: 0 3px 3px 3px;
+    height: calc(100vh - 130px);
+    max-height: 1000px;
+    border-radius: 10px;
+}
+
+.sl-editor #panel > div {
+    height: 100%;
 }
 
 .cm-editor {
     height: 100%;
-    border: 1px solid #ddd;
+    border-radius: 5px 5px 12px 12px;
 }
 
 .cm-scroller {
     overflow-y: scroll;
+}
+
+.cm-panels.cm-panels-bottom {
+    border-radius: 0 0 12px 12px;
+}
+
+.cm-editor.cm-focused {
+    outline: 1px solid #e6e8e5;
 }

@@ -1,0 +1,29 @@
+.sl-nav .center-container {
+    flex: 1 auto;
+    height: 36px;
+}
+
+.sl-nav .container-extend.is-focus {
+    border-radius: 12px;
+}
+
+.sl-nav .search-panel {
+    border-radius: 0 0 12px 12px;
+}
+
+.sl-nav #nav-search {
+    line-height: 34px;
+    height: 34px;
+}
+
+.sl-nav #nav-search > .nav-search-content {
+    height: 25px;
+    border-radius: 12px;
+}
+
+.sl-nav #nav-search > .nav-search-btn {
+    top: 2px;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+}

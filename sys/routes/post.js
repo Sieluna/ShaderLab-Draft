@@ -39,8 +39,7 @@ router.get("/", tokenHandle.verify, async (req, res) => {
 });
 
 router.get("/:id", tokenHandle.verify, async (req, res) => {
-    await postHandle.viewPost(req.params.id);
-    const post = await postHandle.getPostById(req.params.id);
+    const post = await postHandle.getViewPostById(req.params.id);
     switch (post) {
         case state.NotExist:
             res.status(404).send("Post not found");

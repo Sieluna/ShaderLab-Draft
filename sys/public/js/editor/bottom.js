@@ -1,5 +1,7 @@
 import { showPanel } from "./dist/view/panel.js";
-import { compile } from "../element/editor/render.js";
+
+let compile;
+export let compileDelegate = function (callback) { compile = callback; };
 
 function countWords(doc) {
     let count = 0, iter = doc.iter();

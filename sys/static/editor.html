@@ -3,23 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="./css/home.css">
-    <script type="module" src="./js/home.js"></script>
-    <title>Home</title>
-<script defer src="js/home.js"></script></head>
+    <link rel="stylesheet" href="./css/editor.css"/>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script type="module" src="./js/editor.js"></script>
+    <title>Editor</title>
+<script defer src="js/editor.js"></script></head>
 <body>
+
+<div id="vertexShaderCode" style="display: none"></div>
+<div id="fragmentShaderCode" style="display: none"></div>
+
 <div class="sl-nav">
     <div class="sl-nav_bar">
-        <ul class="left-entry">
-            <li class="left-entry-item">
-                <div class="home-entry">ShaderLab</div>
-            </li>
-            <li class="left-entry-item">
-                <div class="login-entry">
-                    <span>Login</span>
-                </div>
-            </li>
-        </ul>
+        <ul class="left-entry"></ul>
         <div class="center-container">
             <div class="bar-outer" style="display: none"></div>
             <div class="container-extend">
@@ -63,12 +59,12 @@
                 <div class="avatar-container small-avatar">
                     <div class="user-entry-mini">
                         <picture>
-                            <img src="img/default.png">
+                            <img src="./img/default.png">
                         </picture>
                     </div>
                     <div class="user-entry-large">
                         <div class="avatar" style="width: 82px; height: 82px; transform: translate(0px, 0px);">
-                            <img src="img/default.png">
+                            <img src="./img/default.png">
                         </div>
                     </div>
                 </div>
@@ -97,89 +93,54 @@
                 </a>
             </li>
             <li class="right-entry-item">
-                <a class="upload-entry" href="editor.html">
+                <div class="upload-entry">
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" class="upload-entry-icon">
                         <path d="M12.0824 10H14.1412C15.0508 10 15.7882 10.7374 15.7882 11.6471V12.8824C15.7882 13.792 15.0508 14.5294 14.1412 14.5294H3.84707C2.93743 14.5294 2.20001 13.792 2.20001 12.8824V11.6471C2.20001 10.7374 2.93743 10 3.84707 10H5.90589" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8.99413 11.2353L8.99413 3.82353" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path><path d="M12.0823 6.29413L8.9941 3.20589L5.90587 6.29413" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
                     </svg>
-                    <span class="upload-entry-text">Create</span>
-                </a>
+                    <span class="upload-entry-text">Upload</span>
+                </div>
             </li>
         </ul>
     </div>
-    <div class="sl-nav_banner"></div>
-    <div class="sl-nav_filter">
-        <div class="topic-filter">
-            <div class="filter-item">Long-TopicLong-TopicLong-TopicLong-Topic</div>
-            <div class="filter-item">Topic222222222222222222222222222222</div>
-            <div class="filter-item">Topic</div>
-            <div class="filter-item">Topic</div>
-            <div class="filter-item">Topic</div>
-            <div class="filter-item">Topic</div>
-        </div>
-        <div class="tag-filter">
-            <div class="filter-item">Long-TagLong-TagLong-TagLong-TagLong-TagLong-Tag</div>
-            <div class="filter-item">Long-TagLong-Tag</div>
-            <div class="filter-item">Long-TagLong-TagLong-TagLong-TagLong-TagLong-Tag</div>
-            <div class="filter-item">Topic</div>
-            <div class="filter-item">Topic</div>
-            <div class="filter-item">Topic</div>
-            <div class="filter-item">Topic</div>
-        </div>
-    </div>
 </div>
 
-<main class="sl-layout">
-    <div class="sl-recommend">
-
+<main class="sl-editor">
+    <div class="renderer">
+        <canvas id="render-canvas"></canvas>
+        <div class="render-info">
+            <div class="renderer-state">
+                <svg width="100%" height="100%" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <path id="state-image" d="M 11 10 L 17 10 L 17 26 L 11 26 M 20 10 L 26 10 L 26 26 L 20 26">
+                            <animate id="state-animation" begin="indefinite" attributeType="XML" attributeName="d" fill="freeze"
+                                     from="M11,10 L17,10 17,26 11,26 M20,10 L26,10 26,26 20,26"
+                                     to="M11,10 L18,13.74 18,22.28 11,26 M18,13.74 L26,18 26,18 18,22.28"
+                                     dur="0.1s" keySplines=".4 0 1 1" repeatCount="1"/>
+                        </path>
+                    </defs>
+                    <use xlink:href="#state-image"></use>
+                    <use xlink:href="#state-image"></use>
+                </svg>
+            </div>
+            <div class="renderer-time">--</div>
+            <div class="renderer-fps">--fps</div>
+            <div class="renderer-full">*</div>
+        </div>
     </div>
-    <div class="sl-holder">
-        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>                        <br><br><br><br><br>
-        <br><br><br><br><br>
+    <div class="pipeline">
+        <div class="flow-create">Create + </div>
+        <diV class="flow-holder"></div>
+    </div>
+    <div id="workflow"></div>
+    <div class="code">
+        <div class="title">
+            <input class="post-input" type="text" accesskey="t" maxlength="32" placeholder="Enter shader name: My Shader">
+        </div>
+        <div id="panel"></div>
     </div>
 </main>
+
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
 
 </body>
 </html>

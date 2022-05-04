@@ -15,6 +15,13 @@ const handle = {
         const result = await post.findByPk(id);
         return result ? result : state.NotExist;
     },
+    getViewPostById: async id => {
+        if (!isNumber(id)) return state.Empty;
+        const result = await post.findByPk(id);
+        if (result == null) return state.NotExist;
+        await post.increment({ views: 1 }, { where: { id: id } });
+        return result;
+    },
     /**
      * Get posts by name
      * @param {string} name

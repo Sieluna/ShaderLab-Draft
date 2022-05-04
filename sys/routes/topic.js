@@ -1,5 +1,4 @@
 const express = require("express");
-const path = require("path");
 
 const state = require("../config/state.js");
 const topicHandle = require("../handle/topic.js");
@@ -20,15 +19,18 @@ router.get("/:id", tokenHandle.verify, async (req, res) => {
             res.status(404).send("Topic not found");
             break;
         case state.Empty:
-            req.status(400).send("Not valid id, should be ")
+            req.status(400).send("Not valid params id");
+            break;
         default:
             res.status(200).json(user);
             break;
     }
 });
 
+
+
 router.post("/login", async (req, res) => {
-    const user = await userHandle.login(req.body.account, req.body.password);
+    const user = await topicHandle.login(req.body.account, req.body.password);
     switch (user) {
         case state.OverSize:
             res.status(400).send("Not valid account or password");
@@ -66,7 +68,15 @@ router.post("/", async (req, res) => {
     }
 });
 
-router.put("/:id", tokenHandle.verify, async (req, res) => {
+router.put("/image/:id", tokenHandle.verify, async (req, res) => {
+    if (req.body.id === req.params.id) {
+        const user = await userHandle.updateById(id, req.body);
+    } else {
+        return res.status(400).send(`Bad request: param ID (${id}) does not match body ID (${req.body.id}).`)
+    }
+});
+
+router.put("/image/:id", tokenHandle.verify, async (req, res) => {
     if (req.body.id === req.params.id) {
         const user = await userHandle.updateById(id, req.body);
     } else {

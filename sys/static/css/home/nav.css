@@ -26,7 +26,7 @@
     top: 0;
     animation: headerSlideDown .3s linear forwards;
     box-shadow: 0 2px 4px rgb(0 0 0 / 8%);
-    background: var(--bg1_float);
+    background: var(--bg_1);
 }
 
 @keyframes headerSlideDown {

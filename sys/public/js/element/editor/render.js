@@ -1,6 +1,6 @@
 import { structure } from "../../editor.js";
-
 import { playState } from "./state.js";
+import { compileDelegate } from "../../editor/bottom.js";
 
 const canvasElement = document.getElementById("render-canvas");
 const timeElement = document.querySelector(".sl-editor .renderer-time");
@@ -8,13 +8,18 @@ const fpsElement = document.querySelector(".sl-editor .renderer-fps");
 
 let time = 0, engine, scene, camera, shaderMaterial, mesh;
 
-export const compile = () => {
+const search = target => {
+    for (let dataKey in structure.drawflow.Home.data) {
+        if (structure.drawflow.Home.data[dataKey] === target)
+            return dataKey;
+    }
+}
+
+compileDelegate(() => {
     if (shaderMaterial) shaderMaterial.dispose(true);
 
-    console.log(localStorage.getItem("glsl_" + structure.indexOf("vertex")), localStorage.getItem("glsl_" + structure.indexOf("fragment")))
-
-    document.getElementById("vertexShaderCode").innerHTML = localStorage.getItem("glsl_" + structure.indexOf("vertex"));
-    document.getElementById("fragmentShaderCode").innerHTML = localStorage.getItem("glsl_" + structure.indexOf("fragment"));
+    document.getElementById("vertexShaderCode").innerHTML = localStorage.getItem("glsl_" + search("vertex"));
+    document.getElementById("fragmentShaderCode").innerHTML = localStorage.getItem("glsl_" + search("fragment"));
 
     shaderMaterial = new BABYLON.ShaderMaterial("shader", scene, {
         vertexElement: "vertexShaderCode",
@@ -24,11 +29,11 @@ export const compile = () => {
         uniforms: ["world", "worldView", "worldViewProjection", "view", "projection"]
     }, false);
 
-    let refTexture = new BABYLON.Texture("../../../img/editor/ref.jpg", scene);
+    let refTexture = new BABYLON.Texture("img/editor/ref.jpg", scene);
     refTexture.wrapU = BABYLON.Texture.CLAMP_ADDRESSMODE;
     refTexture.wrapV = BABYLON.Texture.CLAMP_ADDRESSMODE;
 
-    let mainTexture = new BABYLON.Texture("../../../img/editor/amiga.jpg", scene);
+    let mainTexture = new BABYLON.Texture("img/editor/amiga.jpg", scene);
 
     shaderMaterial.setTexture("textureSampler", mainTexture);
     shaderMaterial.setTexture("refSampler", refTexture);
@@ -40,7 +45,7 @@ export const compile = () => {
 
     shaderMaterial.onCompiled = () => console.log("Compile success");
     shaderMaterial.onError = (sender, errors) => console.log("Fail");
-}
+})
 
 export const screenShotFeature = (width, height) => {
     BABYLON.Tools.CreateScreenshot(engine, camera, { width: width, height: height }, function (data) {

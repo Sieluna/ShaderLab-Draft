@@ -1,24 +1,15 @@
 import { scrollTopFeature } from "./element/home/navbar.js";
 import { searchFeature } from "./element/shared/search.js";
-import { userFeature } from "./element/shared/user.js";
+import { userFeature } from "./element/shared/avatar.js";
+import { refreshFeature } from "./element/shared/refresh.js";
 
-//const user = localStorage.getItem("user");
-
-const user = {}
-
-const avatarElement = document.querySelector(".sl-nav .avatar-container");
-
-if (user != null) {
-    document.querySelectorAll(".sl-nav .login-entry").forEach(node => node.setAttribute("style", "display: none"));
-    avatarElement.setAttribute("style", "display: block");
-} else {
-    document.querySelectorAll(".sl-nav .login-entry").forEach(node => node.setAttribute("style", "display: block"));
-    avatarElement.setAttribute("style", "display: none");
-}
+const token = JSON.parse(localStorage.getItem("token"));
+const user = JSON.parse(localStorage.getItem("user"));
 
 window.onscroll = scrollTopFeature;
 
 window.onload = () => {
+    refreshFeature(token, user);
+    userFeature(token, user);
     searchFeature();
-    userFeature(user);
 }

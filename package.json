@@ -14,9 +14,6 @@
         "chai": "latest",
         "chai-http": "latest",
         "form-data": "latest",
-        "css-loader": "latest",
-        "mini-css-extract-plugin": "latest",
-        "html-webpack-plugin": "latest",
         "mocha": "latest",
         "webpack": "latest",
         "webpack-cli": "latest"

@@ -1,6 +1,4 @@
 const { topic } = require("./model.js").models;
-const path = require("path");
-const fs = require("fs");
 const state = require("../config/state.js");
 const { isEmpty, isNumber } = require("./utils.js")
 

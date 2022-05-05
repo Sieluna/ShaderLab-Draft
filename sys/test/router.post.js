@@ -20,7 +20,7 @@ describe("Post APIs", () => {
             set("content-type", "application/x-www-form-urlencoded").
             end((err, res) => {
                 debug.log("Register ", res.body);
-                code = res.body.token;
+                code = res.body.accessToken;
                 expect(res.status).to.equal(200);
                 done();
             });

@@ -2,9 +2,13 @@
 @import "./theme.css";
 
 @import "./editor/nav.css";
+@import "./shared/left.css";
 @import "./shared/center.css";
+@import "./shared/search.css";
 @import "./shared/right.css";
+@import "./shared/avatar.css";
 /** Override */
+@import "./editor/nav/left.css";
 @import "./editor/nav/center.css";
 @import "./editor/nav/right.css";
 

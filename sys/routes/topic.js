@@ -27,8 +27,6 @@ router.get("/:id", tokenHandle.verify, async (req, res) => {
     }
 });
 
-
-
 router.post("/login", async (req, res) => {
     const user = await topicHandle.login(req.body.account, req.body.password);
     switch (user) {

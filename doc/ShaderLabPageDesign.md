@@ -46,9 +46,15 @@ If user already registered, this page should not be load.
 
 ### Feature
 
-Navigation: search, filter and user control.
+In home page we should have three key features:
+
+- search
+- user
+- preview
 
 Structure design: Navigation, Layout
+
+Navigation: search, filter and user control.
 
 |             |         CSS          |  Naming   | Interop | Mobeile | Desktop |
 |-------------|:--------------------:|:---------:|:-------:|:-------:|:-------:|
@@ -88,7 +94,6 @@ Main Layout:
 | Recommend | layout.css | sl-recommend |  True   | Enable  | Enable  |
 | Holder    | layout.css |  sl-holder   |  True   | Enable  | Enable  |
 
-
 Layout should get the data from database under **ranking**.
 
 | Feature      |         Request          |   Response   |
@@ -96,6 +101,22 @@ Layout should get the data from database under **ranking**.
 | Page Loading |      GET /api/post       | RETURN JSON  |
 |              |   GET /api/user/vertify  | RETURN token |
 | Search       |    GET /api/post/tag     | RETURN JSON  |
+
+```mermaid
+sequenceDiagram
+    participant local
+    participant client
+    participant server
+    client-->>local: get user info
+    client-->>local: get token
+    local->>client: user?
+    client->>local: render user entry or login entry
+    local->>client: token
+    client->>server: send user
+    server->>client: return new token
+    client->>server: Request /api/post
+    server->>client: Response img.src and name
+```
 
 Search panel implement:
 
@@ -125,7 +146,8 @@ flowchart TD
     leave --> End
 ```
 
-## Profile Page
+## Editor Page
 
 --------------------------------------
+
 

@@ -1,4 +1,4 @@
-import { structure } from "../../editor.js";
+import { structure } from "./action.js";
 import { playState } from "./state.js";
 import { compileDelegate } from "../../editor/bottom.js";
 
@@ -79,7 +79,7 @@ export const babylonFeature = () => {
         window.addEventListener("resize", () => engine.resize());
 
         setInterval(() => {
-            timeElement.textContent = isNaN(time) ? "--" : time.toFixed(1);
+            timeElement.textContent = time === 0 ? "--" : time.toFixed(1);
             fpsElement.textContent = engine.getFps().toFixed() + " fps";
         }, 100);
     }

@@ -154,6 +154,17 @@ describe("Post handle test", () => {
             await postHandle.thumbPost("Balabala", 1)
         });
     });
+    describe("Tag post test", () => {
+        it("should tag the post", async () => {
+            await postHandle.tagPost("day", 1);
+            await postHandle.tagPost("yad", 1);
+            await postHandle.tagPost("ayd", 1);
+            await postHandle.tagPost("dya", 1);
+            await postHandle.tagPost("yad", 1);
+            const result = await sequelize.models.tag.findAll();
+            debug.log(result);
+        });
+    });
     describe("Get post thumbs test", async () => {
         it("should return post thumbs with id 1", async () => {
             postCache = await postHandle.getPostThumbsById(1);

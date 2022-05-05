@@ -67,7 +67,7 @@ router.post("/login", async (req, res) => {
             res.status(400).send("Account or password can not be empty.");
             break;
         default:
-            res.status(200).json({ data: user, token: tokenHandle.sign(user.id, user.permission) });
+            res.status(200).json({ data: user, accessToken: tokenHandle.sign(user.id, user.permission), refreshToken: tokenHandle.sign(user.id, user.permission, "", 3600 * 24 * 30) });
             break;
     }
 });
@@ -85,7 +85,26 @@ router.post("/", async (req, res) => {
             res.status(400).send("Account or password can not be empty.");
             break;
         default:
-            res.status(200).json({ data: userHandle.getUserById(user.id), token: tokenHandle.sign(user.id, user.permission) });
+            res.status(200).json({ data: await userHandle.getUserById(user.id), accessToken: tokenHandle.sign(user.id, user.permission), refreshToken: tokenHandle.sign(user.id, user.permission, "", 3600 * 24 * 30) });
+            break;
+    }
+});
+
+router.put("/", tokenHandle.verify, async (req, res) => {
+    const result = await userHandle.valid(req.auth.id, req.body.password);
+    switch (result) {
+        case state.OverSize:
+            res.status(400).send("Not valid token");
+            break;
+        case state.Empty:
+            res.status(400).send("Not valid body");
+            break;
+        case state.NotExist:
+            res.status(400).send("Invalid account");
+            break;
+        default:
+            if (result.flag)
+                res.status(200).json({ accessToken: tokenHandle.sign(result.data.id, result.data.permission) });
             break;
     }
 });

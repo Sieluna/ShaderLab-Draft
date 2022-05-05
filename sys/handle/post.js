@@ -1,5 +1,5 @@
 const { Sequelize } = require("sequelize");
-const { user, topic, post, thumb, comment } = require("./model.js").models;
+const { tag, post, thumb, comment } = require("./model.js").models;
 const userHandle = require("./user.js");
 const topicHandle = require("./topic.js");
 const state = require("../config/state.js");
@@ -15,6 +15,11 @@ const handle = {
         const result = await post.findByPk(id);
         return result ? result : state.NotExist;
     },
+    /**
+     * Get and view post by id
+     * @param {number|string} id
+     * @return {Promise<post|state>}
+     */
     getViewPostById: async id => {
         if (!isNumber(id)) return state.Empty;
         const result = await post.findByPk(id);
@@ -158,6 +163,17 @@ const handle = {
         let userId = await normalizeId(user, userHandle.getUserByName);
         if (userId == null || !isNumber(post)) return state.NotExist;
         return await comment.findOrCreate({ where: { userId: userId, postId: post }, defaults: { content: content } });
+    },
+    /**
+     * Mark post some tags
+     * @param {string} tagName
+     * @param {number|string} post
+     * @return {Promise<void>}
+     */
+    tagPost: async (tagName, post) => {
+        if (!isNumber(post) || isEmpty(tagName)) return state.Empty;
+        if (tagName.length > 32) return state.OverSize;
+        return tag.findOrCreate({ where: { name: tagName, postId: post }});
     },
     /**
      * Create a post

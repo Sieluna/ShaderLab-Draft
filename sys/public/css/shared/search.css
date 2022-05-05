@@ -1,0 +1,53 @@
+.sl-nav .search-history {
+    min-height: 220px;
+}
+
+.sl-nav .history-header {
+    display: flex;
+    line-height: 30px;
+    font-size: 18px;
+    flex-direction: row;
+    justify-content: space-between;
+    margin: 0 16px 8px;
+}
+
+.sl-nav.history-header .title {
+    font-weight: bold;
+}
+
+.sl-nav .history-header .history-clear {
+    color: var(--text_light);
+    cursor: pointer;
+    font-size: small;
+}
+
+.sl-nav .history-header .history-clear:hover {
+    color: var(--text_dark);
+}
+
+.sl-nav .history-item {
+    line-height: 28px;
+    margin: 2px 10px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    text-decoration: none;
+}
+
+.sl-nav .history-item:hover {
+    border-radius: 4px;
+    background-color: var(--graph_bg_thick);
+}
+
+.sl-nav .history-item div {
+    padding: 0 12px;
+}
+
+.sl-nav .search-panel .suggestion-item {
+    display: block;
+    height: 32px;
+    line-height: 32px;
+    cursor: pointer;
+    overflow: hidden;
+
+}

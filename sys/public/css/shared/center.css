@@ -39,7 +39,7 @@
     border: 1px solid var(--line_regular);
     border-top: none;
     border-radius: 0 0 8px 8px;
-    padding: 13px 0 16px;
+    padding: 10px 0 16px;
 }
 
 .sl-nav #nav-search {
@@ -69,7 +69,7 @@
     opacity: 1
 }
 
-.sl-nav #nav-search > .nav-search-content {
+.sl-nav #nav-search .nav-search-content {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -81,7 +81,7 @@
     border-radius: 6px;
 }
 
-.sl-nav #nav-search > .nav-search-content > .nav-search-input {
+.sl-nav #nav-search .nav-search-content .nav-search-input {
     flex: 1;
     overflow: hidden;
     padding-right: 8px;
@@ -93,13 +93,13 @@
     line-height: 20px;
 }
 
-.sl-nav #nav-search > .nav-search-content > .nav-search-input:focus {
+.sl-nav #nav-search .nav-search-content .nav-search-input:focus {
     outline: none;
     background: var(--graph_bg_thick);
     color: var(--text_dark);
 }
 
-.sl-nav #nav-search > .nav-search-content > .nav-search-clean {
+.sl-nav #nav-search .nav-search-content .nav-search-clean {
     width: 16px;
     height: 16px;
     right: 10px;
@@ -107,13 +107,17 @@
     visibility: hidden;
 }
 
-.sl-nav #nav-search > .nav-search-content svg {
+.sl-nav #nav-search .nav-search-content .nav-search-clean img {
     vertical-align: middle;
     position: absolute;
     color: var(--graph_weak);
 }
 
-.sl-nav #nav-search.is-focus > .nav-search-content > .nav-search-clean {
+.sl-nav #nav-search .nav-search-content .nav-search-clean img:hover {
+    filter: brightness(55%);
+}
+
+.sl-nav #nav-search.is-focus .nav-search-content .nav-search-clean {
     visibility: inherit;
 }
 

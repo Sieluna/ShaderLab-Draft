@@ -105,6 +105,18 @@ const handle = {
         } else return state.OverSize;
     },
     /**
+     * Vertify the md5 password is same
+     * @param {number|string} id
+     * @param {string} password
+     * @return {Promise<boolean>}
+     */
+    valid: async (id, password) => {
+        if (!isNumber(id) || isEmpty(password)) return state.Empty;
+        if (password.length !== 32) return state.OverSize;
+        const user = await handle.getUserById(id);
+        return { flag: user.password == password, data: user }
+    },
+    /**
      * Update user mysql Admin entrance (unsafe)
      * @param {number|string} id id
      * @param data data

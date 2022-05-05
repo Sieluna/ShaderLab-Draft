@@ -1,0 +1,5 @@
+@media (max-width: 799.98px) {
+    .sl-nav .left-entry-item:first-child {
+        display: block;
+    }
+}

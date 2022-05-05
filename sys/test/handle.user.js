@@ -71,6 +71,13 @@ describe("User handle test", () => {
             expect(userCache).to.be.equal(state.NotCorrect);
         });
     });
+    describe("Valid test", () => {
+        beforeEach(async () => userCache = await userHandle.login("User_" + code, "UserHandleTestPassword"));
+        it ("should return true with correct password", async () => {
+            const valid = await userHandle.valid(userCache.id, userCache.password);
+            expect(valid.flag).to.be.true;
+        });
+    });
     describe("Get last id test", () => {
         before(async () => code = await userHandle.getLastId());
         it("should return a integer", async () => {

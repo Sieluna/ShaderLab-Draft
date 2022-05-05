@@ -2,9 +2,11 @@
 @import "./theme.css";
 
 @import "./home/nav.css";
-@import "./home/nav/left.css";
+@import "./shared/left.css";
 @import "./shared/center.css";
+@import "./shared/search.css";
 @import "./shared/right.css";
+@import "./shared/avatar.css";
 @import "./home/nav/banner.css";
 @import "./home/nav/filter.css";
 

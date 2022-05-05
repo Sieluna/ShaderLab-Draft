@@ -1,4 +1,5 @@
-import { lazyLoadFeature } from "./element/login/image.js"
+import { lazyLoadFeature } from "./element/login/image.js";
+import { fetchFeature } from "./element/shared/response.js";
 
 let token = localStorage.getItem("token");
 
@@ -10,21 +11,19 @@ const redirect = (existData) => {
 redirect(token);
 
 const submitInfo = (target = "") => {
-    fetch("/api/user" + target, {
+    fetchFeature(`/api/user${target}`, {
         method: "POST",
         body: new URLSearchParams(new FormData(document.getElementById("panel-input"))),
         redirect: "follow"
-    }).then(res => {
-        return res.json();
-    }).then(json => {
-        switch (json.status) {
-            case 200:
-                localStorage.setItem("token", json.data.token);
-                redirect(true);
-                break;
-            default:
-                alert(json.msg);
-        }
+    }, result => {
+        if (!result) return;
+        localStorage.setItem("user", JSON.stringify(result.data));
+        localStorage.setItem("token", JSON.stringify({ accessToken: result.accessToken, refreshToken: result.refreshToken }));
+        Swal.fire({
+            icon: "success",
+            title: "Success",
+            text: "Login Success!"
+        }).then(() => redirect(true));
     });
 }
 

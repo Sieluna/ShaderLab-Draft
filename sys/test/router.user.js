@@ -4,6 +4,7 @@ const chaiHttp = require("chai-http");
 const sequelize = require("../handle/model");
 
 const debug = require("../config/debug.js");
+const tokenHandle = require("../handle/token");
 
 const expect = chai.expect;
 chai.use(chaiHttp);
@@ -20,7 +21,7 @@ describe("User APIs", () => {
             set("content-type", "application/x-www-form-urlencoded").
             end((err, res) => {
                 debug.log("Register ", res.body);
-                code = res.body.token;
+                code = res.body.accessToken;
                 expect(res.status).to.equal(200);
                 done();
             });
@@ -61,10 +62,27 @@ describe("User APIs", () => {
             });
         });
     });
-    // TODO: Admin
-    describe("User update test", () => {
-        it("should update", () => {
-            // Yes!!!! I AM ADMIN
+    describe("User valid test", () => {
+        let user;
+        before(async () => {
+            user = await require("../handle/user.js").login("RouterTest", "Expsw");
+            user = {
+                data: user,
+                accessToken: tokenHandle.sign(user.id, user.permission),
+                refreshToken: tokenHandle.sign(user.id, user.permission, "", 3600 * 24 * 30)
+            };
+            debug.log(user);
+        });
+        it("should update token", done => {
+            chai.request(app).put("/api/user").
+            send({ password: user.data.password }).
+            set("content-type", "application/x-www-form-urlencoded").
+            set("Authorization", "Bearer " + user.refreshToken).
+            end((err, res) => {
+                debug.log(res);
+                expect(res.status).to.equal(200, res.body);
+                done();
+            });
         });
     });
     describe("User update name test", () => {

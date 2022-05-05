@@ -38,9 +38,14 @@ sequenceDiagram
 
 **user permission**
 
-- admin
-- user
-- visitor
+|          | Admin | User | Visitor |
+|:---------|:-----:|:----:|:-------:|
+| /admin/* |   X   |      |         |
+| /api/*   |   X   |  X   |    X    |
+| /*       |   X   |  X   |    X    |    
+- admin -> /api*, /admin*
+- user -> /api*
+- visitor -> /* exclude /admin* and /api/*
 
 **Structure design**
 
@@ -59,9 +64,31 @@ sequenceDiagram
     middle->routes: error handle and resoponse
 ```
 
-## user
+## User
 
 --------------------------------------
 
+REST -> Find, create, update, delete
+
+Need register
+
 User password could have no length limit.
 md 5 could compress to 32.
+
+## Home
+
+--------------------------------------
+
+**design**
+
+/shader ->
+
+## Editor
+
+--------------------------------------
+
+**design**
+
+/shader/:id -> to enter into the post
+
+

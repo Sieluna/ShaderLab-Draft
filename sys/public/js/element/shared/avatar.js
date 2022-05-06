@@ -47,7 +47,7 @@ const leaveAvatar = event => {
     }
 }
 
-export const userFeature = (token, user) => {
+export const userFeature = token => {
     if (window.innerWidth < 800) {
         leftAvatar.setAttribute("style", "display: block");
         rightAvatar.setAttribute("style", "display: none");
@@ -55,7 +55,7 @@ export const userFeature = (token, user) => {
         leftAvatar.setAttribute("style", "display: none");
         rightAvatar.setAttribute("style", "display: block");
     }
-    if (user != null && token != null) {
+    if (token != null) {
         loginElements.forEach((node) => node.setAttribute("style", "display: none"));
         avatarElements.forEach((node, index) => {
             node.setAttribute("style", "display: block");

@@ -16,7 +16,8 @@
         "form-data": "latest",
         "mocha": "latest",
         "webpack": "latest",
-        "webpack-cli": "latest"
+        "webpack-cli": "latest",
+        "html-webpack-plugin": "latest"
     },
     "scripts": {
         "server": "set DEBUG=shaderlab:* && node ./sys/bin/www",

@@ -1,3 +1,10 @@
+/**
+ *
+ * @param input
+ * @param init
+ * @param callback
+ * @return {void}
+ */
 export const fetchFeature = (input, init, callback) =>
     fetch(input, init).
     then(handleResponse).

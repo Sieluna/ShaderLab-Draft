@@ -16,10 +16,10 @@ const handle = {
         if (limit) {
             if (!isNumber(limit)) return state.Empty;
             const result = await post.findAll({ attributes: ["id", "name"], where: { name: { [Op[type]]: `${keyword}` }}, limit: limit });
-            return result.length > 0 ? Object.assign({}, result) : state.NotExist;
+            return result.length > 0 ? result : state.NotExist;
         } else {
             const result = await post.findAll({ attributes: ["id", "name"], where: { name: { [Op[type]]: `${keyword}` }}});
-            return result.length > 0 ? Object.assign({}, result) : state.NotExist;
+            return result.length > 0 ? result : state.NotExist;
         }
     },
     /**
@@ -34,10 +34,10 @@ const handle = {
         if (limit) {
             if (!isNumber(limit)) return state.Empty;
             const result = await post.findAll({ where: { name: { [Op[type]]: `${keyword}` }}, limit: limit });
-            return result.length > 0 ? Object.assign({}, result) : state.NotExist;
+            return result.length > 0 ? result : state.NotExist;
         } else {
             const result = await post.findAll({ where: { name: { [Op[type]]: `${keyword}` }}});
-            return result.length > 0 ? Object.assign({}, result) : state.NotExist;
+            return result.length > 0 ? result : state.NotExist;
         }
     },
     /**
@@ -51,10 +51,10 @@ const handle = {
         if (limit) {
             if (!isNumber(limit)) return state.Empty;
             const result = await tag.findAll({ include: post, where: { name: tagName }, limit: limit });
-            return result.length > 0 ? Object.assign({}, result) : state.NotExist;
+            return result.length > 0 ? result : state.NotExist;
         } else {
             const result = await post.findAll({ include: post, where: { name: tagName }});
-            return result.length > 0 ? Object.assign({}, result) : state.NotExist;
+            return result.length > 0 ? result : state.NotExist;
         }
     }
 }

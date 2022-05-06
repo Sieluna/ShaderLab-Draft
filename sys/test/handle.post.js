@@ -234,10 +234,12 @@ describe("Post handle test", () => {
             await postHandle.viewPost(2);
             postCache = await postHandle.getAllPostsByRank(2);
             debug.log(postCache);
+            expect(postCache.length).to.be.equal(2);
         });
         it("should return 2 instance with rank asc", async () => {
             postCache = await postHandle.getAllPostsByRank(2, true);
             debug.log(postCache);
+            expect(postCache.length).to.be.equal(2);
         });
     });
     describe("Count post", () => {

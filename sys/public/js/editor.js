@@ -37,7 +37,7 @@ window.onload = () => {
         })
     });
     refreshFeature(token, user);
-    userFeature(token, user);
+    userFeature(token);
     searchFeature();
     stateFeature();
     flowFeature();

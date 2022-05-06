@@ -1,5 +1,5 @@
 const { Sequelize } = require("sequelize");
-const { tag, post, thumb, comment } = require("./model.js").models;
+const { user, tag, post, thumb, comment } = require("./model.js").models;
 const userHandle = require("./user.js");
 const topicHandle = require("./topic.js");
 const state = require("../config/state.js");
@@ -52,9 +52,9 @@ const handle = {
     getAllPosts: async limit => {
         if (limit) {
             if (!isNumber(limit)) return state.Empty;
-            return await post.findAll({ limit: limit });
+            return await post.findAll({ include: { model: user, attributes: ["name"] }, limit: limit });
         } else {
-            return await post.findAll();
+            return await post.findAll({ include: { model: user, attributes: ["name"] }});
         }
     },
     /**
@@ -66,7 +66,7 @@ const handle = {
     getAllPostsByRank: async (limit, order = false) => {
         if (limit) {
             if (!isNumber(limit)) return state.Empty;
-            return await post.findAll({
+            const result = await post.findAll({
                 attributes: {
                     include: [
                         [ Sequelize.literal(`(SELECT count(*) FROM thumbs WHERE thumbs.thumb_post = post.post_id)`), "post_thumbs" ],
@@ -76,8 +76,9 @@ const handle = {
                 order: [[ Sequelize.literal(`(post_views * 0.1) + post_thumbs + (post_comments * 2)`), order ? "ASC": "DESC" ]],
                 limit: limit
             });
+            return result.length > 0 ? result : state.NotExist;
         } else {
-            return await post.findAll({
+            const result = await post.findAll({
                 attributes: {
                     include: [
                         [ Sequelize.literal(`(SELECT count(*) FROM thumbs WHERE thumbs.thumb_post = post.post_id)`), "post_thumbs" ],
@@ -86,6 +87,7 @@ const handle = {
                 },
                 order: [[ Sequelize.literal(`(post_views * 0.1) + post_thumbs + (post_comments * 2)`), order ? "ASC": "DESC" ]]
             });
+            return result.length > 0 ? result : state.NotExist;
         }
     },
     /**

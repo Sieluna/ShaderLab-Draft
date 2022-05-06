@@ -33,9 +33,35 @@ const state = require("../config/state");
 
 const router = express.Router();
 
-router.get("/", tokenHandle.verify, async (req, res) => {
+router.get("/", async (req, res) => {
     const posts = await postHandle.getAllPosts(50);
     res.status(200).json(posts);
+});
+
+router.get("/rank", tokenHandle.verify, async (req, res) => {
+    let posts;
+    switch (req.body.order) {
+        case true:
+            posts = await postHandle.getAllPostsByRank(50, true);
+            break;
+        case false:
+            posts = await postHandle.getAllPostsByRank(50, false);
+            break;
+        default:
+            posts = await postHandle.getAllPostsByRank(50);
+            break;
+    }
+    switch (posts) {
+        case state.NotExist:
+            res.status(404).send("Post not found");
+            break;
+        case state.Empty:
+            res.status(400).send("Not valid param ");
+            break;
+        default:
+            res.status(200).json(posts);
+            break;
+    }
 });
 
 router.get("/:id", tokenHandle.verify, async (req, res) => {
@@ -56,7 +82,6 @@ router.get("/:id", tokenHandle.verify, async (req, res) => {
 router.post("/", tokenHandle.verify, upload.single("preview"), async (req, res) => {
     const url = path.relative(path.resolve(__dirname, "../"), req.file.path).replaceAll("\\", "/");
     const post = await postHandle.create(req.auth.id, req.body.topic, { name: req.body.name, preview: url, content: req.body.content });
-    console.log(post);
     switch (post) {
         case state.NotExist:
             res.status(404).send("Error user action when create topic");

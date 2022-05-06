@@ -4,28 +4,38 @@ const searchElement = document.querySelector("#nav-search .nav-search-btn");
 
 let history = JSON.parse(localStorage.getItem("history")) || {};
 
-const historyPrefab = (content) => historyElement.innerHTML +=
-    `<a class="history-item" href="#">
-        <div>${content}</div>
-        <div style="font-size: 16px top: 14px">&#10548</div>
-    </a>`
+let historyCache = [];
+
+const loadHistoryPrefab = (history) => {
+    Object.keys(history).sort((a, b) => history[b] - history[a]).forEach((item, index) => {
+        if (index < 6) {
+            if (historyCache[index]) {
+                historyCache[index].innerHTML = `<div>${item}</div>
+                                                 <div style="font-size: 16px top: 14px">&#10548</div>`
+            } else {
+                const element = document.createElement("a");
+                element.classList.add("history-item");
+                element.innerHTML = `<div>${item}</div>
+                                     <div style="font-size: 16px top: 14px">&#10548</div>`
+                historyCache[index] = element;
+                historyElement.append(historyCache[index]);
+            }
+        }
+    });
+}
 
 export const historyFeature = (inputData) => {
-    Object.keys(history).sort((a, b) => history[b] - history[a]).forEach((item, index) => {
-        if (index < 6)
-            historyPrefab(item);
-    });
+    loadHistoryPrefab(history);
     cleanElement.addEventListener("click", () => {
-        console.log("click")
         document.querySelectorAll(".sl-nav .search-panel .history-item").forEach(node => node.remove());
         localStorage.removeItem("history");
+        history = {};
     });
     searchElement.addEventListener("click", () => {
         if (inputData.value.length > 0) {
             history[inputData.value] = Date.now();
             localStorage.setItem("history", JSON.stringify(history));
-        } else {
-            console.log("[History] ", "search input none");
+            loadHistoryPrefab(history)
         }
     });
 }

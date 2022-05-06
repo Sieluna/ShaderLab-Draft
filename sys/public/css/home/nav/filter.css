@@ -1,12 +1,10 @@
 /**
  * Filter Bar
  */
-.sl-nav > .sl-nav_filter {
+.sl-nav .sl-nav_filter {
     display: flex;
     flex-direction: column;
     background: var(--bg_1);
-    width: calc(100% - 128px);
-    padding: 0 64px;
 }
 
 .sl-nav .topic-filter {
@@ -42,4 +40,35 @@
     line-height: 29px;
     transition: background-color 0.3s, color 0.3s;
     cursor: pointer;
+}
+
+@media (max-width: 399.98px) {
+    .sl-nav .sl-nav_filter {
+        width: calc(100% - 10px);
+        padding: 3px 5px;
+    }
+
+    .sl-nav .topic-filter .filter-item:nth-child(1n+4),
+    .sl-nav .tag-filter .filter-item:nth-child(1n+5) {
+        display: none;
+    }
+}
+
+@media (min-width: 400px) and (max-width: 799.98px) {
+    .sl-nav .sl-nav_filter {
+        width: calc(100% - 30px);
+        padding: 5px 15px;
+    }
+
+    .sl-nav .topic-filter .filter-item:nth-child(1n+5),
+    .sl-nav .tag-filter .filter-item:nth-child(1n+6) {
+        display: none;
+    }
+}
+
+@media (min-width: 800px) {
+    .sl-nav .sl-nav_filter {
+        width: calc(100% - 70px);
+        padding: 7px 35px;
+    }
 }

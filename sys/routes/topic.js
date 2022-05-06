@@ -74,7 +74,7 @@ router.put("/image/:id", tokenHandle.verify, async (req, res) => {
     }
 });
 
-router.put("/image/:id", tokenHandle.verify, async (req, res) => {
+router.put("/description/:id", tokenHandle.verify, async (req, res) => {
     if (req.body.id === req.params.id) {
         const user = await userHandle.updateById(id, req.body);
     } else {

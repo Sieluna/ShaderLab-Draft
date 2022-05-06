@@ -7,7 +7,6 @@ const tokenHandle = require("../handle/token.js");
 const router = express.Router();
 
 router.get("/:keyword", async (req, res) => {
-    console.log(req.params)
     const posts = await searchHandle.SearchPostsByContent(req.params.keyword, 50);
     switch (posts) {
         case state.NotExist:

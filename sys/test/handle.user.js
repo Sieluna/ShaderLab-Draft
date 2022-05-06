@@ -196,14 +196,15 @@ describe("User handle test", () => {
         });
     });
     describe("Abort user test", () => {
-        beforeEach(async () => { code = await userHandle.getLastId(); await userHandle.deprecateById(code) });
+        beforeEach(async () => { code = await userHandle.getLastId(); });
         it("should mark user to deprecated", async () => {
+            await userHandle.deprecateById(code);
             expect(await userHandle.getLastId()).to.be.equal(code - 1);
         });
     });
     describe("Restore user test", () => {
+        beforeEach(async () => { code = await userHandle.getLastId(); });
         it("should mark user to active", async () => {
-            code = await userHandle.getLastId();
             const result = await userHandle.restoreById(code + 1);
             debug.log(result);
             expect(await userHandle.getLastId()).to.be.equal(code + 1);

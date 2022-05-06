@@ -34,7 +34,7 @@ describe("Search handle test", () => {
         });
         it("should return none with none", async () => {
             const result = await searchHandle.SearchPostsByContent("none");
-            expect(result.length).to.be.equal(0);
+            expect(result).to.be.equal(state.NotExist);
             debug.log(result);
         });
         it("should be ok with no keywords", async () => {

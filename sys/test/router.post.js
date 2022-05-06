@@ -51,4 +51,16 @@ describe("Post APIs", () => {
             });
         });
     });
+    describe("Post router get post recommend test", () => {
+        it ("should return code 200, and 8 posts", done => {
+            chai.request(app).get("/api/post/recommend").
+            set("Authorization", "Bearer " + code).
+            set("content-type", "application/x-www-form-urlencoded").
+            end((err, res) => {
+                debug.log("Get Recommends ", res.body);
+                expect(res.status).to.equal(200);
+                done();
+            });
+        });
+    });
 });

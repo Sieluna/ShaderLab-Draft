@@ -38,6 +38,11 @@ router.get("/", async (req, res) => {
     res.status(200).json(posts);
 });
 
+router.get("/recommend", async (req, res) => {
+    const posts = await postHandle.getAllPostsByRank(8);
+    res.status(200).json(posts);
+});
+
 router.get("/rank", tokenHandle.verify, async (req, res) => {
     let posts;
     switch (req.body.order) {

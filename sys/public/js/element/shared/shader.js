@@ -6,24 +6,31 @@ const holderElement = document.querySelector(".sl-layout .sl-holder");
 let cache = JSON.parse(localStorage.getItem("cache")) || {};
 let shaders = {}
 
-class Shader {
+class ShaderBase {
     constructor(shaderData) {
         this.name = shaderData.name;
         this.image = shaderData.preview;
-        this.user = shaderData.user.name;
         this.content = shaderData.content;
         this.update = shaderData.post_update;
+    }
+}
+
+class Shader extends ShaderBase {
+    constructor(shaderData) {
+        super(shaderData);
+        this.user = shaderData.user.name;
     }
 
     get prefab() {
         const shader = document.createElement("div");
         shader.classList.add("shader-info");
-        shader.innerHTML = `<div class="shader-preview">
-                                <img src="${this.image}">
-                                <!--canvas ></canvas-->
-                            </div>
-                            <div class="shader-name">${this.name}</div>
-                            <div>${this.user}</div>`
+        shader.innerHTML = `
+            <div class="shader-preview">
+                <img src="${this.image}">
+                <!--canvas ></canvas-->
+            </div>
+            <div class="shader-name">${this.name}</div>
+            <div>${this.user}</div>`;
         return shader;
     }
 
@@ -41,8 +48,23 @@ class Shader {
     }
 }
 
+class Recommend extends ShaderBase {
+    constructor(shaderData) {
+        super(shaderData);
+    }
+
+    static init() {
+        fetchFeature("/api/post/recommend", {
+            method: "GET"
+        }, result => {
+            console.log(result);
+        })
+    }
+}
+
 export const shaderFeature = token => {
     if (token != null) {
         Shader.init();
+        Recommend.init();
     }
 }

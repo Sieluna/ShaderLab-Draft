@@ -5,6 +5,9 @@ const userinfoElement = document.querySelector(".sl-nav .avatar-bottom");
 const leftAvatar = document.querySelector(".sl-nav .left-entry-item .avatar-container");
 const rightAvatar = document.querySelector(".sl-nav .right-entry-item .avatar-container");
 
+const nameElement = document.querySelector(".sl-nav .avatar-bottom .userinfo-name");
+const logoutElement = document.querySelector(".sl-nav .avatar-bottom .userinfo-logout");
+
 let avatarLock = true, avatarLockId = -1, avatarAnim = true;
 
 const isParent = (refNode, otherNode) => {
@@ -47,7 +50,15 @@ const leaveAvatar = event => {
     }
 }
 
-export const userFeature = token => {
+export const userFeature = (token, user) => {
+    if (user) {
+        nameElement.textContent = user.name;
+        logoutElement.addEventListener("click", () => {
+            localStorage.removeItem("user");
+            localStorage.removeItem("token");
+            location.reload();
+        });
+    }
     if (window.innerWidth < 800) {
         leftAvatar.setAttribute("style", "display: block");
         rightAvatar.setAttribute("style", "display: none");

@@ -34,7 +34,7 @@
 }
 
 .sl-nav .right-entry-holder:hover .right-entry-icon {
-    animation: jump .3s
+    animation: jump 0.3s
 }
 
 @keyframes jump {
@@ -89,7 +89,7 @@
     font-size: 14px;
     line-height: 20px;
     cursor: pointer;
-    transition: background-color .3s;
+    transition: background-color 0.3s;
     text-decoration: none;
 }
 

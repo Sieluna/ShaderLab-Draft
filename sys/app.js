@@ -20,6 +20,7 @@ app.get("/", (req, res) => res.render("index", { title: "Shader Lab" }));
 
 app.use("/api/user", require("./routes/user.js"));
 app.use("/api/topic", require("./routes/topic.js"));
+app.use("/api/tag", require("./routes/tag.js"));
 app.use("/api/post", require("./routes/post.js"));
 app.use("/api/search", require("./routes/search.js"));
 
@@ -34,7 +35,7 @@ app.use(function (err, req, res, next) {
 });
 
 setTimeout(() => {
-    require("./config/inject.js")().then();
-}, 3000)
+    require("./config/inject.js")(500).then();
+}, 2500)
 
 module.exports = app;

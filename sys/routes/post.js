@@ -29,7 +29,7 @@ const upload = multer({
 
 const tokenHandle = require("../handle/token.js");
 const postHandle = require("../handle/post.js");
-const state = require("../config/state");
+const state = require("../config/state.js");
 
 const router = express.Router();
 
@@ -44,18 +44,7 @@ router.get("/recommend", async (req, res) => {
 });
 
 router.get("/rank", tokenHandle.verify, async (req, res) => {
-    let posts;
-    switch (req.body.order) {
-        case true:
-            posts = await postHandle.getAllPostsByRank(50, true);
-            break;
-        case false:
-            posts = await postHandle.getAllPostsByRank(50, false);
-            break;
-        default:
-            posts = await postHandle.getAllPostsByRank(50);
-            break;
-    }
+    const posts = await postHandle.getAllPostsByRank(50, req.body.order);
     switch (posts) {
         case state.NotExist:
             res.status(404).send("Post not found");

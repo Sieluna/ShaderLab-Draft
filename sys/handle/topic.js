@@ -1,6 +1,6 @@
 const { topic } = require("./model.js").models;
 const state = require("../config/state.js");
-const { isEmpty, isNumber } = require("./utils.js")
+const { isEmpty, isNumber } = require("./utils.js");
 
 const handle = {
     /**
@@ -69,7 +69,7 @@ const handle = {
      * @return {Promise<topic|state>}
      */
     createByName: async name => {
-        if (isEmpty(name) || isNumber(name)) return state.NotCorrect;
+        if (isEmpty(name)) return state.Empty;
         if (name.length > 32) return state.OverSize;
         return await topic.create({ name: name });
     },

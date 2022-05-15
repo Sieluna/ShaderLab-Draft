@@ -1,20 +1,46 @@
 const express = require("express");
+const path = require("path");
+const fs = require("fs");
+const multer = require("multer");
+
+const upload = multer({
+    fileFilter: (req, file, callback) => {
+        const acceptableMime = [".webp", ".jpeg", ".png", ".jpg", ".gif"];
+        if (acceptableMime.includes(path.extname(file.originalname)))
+            callback(null, true);
+        else
+            callback(null, false);
+    },
+    storage: multer.diskStorage({
+        destination: path.resolve(__dirname, "../static/data/topic"), // upload target
+        filename: function (req, file, callback) {
+            let extName = path.extname(file.originalname);
+            topicHandle.getLastId(1).then(fileName => {
+                fs.stat(path.resolve(__dirname, "../static/data/topic/", fileName + extName), (err, stat) => {
+                    if (err == null)
+                        fs.unlink(path.resolve(__dirname, "../static/data/topic/", fileName + extName), () => callback(null, fileName + extName));
+                    else if (err.code === "ENOENT")
+                        callback(null, fileName + extName);
+                });
+            });
+        }
+    })
+});
 
 const state = require("../config/state.js");
 const topicHandle = require("../handle/topic.js");
 const tokenHandle = require("../handle/token.js");
-const userHandle = require("../handle/user");
 
 const router = express.Router();
 
-router.get("/", tokenHandle.verify, async (req, res) => {
+router.get("/", async (req, res) => {
     const topic = await topicHandle.getAllTopics();
     res.status(200).json(topic);
 });
 
-router.get("/:id", tokenHandle.verify, async (req, res) => {
-    const user = await topicHandle.getTopicById(req.params.id);
-    switch (user) {
+router.get("/:topic", tokenHandle.verify, async (req, res) => {
+    const topic = await topicHandle.getTopic(req.params.topic);
+    switch (topic) {
         case state.NotExist:
             res.status(404).send("Topic not found");
             break;
@@ -22,77 +48,55 @@ router.get("/:id", tokenHandle.verify, async (req, res) => {
             req.status(400).send("Not valid params id");
             break;
         default:
-            res.status(200).json(user);
+            res.status(200).json(topic);
             break;
     }
 });
 
-router.post("/login", async (req, res) => {
-    const user = await topicHandle.login(req.body.account, req.body.password);
-    switch (user) {
+router.post("/", tokenHandle.verify, upload.single("icon"), async (req, res) => {
+    let { name, description } = req.body, topic;
+    if (description !== undefined) {
+        const url = path.relative(path.resolve(__dirname, "../"), req.file.path).replaceAll("\\", "/");
+        topic = await topicHandle.create(name, url, description);
+    } else
+        topic = await topicHandle.createByName(name);
+    switch (topic) {
         case state.OverSize:
-            res.status(400).send("Not valid account or password");
+            res.status(400).send("Topic name or description is oversize");
             break;
         case state.NotCorrect:
-            res.status(400).send("Password incorrect!");
-            break;
-        case state.NotExist:
-            res.status(400).send("Account not exist!");
+            res.status(400).send("Topic name not correct");
             break;
         case state.Empty:
-            res.status(400).send("Account or password can not be empty.");
+            res.status(400).send("Not valid name");
             break;
         default:
-            res.status(200).json({ data: user, token: tokenHandle.sign(user.id, user.permission) });
+            res.status(200).json(topic);
             break;
     }
 });
 
-router.post("/", async (req, res) => {
-    const user = await userHandle.register(req.body.account, req.body.password);
-    switch (user) {
-        case state.Duplicate:
-            res.status(400).send("Account already exist");
-            break;
-        case state.OverSize:
-            res.status(400).send("Account or password is too long");
-            break;
+router.put("/image/:id", tokenHandle.verify, upload.single("icon"), async (req, res) => {
+    const url = path.relative(path.resolve(__dirname, "../"), req.file.path).replaceAll("\\", "/");
+    const topic = await topicHandle.updateImageById(req.params.id, url);
+    switch (topic) {
         case state.Empty:
-            res.status(400).send("Account or password can not be empty.");
+            res.status(400).send("Not valid id");
             break;
         default:
-            res.status(200).json({ data: user, token: tokenHandle.sign(user.id, user.permission) });
+            res.status(200).json(topic);
             break;
-    }
-});
-
-router.put("/image/:id", tokenHandle.verify, async (req, res) => {
-    if (req.body.id === req.params.id) {
-        const user = await userHandle.updateById(id, req.body);
-    } else {
-        return res.status(400).send(`Bad request: param ID (${id}) does not match body ID (${req.body.id}).`)
     }
 });
 
 router.put("/description/:id", tokenHandle.verify, async (req, res) => {
-    if (req.body.id === req.params.id) {
-        const user = await userHandle.updateById(id, req.body);
-    } else {
-        return res.status(400).send(`Bad request: param ID (${id}) does not match body ID (${req.body.id}).`)
-    }
-});
-
-router.delete("/:id", tokenHandle.verify, async (req, res) => {
-    const effect = await userHandle.deprecateById(req.params.id);
-    switch (effect) {
-        case state.NotExist:
-            res.status(404).send("User could not find");
-            break;
+    const topic = await topicHandle.updateDescriptionById(req.params.id, req.body.description);
+    switch (topic) {
         case state.Empty:
-            res.status(404).send("Params not exist");
+            res.status(400).send("Not valid id");
             break;
         default:
-            res.status(200).end();
+            res.status(200).json(topic);
             break;
     }
 });

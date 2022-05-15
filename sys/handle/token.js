@@ -34,9 +34,7 @@ module.exports = {
             }
 
             const authorizationHeader = req.headers && "Authorization" in req.headers ? "Authorization" : "authorization";
-            if (config.getToken && typeof config.getToken == "function") {
-                token = config.getToken(req);
-            } else if (req.headers && req.headers[authorizationHeader]) {
+            if (req.headers && req.headers[authorizationHeader]) {
                 const parts = (req.headers[authorizationHeader]).split(" ");
                 if (parts.length === 2) {
                     const scheme = parts[0], credentials = parts[1];
@@ -61,11 +59,7 @@ module.exports = {
                 return next({ code: "INVALID_TOKEN", status: 401, message: err.message, inner: err });
             }
 
-            const isRevoked = config.isRevoked && config.isRevoked(req, decodedToken) || false;
-            if (isRevoked) return next({ code: "REVOKED_TOKEN", status: 401, message: "The token has been revoked." });
-
-            const requestProperty = typeof config.requestProperty == "string" ? config.requestProperty : "auth";
-            req[requestProperty] = decodedToken.payload;
+            req["auth"] = decodedToken.payload;
             next();
         } catch (err) {
             return next(err);

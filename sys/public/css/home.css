@@ -7,7 +7,12 @@
 @import "./shared/search.css";
 @import "./shared/right.css";
 @import "./shared/avatar.css";
+@import "./shared/user.css";
 @import "./home/nav/banner.css";
 @import "./home/nav/filter.css";
 
 @import "./home/layout.css";
+@import "./home/layout/common.css";
+@import "./home/layout/container.css";
+@import "./home/layout/suggest.css";
+

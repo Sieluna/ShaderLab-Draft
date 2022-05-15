@@ -1,7 +1,7 @@
 const topicHandle = require("../handle/topic.js");
 const state = require("../config/state.js");
 const debug = require("../config/debug.js");
-const sequelize = require("../handle/model");
+const sequelize = require("../handle/model.js");
 const expect = require("chai").expect;
 
 describe("Topic handle test", () => {
@@ -20,11 +20,6 @@ describe("Topic handle test", () => {
            topicCache = await topicHandle.createByName("abcdabcdabcdabcdabcdabcdabcdabcdabcd");
             debug.log(topicCache);
            expect(topicCache).to.be.equal(state.OverSize);
-        });
-        it("should return not correct", async () => {
-            topicCache = await topicHandle.createByName("123456789123456789123456789123456789");
-            debug.log(topicCache);
-            expect(topicCache).to.be.equal(state.NotCorrect);
         });
     });
     describe("Get topic test", () => {

@@ -23,7 +23,7 @@ const isNumber = data => numberReg.test(data);
 
 /**
  * Normalize id
- * @param {name|string} target
+ * @param {number|string} target
  * @param {function} handle
  * @return {number|string}
  */

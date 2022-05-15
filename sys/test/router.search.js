@@ -17,7 +17,7 @@ describe("Search APIs", () => {
     after("Database clean", async () => await sequelize.drop());
     it("should return no error", () => expect(code).to.be.true);
     before("Create init", async () =>{
-        for (let i = 0; i < 10; i++) {
+        for (let i = 1; i < 10; i++) {
             await userHandle.register("PostNameTest" + i, "PostTestPSW");
             await topicHandle.create("TopicNameTest" + i, "http://none", "This is Topic Name" + i);
         }
@@ -45,6 +45,15 @@ describe("Search APIs", () => {
                 done();
             });
         });
+        it("should return code 200, and users info", done => {
+            chai.request(app).get("/api/search/user/tes").
+            set("content-type", "application/x-www-form-urlencoded").
+            end((err, res) => {
+                debug.log("Search ", res.body);
+                expect(res.status).to.equal(200);
+                done();
+            });
+        });
         it("should return code 200, and post info", done => {
             chai.request(app).get("/api/search/post/se").
             set("content-type", "application/x-www-form-urlencoded").
@@ -65,6 +74,15 @@ describe("Search APIs", () => {
         });
         it("should return code 200, and post info", done => {
             chai.request(app).get("/api/search/tag/day").
+            set("content-type", "application/x-www-form-urlencoded").
+            end((err, res) => {
+                debug.log("Search ", res.body);
+                expect(res.status).to.equal(200);
+                done();
+            });
+        });
+        it("should return code 200, and post info", done => {
+            chai.request(app).get("/api/search/topic/TopicNameTest1").
             set("content-type", "application/x-www-form-urlencoded").
             end((err, res) => {
                 debug.log("Search ", res.body);

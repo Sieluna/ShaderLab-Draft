@@ -43,9 +43,17 @@ sequenceDiagram
 | /admin/* |   X   |      |         |
 | /api/*   |   X   |  X   |    X    |
 | /*       |   X   |  X   |    X    |    
+
 - admin -> /api*, /admin*
 - user -> /api*
 - visitor -> /* exclude /admin* and /api/*
+
+3 level design would be good enough to.
+
+```mermaid
+graph TD;
+    Visitor --> User --> Admin
+```
 
 **Structure design**
 
@@ -64,16 +72,104 @@ sequenceDiagram
     middle->routes: error handle and resoponse
 ```
 
+```mermaid
+graph TD;
+    ModelHandle ----> Mysql
+    SearchHandle --> UserHandle
+    SearchHandle --> PostHandle
+    SearchHandle --> TagHandle
+    SearchHandle --> TopicHandle
+    UserHandle ---> User
+    PostHandle --> TagHandle
+    PostHandle --> TopicHandle
+    PostHandle ---> Post
+    TagHandle --> Tag
+    TopicHandle --> Topic
+```
+
+```mermaid
+graph TD;
+    UserAPI --> UserHandle
+    PostAPI --> PostHandle
+    TagAPI --> TagHandle
+    TopicAPI --> TopicHandle
+    SearchAPI --> SearchHandle
+```
+
 ## User
 
 --------------------------------------
 
-REST -> Find, create, update, delete
+### Analyze
 
-Need register
+In user api should have register, login, update, abort feature.
 
-User password could have no length limit.
-md 5 could compress to 32.
+The user part have to focus on the user database.
+
+**API design**
+
+|        | API                   | Introduction                |
+|:------:|-----------------------|-----------------------------|
+|  Get   | /api/user             | Get the all the user        |
+|  Post  | /api/user             | Create a user               |
+|  Put   | /api/user             | Update the user (consider?) |
+| Delete | /api/user             | Delete a user (consider?)   |
+|        |                       |                             |
+|  Get   | /api/user/:id         | Get a user with id          |
+|  Post  | /api/user/login       | Login                       |
+|  Put   | /api/user/avatar      | Update user avatar          |
+|  Put   | /api/user/email       | Update user email           |
+|  Put   | /api/user/password    | Update user password        |
+| Delete | /api/user/abort/:id   | Abort user                  |
+|  Get   | /api/user/restore/:id | Restore user                | 
+
+User password could have no length limit. - md 5 could compress to 32.
+
+## Topic
+
+--------------------------------------
+
+### Analyze
+
+In topic api should have search, create, update, (remove? ) feature.
+
+The topic part should focus on the topic database.
+
+|      | API                        | Introduction                 |
+|:----:|----------------------------|------------------------------|
+| Get  | /api/topic                 | Get all the topic            |
+| Post | /api/topic                 | Create a topic               |
+| Put  | /api/topic                 | Update the topic             |
+|      |                            |                              |
+| Get  | /api/topic/:topic          | Get a topic by id            |
+| Put  | /api/topic/image/:id       | Update the topic image       |
+| Put  | /api/topic/description/:id | Update the topic description |
+
+## Tag
+
+--------------------------------------
+
+In tag api should have search, create (should integrate into post), update feature.
+
+The tag part should focus on the tag database.
+
+|     | API      | Introduction     |
+|:---:|----------|------------------|
+| Get | /api/tag | Get all the tags |
+| Put | /api/tag | Update the tag   |
+
+## Thumb
+
+--------------------------------------
+
+In thumb api should have search (use thumb?), create (should integrate into post) feature.
+
+Should not remove and update.
+
+## Comment
+
+--------------------------------------
+
 
 ## Home
 

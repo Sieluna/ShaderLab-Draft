@@ -1,5 +1,4 @@
 /**
- *
  * @param input
  * @param init
  * @param callback

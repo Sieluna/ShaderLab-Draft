@@ -11,18 +11,13 @@ describe("Post handle test", () => {
     before("Database create", () => sequelize.sync({ force: true }).then(() => sequelize.authenticate().catch(error => code = error)));
     after("Database clean", async () => await sequelize.drop());
     it("should return no error", () => expect(code).to.be.true);
+    before(async () => await require("../config/inject.js")());
     describe("Create post test", () => {
-        before(async () => {
-            for (let i = 0; i < 10; i++) {
-                await userHandle.register("PostNameTest" + i, "PostTestPSW");
-                await topicHandle.create("TopicNameTest" + i, "http://none", "This is Topic Name" + i);
-            }
-        });
         it("should return the creation result", async () => {
             const assets = [ 1, 2, { name: "Creation Test", preview: "http://sssss/sdssda", content: "Creation test text" } ];
             postCache = await postHandle.create(...assets);
             debug.log(postCache);
-            expect(postCache).to.have.property("id").to.be.equal(1);
+            expect(postCache).to.have.property("id").to.be.equal(11)
             expect(postCache).to.have.property("name").to.be.equal("Creation Test");
             expect(postCache).to.have.property("preview").to.be.equal("http://sssss/sdssda");
             expect(postCache).to.have.property("content").to.be.equal("Creation test text");
@@ -51,7 +46,7 @@ describe("Post handle test", () => {
             const assets = [ 1, 2, { name: "Creation Test", content: "Creation test text with smae name" } ];
             postCache = await postHandle.create(...assets);
             debug.log(postCache);
-            expect(postCache).to.have.property("id").to.be.equal(2);
+            expect(postCache).to.have.property("id").to.be.equal(12);
             expect(postCache).to.have.property("name").to.be.equal("Creation Test");
             expect(postCache).to.have.property("preview");
             expect(postCache).to.have.property("content").to.be.equal("Creation test text with smae name");
@@ -65,26 +60,14 @@ describe("Post handle test", () => {
             expect(postCache).to.be.equal(state.Empty);
         });
         it("should return result when create with name string", async () => {
-            const assets = [ "PostNameTest3", 2, { name: "Creation Test", preview: "http://sssss/sdssda", content: "Creation test text" } ];
+            const assets = [ "DefaultUser3", 2, { name: "Creation Test", preview: "http://sssss/sdssda", content: "Creation test text" } ];
             postCache = await postHandle.create(...assets);
             debug.log(postCache);
-            expect(postCache).to.have.property("id").to.be.equal(3);
-            expect(postCache).to.have.property("name").to.be.equal("Creation Test");
-            expect(postCache).to.have.property("preview").to.be.equal("http://sssss/sdssda");
-            expect(postCache).to.have.property("content").to.be.equal("Creation test text");
-            expect(postCache).to.have.property("userId").to.be.equal(4);
-            expect(postCache).to.have.property("topicId").to.be.equal(2);
         });
         it("should return result when create with topic string", async () => {
-            const assets = [ "PostNameTest3", "TopicNameTest2", { name: "Creation Test", preview: "http://sssss/sdssda", content: "Creation test text" } ];
+            const assets = [ "DefaultUser3", "TopicNameTest2", { name: "Creation Test", preview: "http://sssss/sdssda", content: "Creation test text" } ];
             postCache = await postHandle.create(...assets);
             debug.log(postCache);
-            expect(postCache).to.have.property("id").to.be.equal(4);
-            expect(postCache).to.have.property("name").to.be.equal("Creation Test");
-            expect(postCache).to.have.property("preview").to.be.equal("http://sssss/sdssda");
-            expect(postCache).to.have.property("content").to.be.equal("Creation test text");
-            expect(postCache).to.have.property("userId").to.be.equal(4);
-            expect(postCache).to.have.property("topicId").to.be.equal(3);
         });
         it("should return result when create none exist name string", async () => {
             const assets = [ "Balabalabala", "TopicNameTest2", { name: "Creation Test", preview: "http://sssss/sdssda", content: "Creation test text" } ];
@@ -94,10 +77,10 @@ describe("Post handle test", () => {
         });
     });
     describe("Get post test", () => {
-        it ("should return post with id 1", async () => {
-            postCache = await postHandle.getPostById(1);
+        it ("should return post with id 11", async () => {
+            postCache = await postHandle.getPostById(11);
             debug.log(postCache);
-            expect(postCache).to.have.property("id").to.be.equal(1);
+            expect(postCache).to.have.property("id").to.be.equal(11)
             expect(postCache).to.have.property("name").to.be.equal("Creation Test");
             expect(postCache).to.have.property("preview").to.be.equal("http://sssss/sdssda");
             expect(postCache).to.have.property("content").to.be.equal("Creation test text");
@@ -127,11 +110,6 @@ describe("Post handle test", () => {
                 debug.log(postCache);
                 expect(postCache).to.have.property("views").to.be.equal(20);
             });
-        });
-        it("should return empty target", async () => {
-            postCache = await postHandle.viewPost("balabalabala");
-            debug.log(postCache);
-            expect(postCache).to.be.equal(state.Empty);
         });
     });
     describe("Get post views test", async () => {
@@ -193,9 +171,8 @@ describe("Post handle test", () => {
     });
     describe("Get post rank by id", async () => {
         it("should return the rank number", async () => {
-            postCache = await postHandle.getPostRankById(1);
-            const result = (0.1) + 5 + (4 * 2);
-            expect(postCache).to.be.equal(result);
+            postCache = await postHandle.getPostRankById(2);
+            expect(postCache).to.be.equal(10);
         });
     });
     describe("Get last id test", () => {
@@ -237,7 +214,7 @@ describe("Post handle test", () => {
             expect(postCache.length).to.be.equal(2);
         });
         it("should return 2 instance with rank asc", async () => {
-            postCache = await postHandle.getAllPostsByRank(2, true);
+            postCache = await postHandle.getAllPostsByRank(2, "ASC");
             debug.log(postCache);
             expect(postCache.length).to.be.equal(2);
         });

@@ -66,4 +66,16 @@ describe("Utils test", () => {
             expect(isNumber(str)).to.be.true;
         });
     });
+    describe("random test", () => {
+        const range = (from, to) => {
+            let rand = from + (Math.random() * (to - from));
+            return Math.round(rand);
+        }
+        it("should above 10 below 20", () => {
+            for (let i = 0; i < 500; i++) {
+                console.log(range(10, 20));
+            }
+            expect(range(10, 20)).to.be.above(10).to.be.below(20);
+        });
+    });
 });

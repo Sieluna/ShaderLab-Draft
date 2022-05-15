@@ -1,13 +1,16 @@
 const { Sequelize } = require("sequelize");
-const { user, tag, post, thumb, comment } = require("./model.js").models;
+const { user, post } = require("./model.js").models;
 const userHandle = require("./user.js");
 const topicHandle = require("./topic.js");
+const tagHandle = require("./tag.js");
+const thumbHandle = require("./thumb.js");
+const commentHandle = require("./comment.js");
 const state = require("../config/state.js");
-const { isNumber, isEmpty, normalizeId } = require("./utils");
+const { isNumber, isEmpty, normalizeId } = require("./utils.js");
 
 const handle = {
     /**
-     * Get post by id
+     * Get post by id (unsafe)
      * @param {number|string} id
      * @return {Promise<post|state>}
      */
@@ -22,13 +25,12 @@ const handle = {
      */
     getViewPostById: async id => {
         if (!isNumber(id)) return state.Empty;
-        const result = await post.findByPk(id);
-        if (result == null) return state.NotExist;
-        await post.increment({ views: 1 }, { where: { id: id } });
+        const result = await handle.getPostById(id);
+        if (result) await post.increment({ views: 1 }, { where: { id: id } });
         return result;
     },
     /**
-     * Get posts by name
+     * Get posts by name (unsafe)
      * @param {string} name
      * @return {Promise<post[]|state>}
      */
@@ -52,41 +54,36 @@ const handle = {
     getAllPosts: async limit => {
         if (limit) {
             if (!isNumber(limit)) return state.Empty;
-            return await post.findAll({ include: { model: user, attributes: ["name"] }, limit: limit });
+            return await post.findAll({ include: { model: user, attributes: ["name", "avatar"] }, limit: limit });
         } else {
-            return await post.findAll({ include: { model: user, attributes: ["name"] }});
+            return await post.findAll({ include: { model: user, attributes: ["name", "avatar"] }});
         }
     },
     /**
      * Get all posts with rank
-     * @param {number} [limit]
-     * @param {boolean} [order] true -> asc, false -> desc
+     * @param {number|string} [limit]
+     * @param {"ASC"|"DESC"} [order]
      * @return {Promise<post[]|state>}
      */
-    getAllPostsByRank: async (limit, order = false) => {
+    getAllPostsByRank: async (limit, order = "DESC") => {
+        if (isEmpty(order)) return state.Empty;
+        const option = {
+            include: { model: user, attributes: ["name", "avatar"] },
+            attributes: {
+                include: [
+                    [ Sequelize.literal(`(SELECT count(*) FROM thumbs WHERE thumbs.thumb_post = post.post_id)`), "post_thumbs" ],
+                    [ Sequelize.literal(`(SELECT count(*) FROM comments WHERE comments.comment_post = post.post_id)`), "post_comments" ]
+                ]
+            },
+            order: [[ Sequelize.literal(`(post_views * 0.1) + post_thumbs + (post_comments * 2)`), order ]],
+        };
         if (limit) {
             if (!isNumber(limit)) return state.Empty;
-            const result = await post.findAll({
-                attributes: {
-                    include: [
-                        [ Sequelize.literal(`(SELECT count(*) FROM thumbs WHERE thumbs.thumb_post = post.post_id)`), "post_thumbs" ],
-                        [ Sequelize.literal(`(SELECT count(*) FROM comments WHERE comments.comment_post = post.post_id)`), "post_comments" ]
-                    ]
-                },
-                order: [[ Sequelize.literal(`(post_views * 0.1) + post_thumbs + (post_comments * 2)`), order ? "ASC": "DESC" ]],
-                limit: limit
-            });
+            option.limit = limit;
+            const result = await post.findAll(option);
             return result.length > 0 ? result : state.NotExist;
         } else {
-            const result = await post.findAll({
-                attributes: {
-                    include: [
-                        [ Sequelize.literal(`(SELECT count(*) FROM thumbs WHERE thumbs.thumb_post = post.post_id)`), "post_thumbs" ],
-                        [ Sequelize.literal(`(SELECT count(*) FROM comments WHERE comments.comment_post = post.post_id)`), "post_comments" ]
-                    ]
-                },
-                order: [[ Sequelize.literal(`(post_views * 0.1) + post_thumbs + (post_comments * 2)`), order ? "ASC": "DESC" ]]
-            });
+            const result = await post.findAll(option);
             return result.length > 0 ? result : state.NotExist;
         }
     },
@@ -115,9 +112,7 @@ const handle = {
      * @return {Promise<post|state>}
      */
     getPostThumbsById: async id => {
-        if (!isNumber(id)) return state.Empty
-        const result = await thumb.count({ where: { postId: id } });
-        return isNumber(result) ? result : state.NotExist;
+        return thumbHandle.getThumbsByPost(id);
     },
     /**
      * Get number of comments by id
@@ -125,20 +120,21 @@ const handle = {
      * @return {Promise<post|state>}
      */
     getPostCommentsById: async id => {
-        if (!isNumber(id)) return state.Empty
-        const result = await comment.count({ where: { postId: id } });
-        return isNumber(result) ? result : state.NotExist;
+        return commentHandle.getCommentByPost(id);
     },
+    /**
+     * Count posts
+     * @return {Promise<number>}
+     */
     countPost: async () => {
         return await post.count();
     },
     /**
-     * View a post
+     * View a post (unsafe)
      * @param {number|string} id
      * @return {Promise<post|state>}
      */
     viewPost: async id => {
-        if (!isNumber(id)) return state.Empty;
         return await post.increment({ views: 1 }, { where: { id: id } });
     },
     /**
@@ -148,9 +144,7 @@ const handle = {
      * @return {Promise<[post,boolean]|state>}
      */
     thumbPost: async (user, post) => {
-        let userId = await normalizeId(user, userHandle.getUserByName);
-        if (userId == null || !isNumber(post)) return state.NotExist;
-        return await thumb.findOrCreate({ where: { userId: userId, postId: post } });
+        return thumbHandle.create(user, post);
     },
     /**
      * Commont a post
@@ -160,22 +154,17 @@ const handle = {
      * @return {Promise<[post,boolean]|state>}
      */
     commentPost: async (user, post, content) => {
-        if (isEmpty(content)) return state.Empty;
-        if (content.length < 5) return state.TooShort;
-        let userId = await normalizeId(user, userHandle.getUserByName);
-        if (userId == null || !isNumber(post)) return state.NotExist;
-        return await comment.findOrCreate({ where: { userId: userId, postId: post }, defaults: { content: content } });
+        return commentHandle.create(user, post, content);
     },
     /**
      * Mark post some tags
+     * @alias tagHandle.create
      * @param {string} tagName
      * @param {number|string} post
      * @return {Promise<void>}
      */
     tagPost: async (tagName, post) => {
-        if (!isNumber(post) || isEmpty(tagName)) return state.Empty;
-        if (tagName.length > 32) return state.OverSize;
-        return tag.findOrCreate({ where: { name: tagName, postId: post }});
+        return tagHandle.create(tagName, post);
     },
     /**
      * Create a post

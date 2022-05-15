@@ -128,7 +128,7 @@
 .sl-nav .avatar-bottom {
     position: absolute;
     top: 100%;
-    right: 143px /*calc((302px / 2) - 8px)*/;
+    right: 143px;
     transition: 0.3s;
     z-index: 1;
 }
@@ -136,14 +136,4 @@
 .sl-nav .avatar-bottom-transition {
     transform: translateY(5px) !important;
     opacity: 0
-}
-
-.sl-nav .userinfo-container {
-    position: relative;
-    width: 300px;
-    background-color: #fff;
-    box-shadow: 0 0 30px rgb(0 0 0 / 10%);
-    border-radius: 8px;
-    border: 1px solid var(--line_regular);
-    color: var(--text_dark);
 }

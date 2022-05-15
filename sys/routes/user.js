@@ -32,8 +32,15 @@ const tokenHandle = require("../handle/token.js");
 const router = express.Router();
 
 router.get("/", tokenHandle.verify, async (req, res) => {
-    const users = await userHandle.getAllUsers();
-    res.status(200).json(users);
+    const users = await userHandle.getAllUsers(50);
+    switch (users) {
+        case state.Empty:
+            res.status(400).send("Param is empty");
+            break;
+        default:
+            res.status(200).json(users);
+            break;
+    }
 });
 
 router.get("/:id", tokenHandle.verify, async (req, res) => {
@@ -100,11 +107,10 @@ router.put("/", tokenHandle.verify, async (req, res) => {
             res.status(400).send("Not valid body");
             break;
         case state.NotExist:
-            res.status(400).send("Invalid account");
+            res.status(400).send("Invalid token");
             break;
         default:
-            if (result.flag)
-                res.status(200).json({ accessToken: tokenHandle.sign(result.data.id, result.data.permission) });
+            if (result.flag) res.status(200).json({ accessToken: tokenHandle.sign(result.data.id, result.data.permission) });
             break;
     }
 });
@@ -138,8 +144,7 @@ router.put("/name", tokenHandle.verify, async (req, res) => {
 });
 
 router.put("/avatar", tokenHandle.verify, upload.single("avatar"), async (req, res) => {
-    const url = path.relative(path.resolve(__dirname, "../"), req.file.path).replaceAll("\\", "/");
-    const user = await userHandle.updateAvatarById(req.body.id, url);
+    const user = await userHandle.updateAvatarById(req.body.id, path.relative(path.resolve(__dirname, "../"), req.file.path).replaceAll("\\", "/"));
     switch (user) {
         case state.Empty:
             res.status(400).send("Id could not be empty");
@@ -193,7 +198,7 @@ router.delete("/abort/:id", tokenHandle.verify, async (req, res) => {
             res.status(404).send("User could not find");
             break;
         case state.Empty:
-            res.status(404).send("Params not exist");
+            res.status(400).send("Params not exist");
             break;
         default:
             res.status(200).end();
@@ -208,7 +213,7 @@ router.get("/restore/:id", tokenHandle.verify, async (req, res) => {
             res.status(404).send("User could not find");
             break;
         case state.Empty:
-            res.status(404).send("Params not exist");
+            res.status(400).send("Params not exist");
             break;
         default:
             res.status(200).end();

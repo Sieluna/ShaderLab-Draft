@@ -7,6 +7,7 @@
 @import "./shared/search.css";
 @import "./shared/right.css";
 @import "./shared/avatar.css";
+@import "./shared/user.css";
 /** Override */
 @import "./editor/nav/left.css";
 @import "./editor/nav/center.css";

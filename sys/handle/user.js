@@ -82,9 +82,8 @@ const handle = {
      * @return {Promise<user|state>}
      */
     login: async (account, password) => {
-        let tempPsw, user;
         if (isEmpty(account) || isEmpty(password)) return state.Empty;
-        user = await handle.getUserNameOrEmail(account);
+        let user = await handle.getUserNameOrEmail(account), tempPsw;
         tempPsw = crypto.createHash("md5").update(user.name + password).digest("hex");
         return user.password ? user.password === tempPsw ? user : state.NotCorrect : user;
     },
@@ -108,7 +107,7 @@ const handle = {
      * Vertify the md5 password is same
      * @param {number|string} id
      * @param {string} password
-     * @return {Promise<boolean>}
+     * @return {Promise<{boolean,user}>}
      */
     valid: async (id, password) => {
         if (!isNumber(id) || isEmpty(password)) return state.Empty;

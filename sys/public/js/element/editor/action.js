@@ -41,7 +41,7 @@ const addNodeToFlow = (name, posX, posY) => {
         default:
             if (prefabs[name]) {
                 const info = `<div><div class="title-box"><input type="text" df-name placeholder="RT name"><br></div></div>`;
-                editor.addNode(name, 1, 1, posX, posY, "flow-import", {"name": name}, info);
+                editor.addNode(name, 1, 1, posX, posY, "flow-import", { "name": name }, info);
             }
             break;
     }

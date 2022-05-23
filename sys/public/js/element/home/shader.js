@@ -1,10 +1,11 @@
 import { fetchFeature } from "../shared/response.js";
 
-const holderElement = document.querySelector(".sl-layout .sl-holder");
-const recommendElement = document.querySelector(".sl-layout .sl-recommend");
+const holderElement = document.querySelector(".sl-layout__holder");
+const recommendElement = document.querySelector(".sl-layout__recommend");
 
-/** @type {ShaderPreview} */
+/** @type {Shader} Shader Cache */
 let cache = JSON.parse(localStorage.getItem("cache")) || {};
+/** @type {{HTMLElement}} Shadow Element*/
 let shaders = {};
 
 class Shader {

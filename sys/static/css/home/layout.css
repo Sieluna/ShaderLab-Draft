@@ -4,7 +4,7 @@
     margin: 0 auto;
 }
 
-.sl-holder {
+.sl-layout__holder {
     position: relative;
     width: 100%;
     display: grid;
@@ -27,19 +27,19 @@
 }
 
 @media (max-width: 399.98px) {
-    .sl-holder {
+    .sl-layout__holder {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
 @media (min-width: 400px) and (max-width: 799.98px) {
-    .sl-holder {
+    .sl-layout__holder {
         grid-template-columns: repeat(4, 1fr);
     }
 }
 
 @media (min-width: 800px) {
-    .sl-holder {
+    .sl-layout__holder {
         grid-template-columns: repeat(5, 1fr);
     }
 }

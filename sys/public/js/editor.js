@@ -1,6 +1,6 @@
 import { stateFeature } from "./element/editor/state.js";
-import { babylonFeature } from "./element/editor/render.js";
-import { flowFeature, editor, structure } from "./element/editor/action.js";
+import { renderFeature } from "./element/editor/render.js";
+import { flowFeature, editor, structure } from "./element/editor/flow.js";
 import { userFeature } from "./element/shared/avatar.js";
 import { searchFeature } from "./element/shared/search.js";
 import { refreshFeature } from "./element/shared/refresh.js";
@@ -41,7 +41,7 @@ window.onload = () => {
     searchFeature();
     stateFeature();
     flowFeature();
-    babylonFeature();
+    renderFeature(false);
 }
 
 export { structure }

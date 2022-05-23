@@ -1,12 +1,12 @@
 /**
  * Center Entry
  */
-.sl-nav .center-container {
+.sl-nav__bar .center-container {
     flex: 1 auto;
     height: 38px;
 }
 
-.sl-nav .bar-outer {
+.sl-nav__bar .bar-outer {
     position: absolute;
     width: 100vw;
     height: 100vh;
@@ -15,23 +15,23 @@
     left: 0;
 }
 
-.sl-nav .container-extend {
+.sl-nav__bar .container-extend {
     position: relative;
     margin: 0 auto;
     min-width: 181px;
     max-width: 500px;
 }
 
-.sl-nav .container-extend.is-focus {
+.sl-nav__bar .container-extend.is-focus {
     box-shadow: 0 0 30px rgb(0 0 0 / 10%);
     border-radius: 8px;
 }
 
-.sl-nav .container-extend.is-focus .nav-search-content {
+.sl-nav__bar .container-extend.is-focus .nav-search-content {
     background-color: var(--graph_bg_thick);
 }
 
-.sl-nav .search-panel {
+.sl-nav__bar .search-panel {
     width: calc(100% - 2px);
     max-height: 612px;
     overflow-y: auto;
@@ -42,7 +42,7 @@
     padding: 10px 0 16px;
 }
 
-.sl-nav #nav-search {
+.sl-nav__bar #nav-search {
     display: flex;
     align-items: center;
     padding: 0 48px 0 4px;
@@ -57,19 +57,19 @@
     transition: background-color .3s
 }
 
-.sl-nav #nav-search.is-focus {
+.sl-nav__bar #nav-search.is-focus {
     border: 1px solid var(--line_regular);
     border-bottom: none;
     background: var(--bg_1);
     opacity: .97
 }
 
-.sl-nav #nav-search:hover {
+.sl-nav__bar #nav-search:hover {
     background-color: var(--bg_1);
     opacity: 1
 }
 
-.sl-nav #nav-search .nav-search-content {
+.sl-nav__bar #nav-search .nav-search-content {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -81,7 +81,7 @@
     border-radius: 6px;
 }
 
-.sl-nav #nav-search .nav-search-content .nav-search-input {
+.sl-nav__bar #nav-search .nav-search-content .nav-search-input {
     flex: 1;
     overflow: hidden;
     padding-right: 8px;
@@ -93,13 +93,13 @@
     line-height: 20px;
 }
 
-.sl-nav #nav-search .nav-search-content .nav-search-input:focus {
+.sl-nav__bar #nav-search .nav-search-content .nav-search-input:focus {
     outline: none;
     background: var(--graph_bg_thick);
     color: var(--text_dark);
 }
 
-.sl-nav #nav-search .nav-search-content .nav-search-clean {
+.sl-nav__bar #nav-search .nav-search-content .nav-search-clean {
     width: 16px;
     height: 16px;
     right: 10px;
@@ -107,21 +107,21 @@
     visibility: hidden;
 }
 
-.sl-nav #nav-search .nav-search-content .nav-search-clean img {
+.sl-nav__bar #nav-search .nav-search-content .nav-search-clean img {
     vertical-align: middle;
     position: absolute;
     color: var(--graph_weak);
 }
 
-.sl-nav #nav-search .nav-search-content .nav-search-clean img:hover {
+.sl-nav__bar #nav-search .nav-search-content .nav-search-clean img:hover {
     filter: brightness(55%);
 }
 
-.sl-nav #nav-search.is-focus .nav-search-content .nav-search-clean {
+.sl-nav__bar #nav-search.is-focus .nav-search-content .nav-search-clean {
     visibility: inherit;
 }
 
-.sl-nav #nav-search > .nav-search-btn {
+.sl-nav__bar #nav-search > .nav-search-btn {
     position: absolute;
     top: 3px;
     right: 7px;
@@ -138,12 +138,12 @@
     transition: background-color .3s;
 }
 
-.sl-nav #nav-search > .nav-search-btn:hover {
+.sl-nav__bar #nav-search > .nav-search-btn:hover {
     background-color: var(--graph_bg_thick);
 }
 
 @media (max-width: 799.98px) {
-    .sl-nav .center-container {
+    .sl-nav__bar .center-container {
         max-width: 350px;
     }
 }

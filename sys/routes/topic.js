@@ -6,10 +6,7 @@ const multer = require("multer");
 const upload = multer({
     fileFilter: (req, file, callback) => {
         const acceptableMime = [".webp", ".jpeg", ".png", ".jpg", ".gif"];
-        if (acceptableMime.includes(path.extname(file.originalname)))
-            callback(null, true);
-        else
-            callback(null, false);
+        callback(null, acceptableMime.includes(path.extname(file.originalname)));
     },
     storage: multer.diskStorage({
         destination: path.resolve(__dirname, "../static/data/topic"), // upload target

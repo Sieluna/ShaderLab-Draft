@@ -6,10 +6,7 @@ const multer = require("multer");
 const upload = multer({
     fileFilter: (req, file, callback) => {
         const acceptableMime = [".webp", ".jpeg", ".png", ".jpg", ".gif"];
-        if (acceptableMime.includes(path.extname(file.originalname)))
-            callback(null, true);
-        else
-            callback(null, false);
+        callback(null, acceptableMime.includes(path.extname(file.originalname)))
     },
     storage: multer.diskStorage({
         destination: path.resolve(__dirname, "../static/data/user"), // upload target
@@ -107,7 +104,7 @@ router.put("/", tokenHandle.verify, async (req, res) => {
             res.status(400).send("Not valid body");
             break;
         case state.NotExist:
-            res.status(400).send("Invalid token");
+            res.status(404).send("Invalid token");
             break;
         default:
             if (result.flag) res.status(200).json({ accessToken: tokenHandle.sign(result.data.id, result.data.permission) });

@@ -1,7 +1,7 @@
 /**
  * Filter Bar
  */
-.sl-nav > .sl-nav_filter {
+.sl-nav > .sl-nav__filter {
     display: flex;
     flex-direction: column;
     background: var(--bg_1);

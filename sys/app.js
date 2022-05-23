@@ -4,9 +4,7 @@ const logger = require("morgan");
 
 const sequelize = require("./handle/model.js");
 
-sequelize.sync({ force: true }).then(() => {
-    require("./config/debug.js").log("Database is synchronized.");
-});
+sequelize.sync({ force: true }).then(() => console.log("Database is synchronized."));
 
 const app = express();
 
@@ -29,9 +27,7 @@ app.use("/api/search", require("./routes/search.js"));
 app.use(function (err, req, res, next) {
     if (err.name === "UnauthorizedError") {
         res.status(401).send("Invalid token.");
-    } else {
-        next(err);
-    }
+    } else next(err);
 });
 
 setTimeout(() => {

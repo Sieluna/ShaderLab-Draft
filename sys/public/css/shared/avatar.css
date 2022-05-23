@@ -1,4 +1,4 @@
-.sl-nav .user-entry-mini {
+.sl-nav__bar .user-entry-mini {
     position: absolute;
     top: 5px;
     left: 10px;
@@ -9,7 +9,7 @@
     border-radius: 50%;
 }
 
-.sl-nav .user-entry-mini picture {
+.sl-nav__bar .user-entry-mini picture {
     border-radius: 50%;
     position: relative;
     display: inline-block;
@@ -19,7 +19,7 @@
     vertical-align: middle;
 }
 
-.sl-nav .user-entry-mini picture > img {
+.sl-nav__bar .user-entry-mini picture > img {
     display: block;
     width: calc(100% - 4px);
     height: calc(100% - 4px);
@@ -28,7 +28,7 @@
     border-radius: 50%;
 }
 
-.sl-nav .user-entry-large {
+.sl-nav__bar .user-entry-large {
     position: absolute;
     top: 5px;
     left: 10px;
@@ -38,7 +38,7 @@
     transform-origin: top left;
 }
 
-.sl-nav .avatar {
+.sl-nav__bar .avatar {
     display: block;
     position: relative;
     box-sizing: content-box;
@@ -48,7 +48,7 @@
     padding: 0;
 }
 
-.sl-nav .avatar img {
+.sl-nav__bar .avatar img {
     top: 0;
     left: 0;
     display: block;
@@ -60,19 +60,19 @@
     will-change: transform;
 }
 
-.sl-nav .avatar-container.small-avatar .user-entry-mini {
+.sl-nav__bar .avatar-container.small-avatar .user-entry-mini {
     animation: fadeIn 0.6s both
 }
 
-.sl-nav .avatar-container.small-avatar .user-entry-large {
+.sl-nav__bar .avatar-container.small-avatar .user-entry-large {
     animation: avatarFadeSmall 0.35s both;
 }
 
-.sl-nav .avatar-container.large-avatar .user-entry-mini {
+.sl-nav__bar .avatar-container.large-avatar .user-entry-mini {
     animation: fadeOut 0.3s both
 }
 
-.sl-nav .avatar-container.large-avatar .user-entry-large {
+.sl-nav__bar .avatar-container.large-avatar .user-entry-large {
     animation: avatarFadeLarge 0.35s both;
 }
 
@@ -125,7 +125,7 @@
     border: 1px solid #aaa;
 }
 
-.sl-nav .avatar-bottom {
+.sl-nav__bar .avatar-bottom {
     position: absolute;
     top: 100%;
     right: 143px;
@@ -133,7 +133,7 @@
     z-index: 1;
 }
 
-.sl-nav .avatar-bottom-transition {
+.sl-nav__bar .avatar-bottom-transition {
     transform: translateY(5px) !important;
     opacity: 0
 }

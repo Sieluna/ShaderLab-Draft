@@ -9,7 +9,7 @@
     width: 25%;
 }
 
-.sl-nav > .sl-nav_bar {
+.sl-nav > .sl-nav__bar {
     position: absolute;
     top: 0;
     z-index: 999;

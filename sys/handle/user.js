@@ -107,7 +107,7 @@ const handle = {
      * Vertify the md5 password is same
      * @param {number|string} id
      * @param {string} password
-     * @return {Promise<{boolean,user}>}
+     * @return {Promise<{flag:boolean,data:user}>}
      */
     valid: async (id, password) => {
         if (!isNumber(id) || isEmpty(password)) return state.Empty;

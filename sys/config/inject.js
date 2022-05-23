@@ -17,4 +17,8 @@ module.exports = async (max = 10) => {
         await postHandle.create(i, range(1, 10), {name: `DefaultPost${i}`, preview: "/img/inject/home/default.png", content: "Some random info"});
         await postHandle.tagPost(`HelloWorld${range(1, 10)}`, i);
     }
+    if (max >= 20) {
+        await userHandle.register("root", "root");
+        await userHandle.updateAvatarById(max + 1, `/img/inject/user/${range(0, 9)}.png`);
+    }
 }

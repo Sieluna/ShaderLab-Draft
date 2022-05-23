@@ -1,12 +1,9 @@
 .sl-editor .renderer {
     display: flex;
     flex-direction: column;
-    border-radius: 10px;
-    box-shadow: 1px 1px 2px var(--graph_weak);
 }
 
 .sl-editor #render-canvas {
-    border-radius: 10px 10px 0 0;
     min-width: 200px;
     width: 100%;
     height: calc(100% - 29px);
@@ -15,8 +12,7 @@
 .sl-editor .render-info {
     display: flex;
     justify-content: space-between;
-    background-color: #f5f5f5;
-    border-radius: 0 0 12px 12px;
+    background-color: var(--graph_bg_thin);
 }
 
 .sl-editor .renderer-state {
@@ -38,4 +34,16 @@
     padding: 5px 20px 5px 20px;
 }
 
+@media (max-width: 1099.98px) {
+    .sl-editor .renderer {
+        border-radius: 10px 0 0 0;
+    }
 
+    .sl-editor #render-canvas {
+        border-radius: 10px 0 0 0;
+    }
+}
+
+@media (min-width: 1100px) {
+
+}

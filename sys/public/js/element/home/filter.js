@@ -1,11 +1,16 @@
 import { fetchFeature } from "../shared/response.js";
 
-const topicElement = document.querySelector(".sl-nav .sl-nav_filter .topic-filter");
-const tagElements = document.querySelector(".sl-nav .sl-nav_filter .tag-filter");
+const topicElement = document.querySelector(".sl-nav__filter .topic-filter");
+const tagElements = document.querySelector(".sl-nav__filter .tag-filter");
 
 /** @type {ShaderPreview} */
 let cache = JSON.parse(localStorage.getItem("cache")) || {};
 let filter = {};
+let random = [...Array(45).keys()].map((number, index, all) => {
+    const j = index + Math.floor(Math.random() * (all.length - index)), v = all[j];
+    all[j] = number;
+    return v * 8;
+});
 
 class Filter {
     constructor(id, name) {
@@ -15,6 +20,7 @@ class Filter {
 
     prefab(content) {
         const filter = document.createElement("div");
+        filter.style.backgroundColor = `hsl(${random.pop()}, 32%, 63%)`;
         filter.className = "filter-item";
         filter.innerHTML = `<div>${content}</div>`;
         filter.addEventListener("click", () => {
@@ -55,7 +61,7 @@ class Tag extends Filter {
         }, result => {
             for (let tag of result) {
                 cache[`Tag_${tag.id}`] = new Tag(tag);
-                filter[`Tag_${tag.id}`] = cache[`Tag_${tag.id}`].prefab(tag.name);
+                filter[`Tag_${tag.id}`] = cache[`Tag_${tag.id}`].prefab(`# ${tag.name}`);
                 tagElements.append(filter[`Tag_${tag.id}`]);
             }
         });

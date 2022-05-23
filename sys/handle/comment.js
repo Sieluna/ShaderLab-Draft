@@ -19,7 +19,7 @@ const handle = {
      * @param {number|string} user
      * @param {number|string} post
      * @param {string} content
-     * @return {Promise<[comment, boolean]|number>}
+     * @return {Promise<[comment, boolean]|state>}
      */
     create: async (user, post, content) => {
         if (isEmpty(content)) return state.Empty;

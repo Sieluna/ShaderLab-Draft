@@ -161,7 +161,7 @@ const handle = {
      * @alias tagHandle.create
      * @param {string} tagName
      * @param {number|string} post
-     * @return {Promise<void>}
+     * @return {Promise<[tag,boolean]|state>}
      */
     tagPost: async (tagName, post) => {
         return tagHandle.create(tagName, post);

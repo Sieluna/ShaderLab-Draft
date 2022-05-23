@@ -1,18 +1,18 @@
 /**
  * Left Entry
  */
-.sl-nav .left-entry {
+.sl-nav__bar .left-entry {
     display: flex;
     align-items: center;
 }
 
-.sl-nav .left-entry-item {
+.sl-nav__bar .left-entry-item {
     display: block;
     flex-shrink: 0;
     cursor: pointer;
 }
 
-.sl-nav .home-entry {
+.sl-nav__bar .home-entry {
     height: 64px;
     line-height: 64px;
     color: #fff;
@@ -20,21 +20,21 @@
 }
 
 @media (max-width: 799.98px) {
-    .sl-nav .left-entry {
+    .sl-nav__bar .left-entry {
         padding-inline: 0 16px;
     }
 
-    .sl-nav .left-entry-item:first-child {
+    .sl-nav__bar .left-entry-item:first-child {
         display: none;
     }
 }
 
 @media (min-width: 800px) {
-    .sl-nav .left-entry {
+    .sl-nav__bar .left-entry {
         padding-inline: 26px 45px;
     }
 
-    .sl-nav .left-entry-item:last-child {
+    .sl-nav__bar .left-entry-item:last-child {
         display: none;
     }
 }

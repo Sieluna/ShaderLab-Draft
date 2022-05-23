@@ -1,9 +1,8 @@
-const historyElement = document.querySelector(".sl-nav .search-panel .search-history");
-const cleanElement = document.querySelector(".sl-nav .search-panel .history-clear");
-const searchElement = document.querySelector("#nav-search .nav-search-btn");
+const historyElement = document.querySelector(".sl-nav__bar .search-panel .search-history");
+const cleanElement = document.querySelector(".sl-nav__bar .search-panel .history-clear");
+const searchElement = document.querySelector(".sl-nav__bar #nav-search .nav-search-btn");
 
 let history = JSON.parse(localStorage.getItem("history")) || {};
-
 let historyCache = [];
 
 const loadHistoryPrefab = (history) => {
@@ -27,9 +26,9 @@ const loadHistoryPrefab = (history) => {
 export const historyFeature = (inputData) => {
     loadHistoryPrefab(history);
     cleanElement.addEventListener("click", () => {
-        document.querySelectorAll(".sl-nav .search-panel .history-item").forEach(node => node.remove());
+        document.querySelectorAll(".sl-nav__bar .search-panel .history-item").forEach(node => node.remove());
         localStorage.removeItem("history");
-        history = {};
+        history = {}; historyCache = [];
     });
     searchElement.addEventListener("click", () => {
         if (inputData.value.length > 0) {

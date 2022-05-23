@@ -1,12 +1,13 @@
-const userHolderElement = document.querySelector(".sl-nav .right-entry-item:first-child");
-const avatarElements = document.querySelectorAll(".sl-nav .avatar-container");
-const loginElements = document.querySelectorAll(".sl-nav .login-entry");
-const userinfoElement = document.querySelector(".sl-nav .avatar-bottom");
-const leftAvatar = document.querySelector(".sl-nav .left-entry-item .avatar-container");
-const rightAvatar = document.querySelector(".sl-nav .right-entry-item .avatar-container");
+const userHolderElement = document.querySelector(".sl-nav__bar .right-entry-item:first-child");
+const avatarElements = document.querySelectorAll(".sl-nav__bar .avatar-container");
+const loginElements = document.querySelectorAll(".sl-nav__bar .login-entry");
+const userinfoElement = document.querySelector(".sl-nav__bar .avatar-bottom");
+const leftAvatar = document.querySelector(".sl-nav__bar .left-entry-item .avatar-container");
+const rightAvatar = document.querySelector(".sl-nav__bar .right-entry-item .avatar-container");
 
-const nameElement = document.querySelector(".sl-nav .avatar-bottom .userinfo-name");
-const logoutElement = document.querySelector(".sl-nav .avatar-bottom .userinfo-logout");
+const avatarIconElements = document.querySelectorAll(".sl-nav__bar .avatar-container img");
+const nameElement = document.querySelector(".sl-nav__bar .avatar-bottom .userinfo-name");
+const logoutElement = document.querySelector(".sl-nav__bar .avatar-bottom .userinfo-logout");
 
 let avatarLock = true, avatarLockId = -1, avatarAnim = true;
 
@@ -51,8 +52,15 @@ const leaveAvatar = event => {
 }
 
 export const userFeature = (token, user) => {
-    if (user) {
+    if (token && user) {
         nameElement.textContent = user.name;
+        avatarIconElements.forEach(image => {
+            if (user.avatar) {
+                image.src = user.avatar;
+            } else {
+                image.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mN89B8AAskB44g04okAAAAASUVORK5CYII=";
+            }
+        });
         logoutElement.addEventListener("click", () => {
             localStorage.removeItem("user");
             localStorage.removeItem("token");

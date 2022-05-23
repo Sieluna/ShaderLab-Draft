@@ -1,17 +1,17 @@
 import { historyFeature } from "./history.js";
 import { fetchFeature } from "./response.js";
 
-const centerElement = document.querySelector(".sl-nav .container-extend");
-const outerElement = document.querySelector(".sl-nav .bar-outer");
-const panelElement = document.querySelector(".sl-nav .search-panel");
-const historyElement = document.querySelector(".sl-nav .search-panel .search-history");
-const searchElement = document.querySelector(".sl-nav #nav-search");
-const suggestionElement = document.querySelector(".sl-nav .search-panel .suggestion");
-const searchInputElement = document.querySelector(".sl-nav #nav-search .nav-search-input");
-const searchCleanElement = document.querySelector(".sl-nav #nav-search .nav-search-clean");
-const searchButtonElement = document.querySelector(".sl-nav #nav-search .nav-search-btn");
+const centerElement = document.querySelector(".sl-nav__bar .container-extend");
+const outerElement = document.querySelector(".sl-nav__bar .bar-outer");
+const panelElement = document.querySelector(".sl-nav__bar .search-panel");
+const historyElement = document.querySelector(".sl-nav__bar .search-panel .search-history");
+const suggestionElement = document.querySelector(".sl-nav__bar .search-panel .suggestion");
+const searchElement = document.querySelector(".sl-nav__bar #nav-search");
+const searchInputElement = document.querySelector(".sl-nav__bar #nav-search .nav-search-input");
+const searchCleanElement = document.querySelector(".sl-nav__bar #nav-search .nav-search-clean");
+const searchButtonElement = document.querySelector(".sl-nav__bar #nav-search .nav-search-btn");
 
-const mainElement = document.querySelector(".sl-layout .sl-holder");
+const mainElement = document.querySelector(".sl-layout__holder");
 
 class Panel {
     constructor() {
@@ -79,6 +79,11 @@ class Panel {
         }
     }
 
+    searchClean() {
+        searchInputElement.value = "";
+        searchInputElement.blur();
+    }
+
     panelInitOpen() {
         centerElement.setAttribute("class", "container-extend is-focus");
         outerElement.setAttribute("style", "display: block");
@@ -107,7 +112,7 @@ class Panel {
         suggestionElement.setAttribute("style", "display: block");
     }
 
-    panelSearchClose(closeAll) {
+    panelSearchClose(closeAll = false) {
         this.inputSearchFlag = false;
         historyElement.setAttribute("style", "display: block");
         suggestionElement.setAttribute("style", "display: none");
@@ -122,8 +127,7 @@ export const searchFeature = () => {
     historyFeature(searchInputElement);
     searchCleanElement.addEventListener("click", () =>{
         panel.panelSearchClose();
-        searchInputElement.value = "";
-        searchInputElement.blur();
+        panel.searchClean();
     });
     searchCleanElement.addEventListener("mouseover", () => panel.panelFocus = true);
     searchInputElement.addEventListener("focusout", () => panel.inputFocus = false);
@@ -143,10 +147,9 @@ export const searchFeature = () => {
             searchButtonElement.click();
         }
     });
-    searchButtonElement.addEventListener("click", event => {
-        panel.panelSearchClose();
-        searchInputElement.value = "";
-        searchInputElement.blur();
+    searchButtonElement.addEventListener("click", () => {
+        panel.panelSearchClose(true);
+        panel.searchClean();
         mainElement.scrollIntoView({ block: "start", inline: "start", behavior: "smooth" });
     });
     outerElement.addEventListener("click", () => panel.panelFocus = false);

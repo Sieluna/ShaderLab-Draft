@@ -7,7 +7,7 @@ const handle = {
     /**
      * Get all tags
      * @param {number|string} [limit]
-     * @return {Promise<tag[]>}
+     * @return {Promise<tag[]|state>}
      */
     getAllTags: async limit => {
         if (limit) {
@@ -17,11 +17,14 @@ const handle = {
             return await tag.findAll();
         }
     },
+    /**
+     * Get grouped tags
+     * @param {number|string} limit
+     * @return {Promise<tag[]|state>}
+     */
     getGroupTags: async limit => {
         const option = {
-            attributes: [
-                [ Sequelize.fn("DISTINCT", Sequelize.col("tag_name")), "name" ]
-            ]
+            attributes: [[ Sequelize.fn("DISTINCT", Sequelize.col("tag_name")), "name" ]]
         };
         if (limit) {
             if (!isNumber(limit)) return state.Empty;
@@ -36,8 +39,8 @@ const handle = {
     /**
      * Create a tag
      * @param {string} tagName
-     * @param {string} post
-     * @return {Promise<[tag,boolean]|number>}
+     * @param {number|string} post
+     * @return {Promise<[tag,boolean]|state>}
      */
     create: async (tagName, post) => {
         if (!isNumber(post) || isEmpty(tagName)) return state.Empty;

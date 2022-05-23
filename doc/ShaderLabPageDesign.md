@@ -56,10 +56,10 @@ Structure design: Navigation, Layout
 
 Navigation: search, filter and user control.
 
-|             |         CSS          |  Naming   | Interop | Mobeile | Desktop |
-|-------------|:--------------------:|:---------:|:-------:|:-------:|:-------:|
-| Navigation  | nav.css, feature.css |  sl-nav   |  True   | Enable  | Enable  |
-| Main Layout |      layout.css      | sl-layout |  True   | Enable  | Enable  |
+|             |    CSS     |  Naming   | Interop | Mobeile | Desktop |
+|-------------|:----------:|:---------:|:-------:|:-------:|:-------:|
+| Navigation  |  nav.css   |  sl-nav   |  True   | Enable  | Enable  |
+| Main Layout | layout.css | sl-layout |  True   | Enable  | Enable  |
 
 ### Analyze
 
@@ -73,26 +73,26 @@ Elements under navigation bar has two stage:
 
 Left Entry:
 
-|                       |     CSS     |  Naming   | Interop | Mobeile | Desktop |
-|-----------------------|:-----------:|:---------:|:-------:|:-------:|:-------:|
-| Home Entry            | feature.css | sl-navbar |  True   | Disable | Enable  |
-| Login Entry -> shared | feature.css | sl-navbar |  True   | Enable  | Disable |
+|                       |     CSS      |   Naming    | Interop | Mobeile | Desktop |
+|-----------------------|:------------:|:-----------:|:-------:|:-------:|:-------:|
+| Home Entry            | nav left.css | sl-nav__bar |  True   | Disable | Enable  |
+| Login Entry -> shared | nav left.css | sl-nav__bar |  True   | Enable  | Disable |
 
 Right Entry:
 
-|                       |     CSS     |  Naming   | Interop | Mobeile | Desktop |
-|-----------------------|:-----------:|:---------:|:-------:|:-------:|:-------:|
-| Login Entry -> shared | feature.css | sl-navbar |  True   | Enable  | Disable |
-| Message Entry         | feature.css | sl-navbar |  True   | Disable | Enable  |
-| History Entry         | feature.css | sl-navbar |  True   | Disable | Enable  |
-| Upload Entry          | feature.css | sl-navbar |  True   | Disable | Enable  |
+|                       |      CSS      |  Naming     | Interop | Mobeile | Desktop |
+|-----------------------|:-------------:|:-----------:|:-------:|:-------:|:-------:|
+| Login Entry -> shared | nav right.css | sl-nav__bar |  True   | Enable  | Disable |
+| Message Entry         | nav right.css | sl-nav__bar |  True   | Disable | Enable  |
+| History Entry         | nav right.css | sl-nav__bar |  True   | Disable | Enable  |
+| Upload Entry          | nav right.css | sl-nav__bar |  True   | Disable | Enable  |
 
 Main Layout:
 
-|           |    CSS     |    Naming    | Interop | Mobeile | Desktop |
-|-----------|:----------:|:------------:|:-------:|:-------:|:-------:|
-| Recommend | layout.css | sl-recommend |  True   | Enable  | Enable  |
-| Holder    | layout.css |  sl-holder   |  True   | Enable  | Enable  |
+|           |        CSS        |        Naming        | Interop | Mobeile | Desktop |
+|-----------|:-----------------:|:--------------------:|:-------:|:-------:|:-------:|
+| Recommend |  nav suggest.css  | sl-layout__recommend |  True   | Enable  | Enable  |
+| Holder    | nav container.css |  sl-layout__holder   |  True   | Enable  | Enable  |
 
 Layout should get the data from database under **ranking**.
 
@@ -150,4 +150,31 @@ flowchart TD
 
 --------------------------------------
 
+Navigation Bar:
+
+Elements under navigation bar has two stage:
+- normal -> mini icon.
+- large -> panel and large icon.
+
+Left Entry:
+
+|                       |     CSS      |   Naming    | Interop | Mobeile | Desktop |
+|-----------------------|:------------:|:-----------:|:-------:|:-------:|:-------:|
+| Login Entry -> shared | nav left.css | sl-nav__bar |  True   | Enable  | Disable |
+
+Right Entry:
+
+|                       |      CSS      |  Naming     | Interop | Mobeile | Desktop |
+|-----------------------|:-------------:|:-----------:|:-------:|:-------:|:-------:|
+| Login Entry -> shared | nav right.css | sl-nav__bar |  True   | Enable  | Disable |
+| Message Entry         | nav right.css | sl-nav__bar |  True   | Disable | Enable  |
+| History Entry         | nav right.css | sl-nav__bar |  True   | Disable | Enable  |
+| Upload Entry          | nav right.css | sl-nav__bar |  True   | Disable | Enable  |
+
+Main Layout:
+
+|           |        CSS        |        Naming        | Interop | Mobeile | Desktop |
+|-----------|:-----------------:|:--------------------:|:-------:|:-------:|:-------:|
+| Recommend |  nav suggest.css  | sl-layout__recommend |  True   | Enable  | Enable  |
+| Holder    | nav container.css |  sl-layout__holder   |  True   | Enable  | Enable  |
 

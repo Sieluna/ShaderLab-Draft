@@ -1,10 +1,13 @@
-let onTop;
+const navbarElement = document.querySelector(".sl-nav__bar");
 
-const navbarElement = document.querySelector(".sl-nav .sl-nav_bar");
+let onTop;
 
 export const scrollTopFeature = () => {
     if (onTop !== !(document.documentElement.scrollTop || document.body.scrollTop)) {
         onTop = !onTop;
-       navbarElement.setAttribute("class", onTop ? "sl-nav_bar" : "sl-nav_bar slide-down");
+        if (onTop)
+            navbarElement.classList.remove("slide-down");
+        else
+            navbarElement.classList.add("slide-down");
     }
 };

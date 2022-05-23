@@ -1,5 +1,5 @@
-let backgroundElement = document.querySelector(".sl-background"),
-    smallBackgroundElement = backgroundElement.querySelector(".small");
+const backgroundElement = document.querySelector(".sl-background");
+const smallBackgroundElement = backgroundElement.querySelector(".small");
 
 export const lazyLoadFeature = () => {
     let img = new Image();

@@ -1,4 +1,4 @@
-import { vsNode, fsNode, imageNode, meshNode, bufferNode } from "./node.js";
+import { vsNode, fsNode, imageNode, meshNode, bufferNode, customNode } from "./node.js";
 import { editor, prefabs } from "../flow.js";
 
 const holderElement = document.querySelector(".sl-editor .flow-holder");
@@ -28,9 +28,12 @@ const addNodeToFlow = (name, posX, posY) => {
         case "mesh":
             editor.addNode("mesh", 0, 1, posX, posY, "mesh", {}, meshNode);
             break;
+        case "buffer":
+            editor.addNode("buffer", 0, 1, posX, posY, "buffer", { name: name }, bufferNode);
+            break;
         default:
             if (prefabs[name])
-                editor.addNode(name, 0, 1, posX, posY, "flow-import", { "name": name }, bufferNode);
+                editor.addNode(name, 0, 1, posX, posY, "custom", { name: name }, customNode);
             break;
     }
 };
@@ -77,7 +80,7 @@ export const linkEventListener = () => {
         changeMode("unlock");
     });
     minusElement.addEventListener("click", () => editor.zoom_out());
-    fitElement.addEventListener("click", () => editor.zoom_reset(1));
+    fitElement.addEventListener("click", () => editor.zoom_reset());
     plusElement.addEventListener("click", () => editor.zoom_in());
 };
 

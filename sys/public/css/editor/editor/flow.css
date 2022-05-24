@@ -105,8 +105,14 @@
     padding-left: 10px;
 }
 
-.sl-editor .drawflow .title-box svg {
+.sl-editor .drawflow .title-box img {
+    display: inline-block;
     position: initial;
+    font-size: inherit;
+    width: 1.25em;
+    height: 1em;
+    overflow: visible;
+    vertical-align: -0.125em;
 }
 
 .sl-editor .drawflow .drawflow-node.selected {
@@ -118,17 +124,38 @@
     color: #22598c;
 }
 
+.sl-editor .drawflow-node .title-box .custom {
+    width: calc(100% - 20px - 1em);
+    border: none;
+    outline: none;
+    background: var(--graph_bg_thin);
+    line-height: 28px;
+    font-size: 16px;
+}
+
 .sl-editor .drawflow-node .box {
-    padding: 16px 14px;
+    padding: 12px 14px 16px;
     font-size: 14px;
     color: #555555;
 }
 
+.sl-editor .drawflow-node .box p {
+    margin: 5px 0;
+}
+
+.sl-editor .drawflow-node .box .buffer-container {
+    width: calc(100% - 4px);
+    border-radius: 5px;
+    border: 1px solid var(--line_bold);
+}
+
 .sl-editor .drawflow-node .box .buffer {
-    border: none;
+    width: calc(100% - 10px);
     outline: none;
-    width: 100%;
-    padding: 0;
+    border: none;
+    line-height: 28px;
+    font-size: 16px;
+    padding: 0 5px;
 }
 
 .sl-editor .drawflow-node .box .image {
@@ -137,7 +164,7 @@
 }
 
 .sl-editor .drawflow .connection .main-path {
-    stroke-width: 3px;
+    stroke-width: 2px;
     stroke: #4badea;
 }
 
@@ -152,8 +179,8 @@
 
 .sl-editor .drawflow .drawflow-node .input,
 .sl-editor .drawflow .drawflow-node .output {
-    height: 15px;
-    width: 15px;
+    height: 10px;
+    width: 10px;
     border: 2px solid #CACACAFF;
 }
 
@@ -163,11 +190,11 @@
 }
 
 .sl-editor .drawflow .drawflow-node .output {
-    right: 10px;
+    right: 7px;
 }
 
 .sl-editor .drawflow .drawflow-node .input {
-    left: -10px;
+    left: -7px;
     background: white;
 }
 

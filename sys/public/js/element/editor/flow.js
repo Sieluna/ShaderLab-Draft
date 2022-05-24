@@ -1,6 +1,6 @@
-import Flow from "../../flow/drawflow.js";
-import { glslInstance, instances } from "../../editor/instance.js";
-import { base, baseFs, baseVs } from "./flow/template.js";
+import { default as Flow } from "../../flow/drawflow.js";
+import { glslInstance, instances, javascriptInstance } from "../../editor/instance.js";
+import { baseFs, baseVs } from "./flow/template.js";
 import { structure } from "./flow/structure.js";
 import { linkEventListener, bindEventListener, drop } from "./flow/action.js";
 
@@ -9,8 +9,7 @@ const createElement = document.querySelector(".sl-editor .flow-create");
 const panelElement = document.querySelector(".sl-editor #panel");
 
 export let prefabs = {};
-
-let tempId = -1;
+let prefabLinks = {}, tempId = -1;
 
 const editor = new Flow(workflowElement);
 editor.start();
@@ -25,22 +24,27 @@ const prefab = (node, info) => {
     return data;
 };
 
+/**
+ * Create a node
+ * @param id id of the node create
+ */
 const nodeCreate = id => {
-    if (tempId > 0) document.getElementById(`glsl_${tempId}`).style.display = "none";
+    if (tempId > 0) document.getElementById(`code_${tempId}`).style.display = "none";
     let target = document.createElement("div");
-    target.id = `glsl_${id}`;
+    target.id = `code_${id}`;
     panelElement.append(target);
     structure.drawflow.Home.data[id] = editor.getNodeFromId(id).name;
     console.log("Node Create ", tempId, id, editor.getNodeFromId(id), structure.drawflow.Home.data);
     switch (structure.drawflow.Home.data[id]) {
         case "vertex":
-            glslInstance(`glsl_${id}`, target, baseVs);
+            glslInstance(`code_${id}`, target, baseVs);
             break;
         case "fragment":
-            glslInstance(`glsl_${id}`, target, baseFs);
+            glslInstance(`code_${id}`, target, baseFs);
             break;
         default:
-            glslInstance(`glsl_${id}`, target, base);
+            if (editor.getNodeFromId(id).name.includes("custom"))
+                javascriptInstance(`code_${id}`, target);
             break;
     }
     tempId = id;
@@ -54,27 +58,25 @@ export const flowFeature = () => {
     editor.on("nodeSelected", function(id) {
         console.log("select", tempId, id, editor.getNodeFromId(id));
         if (tempId == id) return;
-        let target = document.getElementById(`glsl_${id}`);
+        let target = document.getElementById(`code_${id}`);
         if (target) {
-            if (tempId > 0) document.getElementById(`glsl_${tempId}`).style.display = "none";
+            if (tempId > 0) document.getElementById(`code_${tempId}`).style.display = "none";
             target.style.display = "block";
-            glslInstance("glsl_" + id, target);
             tempId = id;
         } else {
-            if (tempId > 0) document.getElementById(`glsl_${tempId}`).style.display = "none";
+            if (tempId > 0) document.getElementById(`code_${tempId}`).style.display = "none";
             target = document.createElement("div");
-            target.id = `glsl_${id}`;
+            target.id = `code_${id}`;
             panelElement.append(target);
-            glslInstance("glsl_" + id, target);
             tempId = id;
         }
     })
 
     editor.on("nodeRemoved", function(id) {
         delete structure.drawflow.Home.data[id];
-        localStorage.removeItem(`glsl_${id}`);
-        instances[`glsl_${id}`].destroy();
-        document.getElementById(`glsl_${tempId}`).remove();
+        localStorage.removeItem(`code_${id}`);
+        instances[`code_${id}`].destroy();
+        document.getElementById(`code_${tempId}`).remove();
         tempId = -1;
     });
 
@@ -83,20 +85,23 @@ export const flowFeature = () => {
     workflowElement.addEventListener("drop", drop);
     workflowElement.addEventListener("dragover", event => event.preventDefault());
 
-    prefabs["vertex"] = prefab("vertex", `<span>VS</span>`);
+    prefabs["vertex"] = prefab("vertex", `<img src="/img/editor/shader.svg" alt=""><span>VS</span>`);
     bindEventListener(prefabs["vertex"]);
-    prefabs["fragment"] = prefab("fragment", `<span>FS</span>`);
+    prefabs["fragment"] = prefab("fragment", `<img src="/img/editor/shader.svg" alt=""><span>FS</span>`);
     bindEventListener(prefabs["fragment"]);
-    prefabs["image"] = prefab("image", `<span>Image</span>`);
+    prefabs["image"] = prefab("image", `<img src="/img/editor/image.svg" alt=""><span>Image</span>`);
     bindEventListener(prefabs["image"]);
-    prefabs["mesh"] = prefab("mesh", `<span>Mesh</span>`);
+    prefabs["mesh"] = prefab("mesh", `<img src="/img/editor/grid.svg" alt=""><span>Mesh</span>`);
     bindEventListener(prefabs["mesh"]);
+    prefabs["buffer"] = prefab("buffer", `<img src="/img/editor/buffer.svg" alt=""><span>Buffer</span>`)
+    bindEventListener(prefabs["buffer"]);
 
     createElement.addEventListener("click", () => {
-        const index = (Object.keys(prefabs).length - 3);
-        const name = "buffer" + index;
-        prefabs[name] = prefab(name, `<span>Buffer${index}</span>`);
+        const index = (Object.keys(prefabs).length - 4);
+        const name = "custom" + index;
+        prefabs[name] = prefab(name, `<img src="/img/editor/code.svg" alt=""><span>Node ${index}</span>`);
         bindEventListener(prefabs[name]);
+        console.log(prefabs);
     });
 }
 

@@ -31,23 +31,27 @@ export const glslInstance = (name, dom, override = null) => {
     return instances[name];
 }
 
-export const javascriptInstance = (name) => {
-    instances[name] = EditorState.create({
-        doc: localStorage.getItem(name) ||
-            'function hello(who = "world") {\n' +
-            '  console.log(`Hello, ${who}!`)\n' +
-            '}',
-        extensions: [
-            defaultConfig,
-            EditorView.lineWrapping, // css white-space
-            javascript(),
-            wordCounter,
-            ViewPlugin.fromClass(class {
-                constructor(view) { localStorage.setItem(name, view.state.doc); }
-                update(update) { if (update.docChanged) localStorage.setItem(name, update.state.doc); }
-                destroy() { delete instances[name] }
-            })
-        ]
+export const javascriptInstance = (name, dom) => {
+    if (instances[name]) return instances[name];
+    instances[name] = new EditorView({
+        state: EditorState.create({
+            doc: localStorage.getItem(name) ||
+                'function hello(who = "world") {\n' +
+                '  console.log(`Hello, ${who}!`)\n' +
+                '}',
+            extensions: [
+                defaultConfig,
+                EditorView.lineWrapping, // css white-space
+                javascript(),
+                wordCounter,
+                ViewPlugin.fromClass(class {
+                    constructor(view) { localStorage.setItem(name, view.state.doc); }
+                    update(update) { if (update.docChanged) localStorage.setItem(name, update.state.doc); }
+                    destroy() { delete instances[name] }
+                })
+            ]
+        }),
+        parent: dom
     });
     return instances[name];
 }

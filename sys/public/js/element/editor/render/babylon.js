@@ -19,8 +19,8 @@ export const compile = () => {
     if (shaderMaterial) shaderMaterial.dispose(true);
 
     shaderMaterial = new ShaderMaterial("shader", scene, {
-        vertexSource: localStorage.getItem("glsl_" + search("vertex")),
-        fragmentSource: localStorage.getItem("glsl_" + search("fragment")),
+        vertexSource: localStorage.getItem("code_" + search("vertex")),
+        fragmentSource: localStorage.getItem("code_" + search("fragment")),
     }, {
         attributes: ["position", "normal", "uv"],
         uniforms: ["world", "worldView", "worldViewProjection", "view", "projection"]

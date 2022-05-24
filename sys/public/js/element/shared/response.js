@@ -1,16 +1,4 @@
 /**
- * @param input
- * @param init
- * @param callback
- * @return {void}
- */
-export const fetchFeature = (input, init, callback) =>
-    fetch(input, init).
-    then(handleResponse).
-    then(callback).
-    catch(error => console.log(error));
-
-/*
  * protobuff desgin ->
  * - text: error case text content for error only
  * - json: success data only
@@ -29,7 +17,7 @@ const handleResponse = response => {
             text: `Check ${contentType}`,
         });
     }
-}
+};
 
 const handleJsonResponse = response => response.json().then(json =>{
     if (response.ok)
@@ -47,4 +35,10 @@ const handleTextResponse = response => response.text().then(text => {
         });
         return null;
     }
-})
+});
+
+export const fetchFeature = (input, init, callback) =>
+    fetch(input, init).
+    then(handleResponse).
+    then(callback).
+    catch(error => console.log(error));

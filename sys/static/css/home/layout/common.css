@@ -1,0 +1,64 @@
+.sl-layout .shader-info {
+    display: flex;
+    border-radius: 12px;
+}
+
+.sl-layout .shader-info:before {
+    content: "";
+    display: inline-block;
+    height: 0;
+    width: 0;
+    padding-bottom: calc(10/16 * 100%);
+}
+
+.sl-layout .shader-info .shader-preview {
+    cursor: pointer;
+}
+
+.sl-layout .shader-info .shader-preview img {
+    border-radius: 12px 12px 6px 6px;
+    width: 100%;
+}
+
+.sl-layout .shader-info .shader-bottom {
+    display: flex;
+    padding: 2px 4px 4px 4px;
+}
+
+.sl-layout .shader-info .shader-bottom img {
+    cursor: pointer;
+}
+
+.sl-layout .shader-info .shader-avatar {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 5px;
+    margin: 0 12px 0 3px;
+}
+
+.sl-layout .shader-info .shader-text {
+    flex: 1;
+    margin: 0 6px 0 0;
+    max-width: 145px;
+}
+
+.sl-layout .shader-info .shader-name {
+    font-size: 1rem;
+    font-weight: bold;
+    margin: 0 0 0.25rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+
+.sl-layout .shader-info .shader-user {
+    color: var(--text_mid_dark);
+    font-size: 0.82rem;
+    max-width: 145px;
+    font-weight: lighter;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}

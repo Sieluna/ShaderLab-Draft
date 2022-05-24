@@ -5,11 +5,11 @@
     margin: 0 auto;
 }
 
-.sl-nav .left-entry {
+.sl-nav__bar .left-entry {
     width: 25%;
 }
 
-.sl-nav > .sl-nav__bar {
+.sl-nav__bar {
     position: absolute;
     top: 0;
     z-index: 999;

@@ -11,9 +11,9 @@
         "sequelize": "latest"
     },
     "devDependencies": {
-        "babylonjs": "latest",
         "chai": "latest",
         "chai-http": "latest",
+        "node-fetch": "latest",
         "form-data": "latest",
         "mocha": "latest",
         "webpack": "latest",
@@ -22,8 +22,10 @@
     },
     "scripts": {
         "server": "set DEBUG=shaderlab:* && node ./sys/bin/www",
-        "compile-editor": "tsc --project ./sys/public/js/editor/tsconfig.json && set FILTER_PATH=sys/public/js/editor/dist && node ./sys/bin/suffix.js",
         "test": "mocha --recursive './sys/test/*.js' --reporter list",
-        "build": "webpack --config ./sys/public/webpack.config.js"
+        "build": "webpack --config ./sys/public/webpack.config.js",
+
+        "compile-editor": "tsc --project ./sys/public/js/editor/tsconfig.json && set FILTER_PATH=sys/public/js/editor/dist && node ./sys/bin/suffix.js",
+        "third-party": "node ./sys/public/js/bin/fetch.js"
     }
 }

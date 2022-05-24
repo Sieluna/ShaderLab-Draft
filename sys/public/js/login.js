@@ -1,16 +1,18 @@
-import { lazyLoadFeature } from "./element/login/image.js";
-import { userFeature } from "./element/login/user.js";
+let scripts = [];
 
-let token = localStorage.getItem("token");
+scripts.push(Object.assign(document.createElement("script"), {
+    async: true,
+    src: "https://cdn.jsdelivr.net/npm/sweetalert2"
+}));
 
-const redirect = (existData) => {
-    if (existData)
-        window.location.href = "home.html";
-}
+scripts.push(Object.assign(document.createElement("link"), {
+    rel: "stylesheet",
+    href: "css/login.css"
+}));
 
-redirect(token);
+scripts.push(Object.assign(document.createElement("script"), {
+    type: "module",
+    src: "js/element/login/index.js"
+}));
 
-window.onload = () => {
-    lazyLoadFeature();
-    userFeature(token);
-}
+document.currentScript.after(...scripts);

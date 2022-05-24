@@ -3,8 +3,8 @@
 }
 
 .sl-editor .flow-create {
-    border-bottom: 2px solid #ccc;
-    line-height: 35px;
+    border-bottom: 1px solid var(--graph_medium);
+    line-height: 38px;
     text-align: center;
     font-weight: bolder;
     cursor: pointer;
@@ -12,14 +12,37 @@
 }
 
 .sl-editor .flow-drag {
-    line-height: 35px;
+    line-height: 40px;
     border-bottom: 1px solid var(--line_bold);
-    padding-left: 10px;
+    padding-left: 12px;
     cursor: move;
     user-select: none;
 }
 
+.sl-editor .flow-drag img {
+    display: inline-block;
+    font-size: inherit;
+    width: 0.7em;
+    height: 0.8em;
+    vertical-align: -0.1em;
+}
+
+.sl-editor .flow-drag span {
+    font-size: inherit;
+    padding-left: 5px;
+}
+
 .sl-editor .pipeline .flow-holder {
-    height: 100%;
+    height: calc(100% - 39px);
     overflow-y: scroll;
+}
+
+.sl-editor .pipeline .flow-holder::-webkit-scrollbar {
+    width: 6px;
+    background-color: var(--graph_bg_regular)
+}
+
+.sl-editor .pipeline .flow-holder::-webkit-scrollbar-thumb {
+    border-radius: 5px;
+    background: var(--graph_weak);
 }

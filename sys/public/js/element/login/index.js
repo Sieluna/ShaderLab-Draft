@@ -1,6 +1,3 @@
-import { lazyLoadFeature } from "./image.js";
-import { userFeature } from "./user.js";
-
 let token = localStorage.getItem("token");
 
 const redirect = (existData) => {
@@ -11,6 +8,11 @@ const redirect = (existData) => {
 redirect(token);
 
 window.onload = () => {
-    lazyLoadFeature();
-    userFeature(token);
-}
+    import("./page.js").then(({ background, navigate, panel }) => {
+        document.body.insertAdjacentHTML("beforeend", background);
+        import("./image.js").then(({ lazyLoadFeature }) => lazyLoadFeature());
+        document.body.insertAdjacentHTML("beforeend", panel);
+        import("./user.js").then(({ userFeature }) => userFeature(token));
+        document.body.insertAdjacentHTML("beforeend", navigate);
+    });
+};

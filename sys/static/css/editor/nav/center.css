@@ -1,27 +1,28 @@
-.sl-nav .center-container {
+.sl-nav__bar .center-container {
     flex: 1 auto;
     height: 36px;
 }
 
-.sl-nav .container-extend.is-focus {
+.sl-nav__bar .container-extend.is-focus {
     border-radius: 12px;
 }
 
-.sl-nav .search-panel {
+.sl-nav__bar .search-panel {
+    padding: 8px 0 16px;
     border-radius: 0 0 12px 12px;
 }
 
-.sl-nav #nav-search {
+.sl-nav__bar #nav-search {
     line-height: 34px;
     height: 34px;
 }
 
-.sl-nav #nav-search > .nav-search-content {
-    height: 25px;
-    border-radius: 12px;
+.sl-nav__bar #nav-search .nav-search-content {
+    height: 23px;
+    border-radius: 8px;
 }
 
-.sl-nav #nav-search > .nav-search-btn {
+.sl-nav__bar #nav-search .nav-search-btn {
     top: 2px;
     width: 30px;
     height: 30px;

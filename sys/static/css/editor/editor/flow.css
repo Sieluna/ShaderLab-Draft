@@ -1,0 +1,230 @@
+@import "../../../js/flow/drawflow.css";
+
+.sl-editor .workflow-btn {
+    float: right;
+    position: absolute;
+    display: flex;
+    font-size: 16px;
+    color: var(--text_white);
+    background: var(--graph_weak);
+    border-radius: 4px;
+    border-right: 1px solid var(--line_bold);
+    z-index: 5;
+}
+
+.sl-editor .workflow-btn:hover {
+    background: var(--graph_medium);
+}
+
+.sl-editor .workflow-lock {
+    bottom: 10px;
+    right: 100px;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.sl-editor .workflow-zoom {
+    bottom: 10px;
+    right: 10px;
+    padding: 4px 10px;
+}
+
+.sl-editor .workflow-btn svg {
+    font-size: inherit;
+    height: 1em;
+    vertical-align: -0.125em;
+    color: var(--graph_white);
+}
+
+.sl-editor .workflow-btn .lock {
+    width: 0.875em;
+}
+
+.sl-editor .workflow-btn .unlock {
+    width: 1.125em;
+}
+
+.sl-editor .workflow-btn .minus {
+    width: 1em;
+    cursor: pointer;
+}
+
+.sl-editor .workflow-btn .fit {
+    width: 1em;
+    padding-left: 8px;
+    cursor: pointer;
+}
+
+.sl-editor .workflow-btn .plus {
+    width: 1em;
+    padding-left: 8px;
+    cursor: pointer;
+}
+
+.sl-editor #workflow {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-size: 25px 25px;
+    background-image: linear-gradient(to right, #f1f1f1 1px, transparent 1px),
+                      linear-gradient(to bottom, #f1f1f1 1px, transparent 1px);
+}
+
+.sl-editor .parent-drawflow {
+    display: flex;
+    overflow: hidden;
+    touch-action: none;
+    outline: none;
+}
+
+.sl-editor .drawflow {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    user-select: none;
+    perspective: 0;
+}
+
+.sl-editor .drawflow .parent-node {
+    position: relative;
+}
+
+.sl-editor .drawflow .drawflow-node {
+    background: var(--graph_white);
+    border: 1px solid var(--graph_bg_thin);
+    box-shadow: 1px 1px 3px lightgray;
+    width: 160px;
+}
+
+.sl-editor .drawflow-node .title-box {
+    height: 45px;
+    line-height: 45px;
+    background: var(--graph_bg_thin);
+    border-bottom: 1px solid #e9e9e9;
+    border-radius: 4px 4px 0 0;
+    padding-left: 10px;
+}
+
+.sl-editor .drawflow .title-box img {
+    display: inline-block;
+    position: initial;
+    font-size: inherit;
+    width: 1.25em;
+    height: 1em;
+    overflow: visible;
+    vertical-align: -0.125em;
+}
+
+.sl-editor .drawflow .drawflow-node.selected {
+    background: white;
+    border: 1px solid var(--graph_weak);
+}
+
+.sl-editor .drawflow .drawflow-node.selected .title-box {
+    color: #22598c;
+}
+
+.sl-editor .drawflow-node .title-box .custom {
+    width: calc(100% - 20px - 1em);
+    border: none;
+    outline: none;
+    background: var(--graph_bg_thin);
+    line-height: 28px;
+    font-size: 16px;
+}
+
+.sl-editor .drawflow-node .box {
+    padding: 12px 14px 16px;
+    font-size: 14px;
+    color: #555555;
+}
+
+.sl-editor .drawflow-node .box p {
+    margin: 5px 0;
+}
+
+.sl-editor .drawflow-node .box .buffer-container {
+    width: calc(100% - 4px);
+    border-radius: 5px;
+    border: 1px solid var(--line_bold);
+}
+
+.sl-editor .drawflow-node .box .buffer {
+    width: calc(100% - 10px);
+    outline: none;
+    border: none;
+    line-height: 28px;
+    font-size: 16px;
+    padding: 0 5px;
+}
+
+.sl-editor .drawflow-node .box .image {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+}
+
+.sl-editor .drawflow .connection .main-path {
+    stroke-width: 2px;
+    stroke: #4badea;
+}
+
+.sl-editor .drawflow .connection .main-path:hover {
+    stroke: #077bff;
+    cursor: pointer;
+}
+
+.drawflow .connection .main-path.selected {
+    stroke: #5bd0b3;
+}
+
+.sl-editor .drawflow .drawflow-node .input,
+.sl-editor .drawflow .drawflow-node .output {
+    height: 10px;
+    width: 10px;
+    border: 2px solid #CACACAFF;
+}
+
+.sl-editor .drawflow .drawflow-node .input:hover,
+.sl-editor .drawflow .drawflow-node .output:hover {
+    background: #4ea9ff;
+}
+
+.sl-editor .drawflow .drawflow-node .output {
+    right: 7px;
+}
+
+.sl-editor .drawflow .drawflow-node .input {
+    left: -7px;
+    background: white;
+}
+
+.sl-editor .drawflow > .drawflow-delete {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #75bfa9;
+    background: white;
+    color: #75bfa9;
+    line-height: 18px;
+    box-shadow: 1px 1px 3px #75bfa9;
+}
+
+.sl-editor .drawflow-delete {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #6d93aa;
+    background: white;
+    color: #6d93aa;
+    line-height: 18px;
+    box-shadow: 1px 1px 3px #6d93aa;
+}
+
+.sl-editor .drawflow .connection .point {
+    stroke: var(--graph_medium);
+    stroke-width: 2;
+    fill: white;
+}
+
+.sl-editor .drawflow .connection .point.selected,
+.sl-editor .drawflow .connection .point:hover {
+    fill: #4ea9ff;
+}

@@ -1,6 +1,6 @@
 import { playState } from "../state.js";
 import { structure } from "../flow.js";
-import { Engine, Scene, ArcRotateCamera, MeshBuilder, ShaderMaterial, Texture, Vector3 } from "https://cdn.jsdelivr.net/npm/@babylonjs/core/index.js";
+import { Engine, Scene, ArcRotateCamera, MeshBuilder, ShaderMaterial, Texture, Vector3 } from "../../../bin/babylon/core/index.js";
 
 const canvasElement = document.getElementById("render-canvas");
 const timeElement = document.querySelector(".sl-editor .renderer-time");

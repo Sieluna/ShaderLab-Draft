@@ -1,0 +1,45 @@
+.sl-nav__bar .userinfo-container {
+    position: relative;
+    width: 250px;
+    padding: 0 24px 18px;
+    background-color: var(--graph_white);
+    box-shadow: 0 0 30px rgb(0 0 0 / 10%);
+    border-radius: 8px;
+    border: 1px solid var(--line_regular);
+    color: var(--text_dark);
+}
+
+.sl-nav__bar .userinfo-header {
+    height: 40px;
+}
+
+.sl-nav__bar .userinfo-name {
+    justify-content: center;
+    font-weight: 500;
+    line-height: 25px;
+    font-size: 25px;
+}
+
+.sl-nav__bar .userinfo-data {
+    display: grid;
+}
+
+.sl-nav__bar .userinfo-line {
+    width: 100%;
+    border-bottom: 1px solid var(--line_regular);
+}
+
+.sl-nav__bar .userinfo-logout {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: 8px;
+    color: var(--graph_icon);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color .3s;
+}
+
+.sl-nav__bar .logon-icon {
+    margin-right: 16px;
+}

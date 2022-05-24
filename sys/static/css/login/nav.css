@@ -1,11 +1,11 @@
-.sl-navbar {
+.sl-nav {
     position: relative;
     width: 100%;
     min-height: 64px;
     margin: 0 auto;
 }
 
-.sl-navbar .nav-label {
+.sl-nav .nav-label {
     margin-left: 40px;
     height: 64px;
     line-height: 64px;
@@ -14,7 +14,7 @@
 }
 
 @media (max-width: 500px) {
-    .sl-navbar {
+    .sl-nav {
         display: none;
     }
 }

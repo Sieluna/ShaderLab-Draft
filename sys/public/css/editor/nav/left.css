@@ -1,5 +1,3 @@
-@media (max-width: 799.98px) {
-    .sl-nav__bar .left-entry-item:first-child {
-        display: block;
-    }
+.sl-nav__bar .left-entry-item:first-child {
+    display: none;
 }

@@ -1,7 +1,7 @@
 import { fetchFeature } from "../shared/response.js";
+import { swal } from "../shared/alert.js";
 
 const registerElement = document.querySelector(".sl-panel .panel-login .register");
-const registerInputElement = document.querySelector(".sl-panel #panel-input .account input");
 const loginElement = document.querySelector(".sl-panel .panel-login .login");
 const loginInputElement = document.querySelector(".sl-panel #panel-input .password input");
 
@@ -14,7 +14,7 @@ const submitInfo = (target = "") => {
         if (!result) return;
         localStorage.setItem("user", JSON.stringify(result.data));
         localStorage.setItem("token", JSON.stringify({ accessToken: result.accessToken, refreshToken: result.refreshToken }));
-        Swal.fire({
+        swal({
             icon: "success",
             title: "Success",
             text: "Login Success!"
@@ -27,7 +27,7 @@ export const userFeature = () => {
         submitInfo();
     });
     loginInputElement.addEventListener("keypress", event => {
-        if (event.key === "Enter" && registerInputElement.value.length > 3) {
+        if (event.key === "Enter") {
             event.preventDefault();
             loginElement.click();
         }

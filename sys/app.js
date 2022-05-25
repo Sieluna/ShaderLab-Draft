@@ -11,7 +11,8 @@ const app = express();
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "static")));
+app.use(express.static(path.join(__dirname, "public")));
+//app.use(express.static(path.join(__dirname, "static")));
 
 app.get("/", (req, res) => res.render("index", { title: "Shader Lab" }));
 

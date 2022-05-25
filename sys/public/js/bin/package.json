@@ -1,0 +1,12 @@
+{
+    "name": "cache",
+    "version": "1.0.0",
+    "type": "module",
+    "dependencies": {
+        "node-fetch": "latest",
+        "sweetalert": "latest"
+    },
+    "scripts": {
+        "cache": "node fetch.js"
+    }
+}

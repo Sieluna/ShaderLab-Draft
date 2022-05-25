@@ -1,3 +1,5 @@
+import { swal } from "./alert.js";
+
 /**
  * protobuff desgin ->
  * - text: error case text content for error only
@@ -11,7 +13,7 @@ const handleResponse = response => {
     } else if (contentType.includes("text/html")) {
         return handleTextResponse(response);
     } else {
-        Swal.fire({
+        swal({
             icon: "error",
             title: "Oops...",
             text: `Check ${contentType}`,
@@ -28,7 +30,7 @@ const handleTextResponse = response => response.text().then(text => {
     if (response.ok)
         return text;
     else {
-        Swal.fire({
+        swal({
             icon: "error",
             title: "Oops...",
             text: text,

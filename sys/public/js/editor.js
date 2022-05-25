@@ -1,10 +1,5 @@
 let scripts = [];
 
-scripts.push(Object.assign(document.createElement("script"), {
-    async: true,
-    src: "https://cdn.jsdelivr.net/npm/sweetalert2"
-}));
-
 if (HTMLScriptElement.supports && HTMLScriptElement.supports("importmap")) {
     scripts.push(Object.assign(document.createElement("script"), {
         type: "importmap",

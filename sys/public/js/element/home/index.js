@@ -1,3 +1,5 @@
+import "../../../css/home.css" assert { type: "css" };
+
 let token = JSON.parse(localStorage.getItem("token"));
 let user = JSON.parse(localStorage.getItem("user"));
 
@@ -6,6 +8,7 @@ window.onscroll = () => {
 };
 
 window.onload = () => {
+    import("../shared/alert.js").then(({ alertFeature }) => alertFeature());
     import("./page.js").then(({ navigate, layout }) => {
         document.body.insertAdjacentHTML("beforeend", navigate);
         import("../shared/refresh.js").then(({ refreshFeature }) => refreshFeature(token, user));

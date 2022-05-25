@@ -16,9 +16,17 @@
 <div id="js-editor"></div>
 </body>
 <script type=module>
-    import { EditorState, EditorView, glslInstance, javascriptInstance, instances } from "./instance.js";
+    import { glslInstance, javascriptInstance } from "./instance.js";
 
-    new EditorView({ state: glslInstance("glslEditor"), parent: document.querySelector("#glsl-editor") });
-    new EditorView({ state: javascriptInstance("jsEditor"), parent: document.querySelector("#js-editor") });
+    const base =
+        'precision highp float;\n' +
+        'attribute vec3 position;\n' +
+        'attribute vec2 uv;\n' +
+        'void main(void) {\n' +
+        '  \n' +
+        '}';
+
+    glslInstance("glslEditor", document.querySelector("#glsl-editor"), base);
+    javascriptInstance("jsEditor", document.querySelector("#js-editor"));
 </script>
 </html>

@@ -1,48 +1,67 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 
 const sourceMap = {
-    login: "js/login.js",
-    loginElement: "js/element/login/index.js",
-    home: "js/home.js",
-    homeElement: "js/element/home/index.js",
-    editor: "js/editor.js",
-    editorElement: "js/element/editor/index.js",
+    login: "js/element/login/index.js",
+    home: "js/element/home/index.js",
+    editor: "js/element/editor/index.js",
 }
 
 module.exports = {
-    watch: true,
     mode: "production",
     entry: {
         login: path.join(__dirname, sourceMap.login),
-        loginElement: path.join(__dirname, sourceMap.loginElement),
         home: path.join(__dirname, sourceMap.home),
-        homeElement: path.join(__dirname, sourceMap.homeElement),
         editor: path.join(__dirname, sourceMap.editor),
-        editorElement: path.join(__dirname, sourceMap.editorElement),
     },
     output: {
         path: path.join(__dirname, "../static"),
-        filename: (pathData) => sourceMap[pathData.chunk.name]
+        filename: "js/[name].js", //(pathData) => sourceMap[pathData.chunk.name]
+        assetModuleFilename: "img/[hash][ext][query]"
     },
-    resolve: {
-        extensions: [".js", ".json"],
+    module: {
+        rules: [
+            {
+                test: /\.css$/i,
+                use: [
+                    MiniCssExtractPlugin.loader,
+                    "css-loader"
+                ],
+            },
+            {
+                test: /\.jpe?g$|\.gif$|\.png$|\.PNG$|\.svg$/,
+                type: "asset/resource",
+            }
+        ],
     },
     plugins: [
+        new MiniCssExtractPlugin({
+            filename: "./css/[name].css"
+        }),
         new HtmlWebpackPlugin({
             chunks: ["login"],
-            filename: "login.html",
-            template: path.join(__dirname, "login.html")
+            title: "Shader Lab",
+            favicon: path.join(__dirname, "./img/favicon.ico"),
+            filename: "login.html"
         }),
         new HtmlWebpackPlugin({
             chunks: ["home"],
-            filename: "home.html",
-            template: path.join(__dirname, "home.html")
+            title: "Shader Lab",
+            favicon: path.join(__dirname, "./img/favicon.ico"),
+            filename: "home.html"
         }),
         new HtmlWebpackPlugin({
             chunks: ["editor"],
-            filename: "editor.html",
-            template: path.join(__dirname, "editor.html")
+            title: "Shader Lab",
+            favicon: path.join(__dirname, "./img/favicon.ico"),
+            filename: "editor.html"
         })
-    ]
+    ],
+    optimization: {
+        minimizer: [
+            new CssMinimizerPlugin(),
+        ],
+    },
 }

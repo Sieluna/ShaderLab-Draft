@@ -1,0 +1,8 @@
+{
+    "name": "editor",
+    "version": "0.0.0",
+    "dependencies": {},
+    "scripts": {
+        "compile": "tsc --project tsconfig.json && set FILTER_PATH=dist && node bin/suffix.js"
+    }
+}

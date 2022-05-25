@@ -1,7 +1,10 @@
+import "../../../css/editor.css" assert { type: "css" };
+
 const token = JSON.parse(localStorage.getItem("token"));
 const user = JSON.parse(localStorage.getItem("user"));
 
 window.onload = () => {
+    import("../shared/alert.js").then(({ alertFeature }) => alertFeature());
     import("./page.js").then(({ navigate, editor }) => {
         document.body.insertAdjacentHTML("beforeend", navigate);
         import("../shared/refresh.js").then(({ refreshFeature }) => refreshFeature(token, user));

@@ -1,3 +1,5 @@
+import "../../../css/login.css" assert { type: "css" };
+
 let token = localStorage.getItem("token");
 
 const redirect = (existData) => {
@@ -8,6 +10,7 @@ const redirect = (existData) => {
 redirect(token);
 
 window.onload = () => {
+    import("../shared/alert.js").then(({ alertFeature }) => alertFeature());
     import("./page.js").then(({ background, navigate, panel }) => {
         document.body.insertAdjacentHTML("beforeend", background);
         import("./image.js").then(({ lazyLoadFeature }) => lazyLoadFeature());

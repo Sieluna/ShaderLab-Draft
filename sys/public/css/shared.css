@@ -252,7 +252,7 @@ template {
 
 body, html {
     padding: 0;
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
 html {

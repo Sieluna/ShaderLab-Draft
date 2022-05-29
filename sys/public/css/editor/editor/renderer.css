@@ -1,45 +1,45 @@
-.sl-editor .renderer {
+.sl-editor__renderer {
     display: flex;
     flex-direction: column;
 }
 
-.sl-editor #render-canvas {
+.sl-editor__renderer #render-canvas {
     min-width: 200px;
     width: 100%;
     height: calc(100% - 29px);
 }
 
-.sl-editor .render-info {
+.sl-editor__renderer .render-info {
     display: flex;
     justify-content: space-between;
     background-color: var(--graph_bg_thin);
 }
 
-.sl-editor .renderer-state {
+.sl-editor__renderer .renderer-state {
     width: 25px;
     height: 25px;
     padding: 2px 15px 2px 15px;
     fill: var(--graph_icon);
 }
 
-.sl-editor .renderer-time {
+.sl-editor__renderer .renderer-time {
     padding: 5px 20px 5px 20px;
 }
 
-.sl-editor .renderer-fps {
+.sl-editor__renderer .renderer-fps {
     padding: 5px 20px 5px 20px;
 }
 
-.sl-editor .renderer-full {
+.sl-editor__renderer .renderer-full {
     padding: 5px 20px 5px 20px;
 }
 
 @media (max-width: 1099.98px) {
-    .sl-editor .renderer {
+    .sl-editor__renderer {
         border-radius: 10px 0 0 0;
     }
 
-    .sl-editor #render-canvas {
+    .sl-editor__renderer #render-canvas {
         border-radius: 10px 0 0 0;
     }
 }

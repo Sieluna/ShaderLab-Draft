@@ -1,3 +1,7 @@
+.sl-nav__bar .left-entry {
+    width: 25%;
+}
+
 .sl-nav__bar .left-entry-item:first-child {
     display: none;
 }

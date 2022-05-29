@@ -24,3 +24,8 @@ export const baseFs =
     'void main(void) {\n' +
     '  gl_FragColor = texture2D(textureSampler, vUV);\n' +
     '}'
+
+export const baseFeature =
+    'function hello(who = "world") {\n' +
+    '  console.log(`Hello, ${who}!`)\n' +
+    '}'

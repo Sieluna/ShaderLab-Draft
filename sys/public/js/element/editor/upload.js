@@ -1,9 +1,12 @@
 import { editor, structure } from "./flow.js";
 
-const postTitleElement = document.querySelector(".sl-editor .post-input");
+const navShadowRoot = document.querySelector("sl-nav").shadowRoot;
+const editorShadowRoot = document.querySelector("sl-editor").shadowRoot;
+
+const postTitleElement = editorShadowRoot.querySelector(".sl-editor__code .post-input");
 
 export const uploadFeature = () => {
-    document.querySelector(".sl-nav .upload-entry").addEventListener("click", () => {
+    navShadowRoot.querySelector(".upload-entry").addEventListener("click", () => {
         Object.assign(structure, editor.export());
         for (let dataKey in structure.drawflow.Home.data)
             structure[`code_${dataKey}`] = localStorage.getItem(`code_${dataKey}`)

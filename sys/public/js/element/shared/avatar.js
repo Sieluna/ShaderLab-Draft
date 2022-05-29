@@ -1,13 +1,15 @@
-const userHolderElement = document.querySelector(".sl-nav__bar .right-entry-item:first-child");
-const avatarElements = document.querySelectorAll(".sl-nav__bar .avatar-container");
-const loginElements = document.querySelectorAll(".sl-nav__bar .login-entry");
-const userinfoElement = document.querySelector(".sl-nav__bar .avatar-bottom");
-const leftAvatar = document.querySelector(".sl-nav__bar .left-entry-item .avatar-container");
-const rightAvatar = document.querySelector(".sl-nav__bar .right-entry-item .avatar-container");
+const shadowRoot = document.querySelector("sl-nav").shadowRoot;
 
-const avatarIconElements = document.querySelectorAll(".sl-nav__bar .avatar-container img");
-const nameElement = document.querySelector(".sl-nav__bar .avatar-bottom .userinfo-name");
-const logoutElement = document.querySelector(".sl-nav__bar .avatar-bottom .userinfo-logout");
+const userHolderElement = shadowRoot.querySelector(".sl-nav__bar .right-entry-item:first-child");
+const avatarElements = shadowRoot.querySelectorAll(".sl-nav__bar .avatar-container");
+const loginElements = shadowRoot.querySelectorAll(".sl-nav__bar .login-entry");
+const userinfoElement = shadowRoot.querySelector(".sl-nav__bar .avatar-bottom");
+const leftAvatar = shadowRoot.querySelector(".sl-nav__bar .left-entry-item .avatar-container");
+const rightAvatar = shadowRoot.querySelector(".sl-nav__bar .right-entry-item .avatar-container");
+
+const avatarIconElements = shadowRoot.querySelectorAll(".sl-nav__bar .avatar-container img");
+const nameElement = shadowRoot.querySelector(".sl-nav__bar .avatar-bottom .userinfo-name");
+const logoutElement = shadowRoot.querySelector(".sl-nav__bar .avatar-bottom .userinfo-logout");
 
 let avatarLock = true, avatarLockId = -1, avatarAnim = true;
 
@@ -55,11 +57,7 @@ export const userFeature = (token, user) => {
     if (token && user) {
         nameElement.textContent = user.name;
         avatarIconElements.forEach(image => {
-            if (user.avatar) {
-                image.src = user.avatar;
-            } else {
-                image.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mN89B8AAskB44g04okAAAAASUVORK5CYII=";
-            }
+            image.src = user.avatar ?? "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mN89B8AAskB44g04okAAAAASUVORK5CYII=";
         });
         logoutElement.addEventListener("click", () => {
             localStorage.removeItem("user");
@@ -85,7 +83,7 @@ export const userFeature = (token, user) => {
         loginElements.forEach(node => {
             node.setAttribute("style", "display: block");
             node.addEventListener("click", () => {
-                window.location.href = "./login.html";
+                window.location.href = "login.html";
             });
         });
         avatarElements.forEach(node =>

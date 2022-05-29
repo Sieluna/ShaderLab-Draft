@@ -4,28 +4,36 @@
     "private": true,
     "dependencies": {
         "express": "latest",
+        "express-es6-template-engine": "latest",
         "jsonwebtoken": "latest",
+        "compression": "latest",
         "morgan": "latest",
         "multer": "latest",
         "mysql2": "latest",
         "sequelize": "latest"
     },
     "devDependencies": {
+        "cross-env": "latest",
+        "favicons": "latest",
+        "mocha": "latest",
         "chai": "latest",
         "chai-http": "latest",
         "form-data": "latest",
-        "tslib": "latest",
-        "mocha": "latest",
         "webpack": "latest",
         "webpack-cli": "latest",
         "css-loader": "latest",
+        "copy-webpack-plugin": "latest",
         "html-webpack-plugin": "latest",
+        "terser-webpack-plugin": "latest",
         "mini-css-extract-plugin": "latest",
-        "css-minimizer-webpack-plugin": "latest"
+        "css-minimizer-webpack-plugin": "latest",
+        "html-inline-script-webpack-plugin": "latest"
     },
     "scripts": {
-        "server": "set DEBUG=shaderlab:* && node ./sys/bin/www",
-        "test": "mocha --recursive './sys/test/*.js' --reporter list",
-        "build": "webpack --config ./sys/public/webpack.config.js"
+        "server.dev": "cross-env NODE_ENV=development DEBUG=shaderlab:* node ./sys/bin/www",
+        "server.prod": "cross-env NODE_ENV=production DEBUG=shaderlab:* node ./sys/bin/www",
+        "build.dev": "webpack --env NODE_ENV=development --config ./sys/public/webpack.config.js && node ./sys/bin/copy.js",
+        "build.prod": "webpack --env NODE_ENV=production --config ./sys/public/webpack.config.js && node ./sys/bin/copy.js",
+        "test": "mocha --recursive './sys/test/*.js' --reporter list"
     }
 }

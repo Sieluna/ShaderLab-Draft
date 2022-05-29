@@ -1,5 +1,3 @@
-import "../../../css/home.css" assert { type: "css" };
-
 let token = JSON.parse(localStorage.getItem("token"));
 let user = JSON.parse(localStorage.getItem("user"));
 
@@ -9,14 +7,16 @@ window.onscroll = () => {
 
 window.onload = () => {
     import("../shared/alert.js").then(({ alertFeature }) => alertFeature());
-    import("./page.js").then(({ navigate, layout }) => {
-        document.body.insertAdjacentHTML("beforeend", navigate);
+    import("./page/navigate.js").then(({ NavigateElement }) => {
+        document.body.insertAdjacentElement("afterbegin", new NavigateElement());
         import("../shared/refresh.js").then(({ refreshFeature }) => refreshFeature(token, user));
         import("../shared/avatar.js").then(({ userFeature }) => userFeature(token, user));
         import("../shared/search.js").then(({ searchFeature }) => searchFeature());
         import("./locate.js").then(({ returnTopFeature }) => returnTopFeature(200));
         import("./filter.js").then(({ filterFeature }) => filterFeature());
-        document.body.insertAdjacentHTML("beforeend", layout);
+    });
+    import("./page/layout.js").then(({ LayoutElement }) => {
+        document.body.insertAdjacentElement("beforeend", new LayoutElement());
         import("./shader.js").then(({ shaderFeature }) => shaderFeature());
     });
 };

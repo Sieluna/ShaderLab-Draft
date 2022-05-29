@@ -31,14 +31,11 @@ export const glslInstance = (name, dom, override = null) => {
     return instances[name];
 }
 
-export const javascriptInstance = (name, dom) => {
+export const javascriptInstance = (name, dom, override = null) => {
     if (instances[name]) return instances[name];
     instances[name] = new EditorView({
         state: EditorState.create({
-            doc: localStorage.getItem(name) ||
-                'function hello(who = "world") {\n' +
-                '  console.log(`Hello, ${who}!`)\n' +
-                '}',
+            doc:  override ? override : localStorage.getItem(name),
             extensions: [
                 defaultConfig,
                 EditorView.lineWrapping, // css white-space

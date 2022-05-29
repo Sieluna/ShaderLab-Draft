@@ -1,12 +1,8 @@
-.sl-nav {
-    position: relative;
+:host {
+    display: block;
     width: 100%;
     min-height: 55px;
     margin: 0 auto;
-}
-
-.sl-nav__bar .left-entry {
-    width: 25%;
 }
 
 .sl-nav__bar {

@@ -148,10 +148,10 @@
 }
 
 /** Slide down case */
-.sl-nav .slide-down .right-entry .right-entry-icon {
+.sl-nav__bar.slide-down .right-entry .right-entry-icon {
     color: var(--text_dark);
 }
 
-.sl-nav .slide-down .right-entry .right-entry-text {
+.sl-nav__bar.slide-down .right-entry .right-entry-text {
     color: var(--text_mid_dark);
 }

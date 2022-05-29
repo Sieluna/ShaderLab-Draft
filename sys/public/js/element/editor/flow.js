@@ -1,12 +1,14 @@
 import { default as Flow } from "../../flow/drawflow.js";
 import { glslInstance, instances, javascriptInstance } from "../../editor/instance.js";
-import { baseFs, baseVs } from "./flow/template.js";
+import { baseFs, baseVs, baseFeature } from "./flow/template.js";
 import { structure } from "./flow/structure.js";
 import { linkEventListener, bindEventListener, drop } from "./flow/action.js";
 
-const workflowElement = document.getElementById("workflow");
-const createElement = document.querySelector(".sl-editor .flow-create");
-const panelElement = document.querySelector(".sl-editor #panel");
+const shadowRoot = document.querySelector("sl-editor").shadowRoot;
+
+const workflowElement = shadowRoot.getElementById("sl-editor__workflow");
+const createElement = shadowRoot.querySelector(".sl-editor__pipeline .flow-create");
+const panelElement = shadowRoot.querySelector(".sl-editor__code #panel");
 
 export let prefabs = {};
 let prefabLinks = {}, tempId = -1;
@@ -29,7 +31,7 @@ const prefab = (node, info) => {
  * @param id id of the node create
  */
 const nodeCreate = id => {
-    if (tempId > 0) document.getElementById(`code_${tempId}`).style.display = "none";
+    if (tempId > 0) shadowRoot.getElementById(`code_${tempId}`).style.display = "none";
     let target = document.createElement("div");
     target.id = `code_${id}`;
     panelElement.append(target);
@@ -44,7 +46,7 @@ const nodeCreate = id => {
             break;
         default:
             if (editor.getNodeFromId(id).name.includes("custom"))
-                javascriptInstance(`code_${id}`, target);
+                javascriptInstance(`code_${id}`, target, baseFeature);
             break;
     }
     tempId = id;
@@ -58,13 +60,13 @@ export const flowFeature = () => {
     editor.on("nodeSelected", function(id) {
         console.log("select", tempId, id, editor.getNodeFromId(id));
         if (tempId == id) return;
-        let target = document.getElementById(`code_${id}`);
+        let target = shadowRoot.getElementById(`code_${id}`);
         if (target) {
-            if (tempId > 0) document.getElementById(`code_${tempId}`).style.display = "none";
+            if (tempId > 0) shadowRoot.getElementById(`code_${tempId}`).style.display = "none";
             target.style.display = "block";
             tempId = id;
         } else {
-            if (tempId > 0) document.getElementById(`code_${tempId}`).style.display = "none";
+            if (tempId > 0) shadowRoot.getElementById(`code_${tempId}`).style.display = "none";
             target = document.createElement("div");
             target.id = `code_${id}`;
             panelElement.append(target);
@@ -76,7 +78,7 @@ export const flowFeature = () => {
         delete structure.drawflow.Home.data[id];
         localStorage.removeItem(`code_${id}`);
         instances[`code_${id}`].destroy();
-        document.getElementById(`code_${tempId}`).remove();
+        shadowRoot.getElementById(`code_${tempId}`).remove();
         tempId = -1;
     });
 

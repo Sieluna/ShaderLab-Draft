@@ -1,16 +1,16 @@
-.sl-editor .code {
+.sl-editor__code {
     display: flex;
     flex-direction: column;
     border-radius: 0 10px 10px 0;
     height: calc(100vh - 120px + 43px);
 }
 
-.sl-editor .title {
+.sl-editor__code .title {
     line-height: 40px;
     padding: 0 20px 0 20px;
 }
 
-.sl-editor .post-input {
+.sl-editor__code .post-input {
     overflow: hidden;
     border: none;
     outline: none;
@@ -18,25 +18,25 @@
     box-shadow: none;
 }
 
-.sl-editor #panel {
+.sl-editor__code #panel {
     flex: 1;
     margin: 0 3px 3px 3px;
     height: calc(100% - 120px);
     border-radius: 10px;
 }
 
-.sl-editor #panel > div {
+.sl-editor__code #panel > div {
     height: 100%;
 }
 
 @media (min-width: 800px) and (max-width: 1099.98px) {
-    .sl-editor .code {
+    .sl-editor__code {
         max-height: 750px;
     }
 }
 
 @media (min-width: 1100px) {
-    .sl-editor .code {
+    .sl-editor__code {
         max-height: 850px;
     }
 }

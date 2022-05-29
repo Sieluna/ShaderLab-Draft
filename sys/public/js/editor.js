@@ -24,11 +24,6 @@ if (HTMLScriptElement.supports && HTMLScriptElement.supports("importmap")) {
     }));
 }
 
-scripts.push(Object.assign(document.createElement("link"), {
-    rel: "stylesheet",
-    href: "css/editor.css"
-}));
-
 scripts.push(Object.assign(document.createElement("script"), {
     type: "module",
     src: "js/element/editor/index.js"

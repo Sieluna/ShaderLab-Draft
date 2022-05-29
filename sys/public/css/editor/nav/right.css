@@ -2,6 +2,10 @@
     margin-block-end: 1rem;
 }
 
+.sl-nav__bar .right-entry .user-entry-mini picture > img {
+    border: 1px solid #aaa;
+}
+
 .sl-nav__bar .upload-entry {
     background: linear-gradient(56deg, #5bd0b3 0%, #4badea 100%);
 }

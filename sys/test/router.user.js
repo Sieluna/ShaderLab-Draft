@@ -128,7 +128,7 @@ describe("User APIs", () => {
         it("should update avatar", done => {
             chai.request(app).put("/api/user/avatar").
             set("Authorization", "Bearer " + code).
-            attach("avatar", "sys/public/img/home/sponza.jpg").
+            attach("avatar", "sys/public/img/default.png").
             field({ id: "1", password: "psw23333" }).
             end((err, res) => {
                 debug.log("Update password", res.body);

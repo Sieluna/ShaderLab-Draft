@@ -1,17 +1,17 @@
 import { historyFeature } from "./history.js";
 import { fetchFeature } from "./response.js";
 
-const centerElement = document.querySelector(".sl-nav__bar .container-extend");
-const outerElement = document.querySelector(".sl-nav__bar .bar-outer");
-const panelElement = document.querySelector(".sl-nav__bar .search-panel");
-const historyElement = document.querySelector(".sl-nav__bar .search-panel .search-history");
-const suggestionElement = document.querySelector(".sl-nav__bar .search-panel .suggestion");
-const searchElement = document.querySelector(".sl-nav__bar #nav-search");
-const searchInputElement = document.querySelector(".sl-nav__bar #nav-search .nav-search-input");
-const searchCleanElement = document.querySelector(".sl-nav__bar #nav-search .nav-search-clean");
-const searchButtonElement = document.querySelector(".sl-nav__bar #nav-search .nav-search-btn");
+const navigateShadowRoot = document.querySelector("sl-nav").shadowRoot;
 
-const mainElement = document.querySelector(".sl-layout__holder");
+const centerElement = navigateShadowRoot.querySelector(".sl-nav__bar .container-extend");
+const outerElement = navigateShadowRoot.querySelector(".sl-nav__bar .bar-outer");
+const panelElement = navigateShadowRoot.querySelector(".sl-nav__bar .search-panel");
+const historyElement = navigateShadowRoot.querySelector(".sl-nav__bar .search-panel .search-history");
+const suggestionElement = navigateShadowRoot.querySelector(".sl-nav__bar .search-panel .suggestion");
+const searchElement = navigateShadowRoot.querySelector(".sl-nav__bar #nav-search");
+const searchInputElement = navigateShadowRoot.querySelector(".sl-nav__bar #nav-search .nav-search-input");
+const searchCleanElement = navigateShadowRoot.querySelector(".sl-nav__bar #nav-search .nav-search-clean");
+const searchButtonElement = navigateShadowRoot.querySelector(".sl-nav__bar #nav-search .nav-search-btn");
 
 class Panel {
     constructor() {
@@ -123,7 +123,7 @@ class Panel {
 
 let panel = new Panel();
 
-export const searchFeature = () => {
+export const searchFeature = (page = "home") => {
     historyFeature(searchInputElement);
     searchCleanElement.addEventListener("click", () =>{
         panel.panelSearchClose();
@@ -150,7 +150,16 @@ export const searchFeature = () => {
     searchButtonElement.addEventListener("click", () => {
         panel.panelSearchClose(true);
         panel.searchClean();
-        mainElement.scrollIntoView({ block: "start", inline: "start", behavior: "smooth" });
+        switch (page) {
+            case "home":
+                const mainElement = document.querySelector("sl-layout").
+                                    shadowRoot.querySelector(".sl-layout__holder");
+                mainElement.scrollIntoView({ block: "start", inline: "start", behavior: "smooth" });
+                break;
+            case "editor":
+                break;
+            default:
+        }
     });
     outerElement.addEventListener("click", () => panel.panelFocus = false);
     panelElement.addEventListener("mouseover", () => panel.panelFocus = true);

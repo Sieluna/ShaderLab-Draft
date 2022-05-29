@@ -1,3 +1,27 @@
+import shared from "../../../css/shared.css" assert { type: "css" };
+import theme from "../../../css/theme.css" assert { type: "css" };
+
+import sharedLeftSheet from "../../../css/shared/left.css" assert { type: "css" };
+import sharedCenterSheet from "../../../css/shared/center.css" assert { type: "css" };
+import sharedRightSheet from "../../../css/shared/right.css" assert { type: "css" };
+import sharedSearchSheet from "../../../css/shared/search.css" assert { type: "css" };
+import sharedAvatarSheet from "../../../css/shared/avatar.css" assert { type: "css" };
+import sharedUserSheet from "../../../css/shared/user.css" assert { type: "css" };
+
+document.adoptedStyleSheets = [shared, theme];
+
+export class NavigateBaseElement extends HTMLElement {
+    constructor(styles) {
+        super();
+        this.attachShadow({ mode: "open" });
+        this.shadowRoot.adoptedStyleSheets = [
+            sharedLeftSheet, sharedCenterSheet, sharedSearchSheet,
+            sharedRightSheet, sharedAvatarSheet, sharedUserSheet,
+            ...styles
+        ];
+    }
+}
+
 export const navigateBar = (option) => `
     <div class="sl-nav__bar">
         <ul class="left-entry">

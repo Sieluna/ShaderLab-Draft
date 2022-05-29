@@ -10,7 +10,8 @@
     height: 64px;
     line-height: 64px;
     color: white;
-    font-size: 30px;
+    font-size: 35px;
+    text-decoration: none;
 }
 
 @media (max-width: 500px) {

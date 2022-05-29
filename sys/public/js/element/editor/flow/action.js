@@ -1,13 +1,15 @@
 import { vsNode, fsNode, imageNode, meshNode, bufferNode, customNode } from "./node.js";
 import { editor, prefabs } from "../flow.js";
 
-const holderElement = document.querySelector(".sl-editor .flow-holder");
+const shadowRoot = document.querySelector("sl-editor").shadowRoot;
 
-const lockElement = document.querySelector(".sl-editor #workflow .workflow-lock .lock");
-const unlockElement = document.querySelector(".sl-editor #workflow .workflow-lock .unlock");
-const minusElement = document.querySelector(".sl-editor #workflow .workflow-zoom .minus");
-const fitElement = document.querySelector(".sl-editor #workflow .workflow-zoom .fit");
-const plusElement = document.querySelector(".sl-editor #workflow .workflow-zoom .plus");
+const holderElement = shadowRoot.querySelector(".sl-editor__pipeline .flow-holder");
+
+const lockElement = shadowRoot.querySelector("#sl-editor__workflow .workflow-lock .lock");
+const unlockElement = shadowRoot.querySelector("#sl-editor__workflow .workflow-lock .unlock");
+const minusElement = shadowRoot.querySelector("#sl-editor__workflow .workflow-zoom .minus");
+const fitElement = shadowRoot.querySelector("#sl-editor__workflow .workflow-zoom .fit");
+const plusElement = shadowRoot.querySelector("#sl-editor__workflow .workflow-zoom .plus");
 
 let mobileItemSelec = '', mobileLastMove = null;
 
@@ -38,7 +40,7 @@ const addNodeToFlow = (name, posX, posY) => {
     }
 };
 
-const changeMode = option => {
+export const changeMode = option => {
     if(option == "lock") {
         lockElement.style.display = "none";
         unlockElement.style.display = "block";
@@ -58,7 +60,7 @@ export const drag = event => {
 
 export const drop = event => {
     if (event.type == "touchend") {
-        let parent = document.elementFromPoint(mobileLastMove.touches[0].clientX, mobileLastMove.touches[0].clientY).closest("#workflow");
+        let parent = shadowRoot.elementFromPoint(mobileLastMove.touches[0].clientX, mobileLastMove.touches[0].clientY).closest("#sl-editor__workflow");
         if (parent != null)
             addNodeToFlow(mobileItemSelec, mobileLastMove.touches[0].clientX, mobileLastMove.touches[0].clientY);
         mobileItemSelec = '';
@@ -68,6 +70,10 @@ export const drop = event => {
         addNodeToFlow(data, event.clientX, event.clientY);
     }
 };
+
+const mobilePos = event => {
+    mobileLastMove = event;
+}
 
 export const linkEventListener = () => {
     editor.zoom_reset(0.8);
@@ -88,6 +94,6 @@ export const bindEventListener = node => {
     node.addEventListener("dragstart", drag);
     node.addEventListener("touchstart", drag, false);
     node.addEventListener("touchend", drop, false);
-    node.addEventListener("touchmove", event => mobileLastMove = event, false);
+    node.addEventListener("touchmove", mobilePos, false);
     holderElement.append(node);
 };

@@ -1,7 +1,9 @@
 import { fetchFeature } from "../shared/response.js";
 
-const topicElement = document.querySelector(".sl-nav__filter .topic-filter");
-const tagElements = document.querySelector(".sl-nav__filter .tag-filter");
+const shadowRoot = document.querySelector("sl-nav").shadowRoot;
+
+const topicElement = shadowRoot.querySelector(".sl-nav__filter .topic-filter");
+const tagElements = shadowRoot.querySelector(".sl-nav__filter .tag-filter");
 
 /** @type {ShaderPreview} */
 let cache = JSON.parse(localStorage.getItem("cache")) || {};
@@ -41,10 +43,12 @@ class Topic extends Filter {
         fetchFeature("/api/topic", {
             method: "GET"
         }, result => {
-            for (let topic of result) {
-                cache[`Topic_${topic.id}`] = new Topic(topic);
-                filter[`Topic_${topic.id}`] = cache[`Topic_${topic.id}`].prefab(topic.name);
-                topicElement.append(filter[`Topic_${topic.id}`]);
+            if (Symbol.iterator in Object(result)) {
+                for (let topic of result) {
+                    cache[`Topic_${topic.id}`] = new Topic(topic);
+                    filter[`Topic_${topic.id}`] = cache[`Topic_${topic.id}`].prefab(topic.name);
+                    topicElement.append(filter[`Topic_${topic.id}`]);
+                }
             }
         });
     }
@@ -59,10 +63,12 @@ class Tag extends Filter {
         fetchFeature("/api/tag", {
             method: "GET"
         }, result => {
-            for (let tag of result) {
-                cache[`Tag_${tag.id}`] = new Tag(tag);
-                filter[`Tag_${tag.id}`] = cache[`Tag_${tag.id}`].prefab(`# ${tag.name}`);
-                tagElements.append(filter[`Tag_${tag.id}`]);
+            if (Symbol.iterator in Object(result)) {
+                for (let tag of result) {
+                    cache[`Tag_${tag.id}`] = new Tag(tag);
+                    filter[`Tag_${tag.id}`] = cache[`Tag_${tag.id}`].prefab(`# ${tag.name}`);
+                    tagElements.append(filter[`Tag_${tag.id}`]);
+                }
             }
         });
     }

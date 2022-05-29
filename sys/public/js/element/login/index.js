@@ -1,5 +1,3 @@
-import "../../../css/login.css" assert { type: "css" };
-
 let token = localStorage.getItem("token");
 
 const redirect = (existData) => {
@@ -9,13 +7,17 @@ const redirect = (existData) => {
 
 redirect(token);
 
+let imageLoad = false;
+
+const loading = () => {
+    imageLoad = true;
+    import("./image.js").then(({ lazyLoadFeature }) => lazyLoadFeature());
+}
+
+window.onresize = () => { if (!imageLoad) loading(); }
+
 window.onload = () => {
+    if (window.innerWidth > 500) loading();
     import("../shared/alert.js").then(({ alertFeature }) => alertFeature());
-    import("./page.js").then(({ background, navigate, panel }) => {
-        document.body.insertAdjacentHTML("beforeend", background);
-        import("./image.js").then(({ lazyLoadFeature }) => lazyLoadFeature());
-        document.body.insertAdjacentHTML("beforeend", panel);
-        import("./user.js").then(({ userFeature }) => userFeature(token));
-        document.body.insertAdjacentHTML("beforeend", navigate);
-    });
+    import("./user.js").then(({ userFeature }) => userFeature(token));
 };

@@ -2,9 +2,11 @@ import { playState } from "../state.js";
 import { structure } from "../flow.js";
 import { Engine, Scene, ArcRotateCamera, MeshBuilder, ShaderMaterial, Texture, Vector3 } from "../../../bin/babylon/core/index.js";
 
-const canvasElement = document.getElementById("render-canvas");
-const timeElement = document.querySelector(".sl-editor .renderer-time");
-const fpsElement = document.querySelector(".sl-editor .renderer-fps");
+const shadowRoot = document.querySelector("sl-editor").shadowRoot;
+
+const canvasElement = shadowRoot.getElementById("render-canvas");
+const timeElement = shadowRoot.querySelector(".sl-editor__renderer .renderer-time");
+const fpsElement = shadowRoot.querySelector(".sl-editor__renderer .renderer-fps");
 
 let time = 0, engine, scene, camera, shaderMaterial, mesh;
 

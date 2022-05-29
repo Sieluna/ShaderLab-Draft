@@ -1,5 +1,5 @@
-.sl-nav {
-    position: relative;
+:host {
+    display: block;
     width: 100%;
     min-height: 64px;
     margin: 0 auto;
@@ -8,7 +8,7 @@
 /**
  * Topper Bar
  */
-.sl-nav .sl-nav__bar {
+.sl-nav__bar {
     position: absolute;
     top: 0;
     z-index: 999;
@@ -21,7 +21,7 @@
 }
 
 /** Slide down case */
-.sl-nav .slide-down {
+.sl-nav__bar.slide-down {
     position: fixed;
     top: 0;
     animation: headerSlideDown .3s linear forwards;

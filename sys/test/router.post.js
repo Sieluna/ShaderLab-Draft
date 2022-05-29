@@ -30,7 +30,7 @@ describe("Post APIs", () => {
         it ("should return code 200, and user info", done => {
             chai.request(app).post("/api/post").
             set("Authorization", "Bearer " + code).
-            attach("preview", "sys/public/img/home/sponza.jpg").
+            attach("preview", "sys/public/img/default.png").
             field({ topic: "PostTopicTest", name: "PostTest", content: "123456789" }).
             end((err, res) => {
                 debug.log("Create ", res.body);

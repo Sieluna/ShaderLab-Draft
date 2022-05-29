@@ -1,7 +1,9 @@
 import { fetchFeature } from "../shared/response.js";
 
-const holderElement = document.querySelector(".sl-layout__holder");
-const recommendElement = document.querySelector(".sl-layout__recommend");
+const shadowRoot = document.querySelector("sl-layout").shadowRoot;
+
+const holderElement = shadowRoot.querySelector(".sl-layout__holder");
+const recommendElement = shadowRoot.querySelector(".sl-layout__recommend");
 
 /** @type {Shader} Shader Cache */
 let cache = JSON.parse(localStorage.getItem("cache")) || {};
@@ -27,11 +29,11 @@ class Shader {
         shader.innerHTML = `
             <a>
                 <div class="shader-preview">
-                    <img src="${this.image}">
+                    <img src="${this.image}" alt="Preview">
                     <!--canvas ></canvas-->
                 </div>
                 <div class="shader-bottom">
-                    <img class="shader-avatar" src="${this.avatar}">
+                    <img class="shader-avatar" src="${this.avatar}" alt="Avatar">
                     <div class="shader-text">
                         <h2 class="shader-name">${this.name}</h2>
                         ${commonUserDOM(this.user)}
@@ -70,6 +72,7 @@ class ShaderRecommend extends Shader {
         fetchFeature("/api/post/recommend", {
             method: "GET"
         }, result => {
+            if (!(Symbol.iterator in Object(result))) return;
             for (let [index, post] of result.entries()) {
                 cache[`Recommend_${post.id}`] = new ShaderRecommend(post);
                 shaders[`Recommend_${post.id}`] = index === 0 ?

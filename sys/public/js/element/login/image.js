@@ -8,6 +8,7 @@ export const lazyLoadFeature = () => {
 
     let imgLarge = new Image();
     imgLarge.src = backgroundElement.dataset.large;
+    imgLarge.alt = "Large Background"
     imgLarge.onload = () => imgLarge.classList.add("loaded");
 
     backgroundElement.appendChild(imgLarge);

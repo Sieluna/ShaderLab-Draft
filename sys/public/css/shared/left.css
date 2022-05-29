@@ -40,6 +40,6 @@
 }
 
 /** Slide down case */
-.sl-nav .slide-down .left-entry .home-entry {
+.sl-nav__bar.slide-down .left-entry .home-entry {
     color: var(--text_dark);
 }

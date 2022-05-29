@@ -91,6 +91,7 @@
     color: var(--text_mid_dark);
     font-size: 14px;
     line-height: 20px;
+    font-family: inherit;
 }
 
 .sl-nav__bar #nav-search .nav-search-content .nav-search-input:focus {

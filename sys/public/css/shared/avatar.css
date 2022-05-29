@@ -121,7 +121,7 @@
     }
 }
 
-.sl-nav .slide-down .right-entry .user-entry-mini picture > img {
+.sl-nav__bar.slide-down .right-entry .user-entry-mini picture > img {
     border: 1px solid #aaa;
 }
 

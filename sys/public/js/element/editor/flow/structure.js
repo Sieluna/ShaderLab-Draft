@@ -1,4 +1,6 @@
-const flowElement = document.getElementById("workflow");
+const shadowRoot = document.querySelector("sl-editor").shadowRoot;
+
+const flowElement = shadowRoot.getElementById("sl-editor__workflow");
 const heightLocate = (flowElement.clientHeight - 53) / 2;
 const widthLocate = flowElement.clientWidth / 2;
 

@@ -28,11 +28,13 @@
     border: 2px solid black;
     color: black;
     z-index: 2;
+    padding: 15px;
 }
 
 .drawflow .drawflow-node.selected {
     background: red;
 }
+
 .drawflow .drawflow-node:hover {
     cursor: move;
 }

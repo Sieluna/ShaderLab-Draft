@@ -1,4 +1,6 @@
-const homeElement = document.querySelector(".sl-nav__bar .home-entry");
+const shadowRoot = document.querySelector("sl-nav").shadowRoot;
+
+const homeElement = shadowRoot.querySelector(".sl-nav__bar .home-entry");
 
 let timer = null;
 

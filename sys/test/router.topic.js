@@ -30,7 +30,7 @@ describe("Topic APIs", () => {
         it("should return code 200, and topic infos", done => {
             chai.request(app).post("/api/topic").
             set("Authorization", "Bearer " + code).
-            attach("icon", "sys/public/img/home/sponza.jpg").
+            attach("icon", "sys/public/img/default.png").
             field({ name: "TestTopic", description: "Description of topic" }).
             end((err, res) => {
                 debug.log("Get All", res.body);
@@ -66,7 +66,7 @@ describe("Topic APIs", () => {
         it("should return code 200, topic info", done => {
             chai.request(app).put("/api/topic/image/1").
             set("Authorization", "Bearer " + code).
-            attach("icon", "sys/public/img/home/sponza.jpg").
+            attach("icon", "sys/public/img/default.png").
             end((err, res) => {
                 debug.log(res.body);
                 expect(res.status).to.equal(200);

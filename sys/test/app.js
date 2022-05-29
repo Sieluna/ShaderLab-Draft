@@ -34,6 +34,8 @@ describe("App test", () => {
         });
     });
     describe("App engine test", () => {
-        describe("Bench")
+        it("should compile file", () => {
+
+        });
     });
 });

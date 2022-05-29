@@ -7,8 +7,6 @@ const param = {
     ext: "html"
 }
 
-let files = [];
-
 const checkDst = (dir) => {
     if (!fs.existsSync(path.resolve(dir)))
         fs.mkdirSync(path.resolve(dir));

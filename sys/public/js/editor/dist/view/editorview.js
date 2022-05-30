@@ -68,7 +68,7 @@ export class EditorView {
         for (let plugin of this.plugins)
             plugin.update(this);
         this.observer = new DOMObserver(this, (from, to, typeOver) => {
-            applyDOMChange(this, from, to, typeOver);
+            return applyDOMChange(this, from, to, typeOver);
         }, event => {
             this.inputState.runScrollHandlers(this, event);
             if (this.observer.intersecting)
@@ -125,7 +125,7 @@ export class EditorView {
     update(transactions) {
         if (this.updateState != 0 /* Idle */)
             throw new Error("Calls to EditorView.update are not allowed while an update is in progress");
-        let redrawn = false, update;
+        let redrawn = false, attrsChanged = false, update;
         let state = this.state;
         for (let tr of transactions) {
             if (tr.startState != state)
@@ -136,6 +136,7 @@ export class EditorView {
             this.viewState.state = state;
             return;
         }
+        this.observer.clear();
         // When the phrases change, redraw the editor
         if (state.facet(EditorState.phrases) != this.state.facet(EditorState.phrases))
             return this.setState(state);
@@ -163,7 +164,7 @@ export class EditorView {
             redrawn = this.docView.update(update);
             if (this.state.facet(styleModule) != this.styleModules)
                 this.mountStyles();
-            this.updateAttrs();
+            attrsChanged = this.updateAttrs();
             this.showAnnouncements(transactions);
             this.docView.updateSelection(redrawn, transactions.some(tr => tr.isUserEvent("select.pointer")));
         }
@@ -172,7 +173,7 @@ export class EditorView {
         }
         if (update.startState.facet(theme) != update.state.facet(theme))
             this.viewState.mustMeasureContent = true;
-        if (redrawn || scrollTarget || this.viewState.mustEnforceCursorAssoc || this.viewState.mustMeasureContent)
+        if (redrawn || attrsChanged || scrollTarget || this.viewState.mustEnforceCursorAssoc || this.viewState.mustMeasureContent)
             this.requestMeasure();
         if (!update.empty)
             for (let listener of this.state.facet(updateListener))
@@ -346,12 +347,14 @@ export class EditorView {
         if (this.state.readOnly)
             contentAttrs["aria-readonly"] = "true";
         attrsFromFacet(this, contentAttributes, contentAttrs);
-        this.observer.ignore(() => {
-            updateAttrs(this.contentDOM, this.contentAttrs, contentAttrs);
-            updateAttrs(this.dom, this.editorAttrs, editorAttrs);
+        let changed = this.observer.ignore(() => {
+            let changedContent = updateAttrs(this.contentDOM, this.contentAttrs, contentAttrs);
+            let changedEditor = updateAttrs(this.dom, this.editorAttrs, editorAttrs);
+            return changedContent || changedEditor;
         });
         this.editorAttrs = editorAttrs;
         this.contentAttrs = contentAttrs;
+        return changed;
     }
     showAnnouncements(trs) {
         let first = true;

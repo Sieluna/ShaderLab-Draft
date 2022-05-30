@@ -4,6 +4,7 @@ export const completionConfig = Facet.define({
         return combineConfig(configs, {
             activateOnTyping: true,
             override: null,
+            closeOnBlur: true,
             maxRenderedOptions: 100,
             defaultKeymap: true,
             optionClass: () => "",
@@ -12,6 +13,7 @@ export const completionConfig = Facet.define({
             addToOptions: []
         }, {
             defaultKeymap: (a, b) => a && b,
+            closeOnBlur: (a, b) => a && b,
             icons: (a, b) => a && b,
             optionClass: (a, b) => c => joinClass(a(c), b(c)),
             addToOptions: (a, b) => a.concat(b)

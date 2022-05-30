@@ -176,23 +176,21 @@ export class ViewState {
         this.defaultTextDirection = style.direction == "rtl" ? Direction.RTL : Direction.LTR;
         let refresh = this.heightOracle.mustRefreshForWrapping(whiteSpace);
         let measureContent = refresh || this.mustMeasureContent || this.contentDOMHeight != dom.clientHeight;
+        this.contentDOMHeight = dom.clientHeight;
+        this.mustMeasureContent = false;
         let result = 0, bias = 0;
+        // Vertical padding
+        let paddingTop = parseInt(style.paddingTop) || 0, paddingBottom = parseInt(style.paddingBottom) || 0;
+        if (this.paddingTop != paddingTop || this.paddingBottom != paddingBottom) {
+            this.paddingTop = paddingTop;
+            this.paddingBottom = paddingBottom;
+            result |= 8 /* Geometry */ | 2 /* Height */;
+        }
         if (this.editorWidth != view.scrollDOM.clientWidth) {
             if (oracle.lineWrapping)
                 measureContent = true;
             this.editorWidth = view.scrollDOM.clientWidth;
             result |= 8 /* Geometry */;
-        }
-        if (measureContent) {
-            this.mustMeasureContent = false;
-            this.contentDOMHeight = dom.clientHeight;
-            // Vertical padding
-            let paddingTop = parseInt(style.paddingTop) || 0, paddingBottom = parseInt(style.paddingBottom) || 0;
-            if (this.paddingTop != paddingTop || this.paddingBottom != paddingBottom) {
-                result |= 8 /* Geometry */;
-                this.paddingTop = paddingTop;
-                this.paddingBottom = paddingBottom;
-            }
         }
         // Pixel viewport
         let pixelViewport = (this.printing ? fullPixelRange : visiblePixelRange)(dom, this.paddingTop);

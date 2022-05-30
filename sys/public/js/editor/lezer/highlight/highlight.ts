@@ -111,6 +111,11 @@ class Rule {
     get depth() { return this.context ? this.context.length : 0 }
 }
 
+/**
+ * A highlighter defines a mapping from highlighting tags and language scopes to CSS class names. They are
+ * usually defined via {@link tagHighlighter} or some wrapper around that, but it is also possible to
+ * implement them from scratch.
+ */
 export interface Highlighter {
     style(tags: readonly Tag[]): string | null
     scope?(node: NodeType): boolean

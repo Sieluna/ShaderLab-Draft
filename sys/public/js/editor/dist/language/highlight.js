@@ -12,6 +12,7 @@ export class HighlightStyle {
             (modSpec || (modSpec = Object.create(null)))["." + cls] = spec;
             return cls;
         }
+        const all = typeof options.all == "string" ? options.all : options.all ? def(options.all) : undefined;
         const scopeOpt = options.scope;
         this.scope = scopeOpt instanceof Language ? (type) => type.prop(languageDataProp) == scopeOpt.data
             : scopeOpt ? (type) => type == scopeOpt : undefined;
@@ -19,7 +20,7 @@ export class HighlightStyle {
             tag: style.tag,
             class: style.class || def(Object.assign({}, style, { tag: null }))
         })), {
-            all: typeof options.all == "string" ? options.all : options.all ? def(options.all) : undefined,
+            all,
         }).style;
         this.module = modSpec ? new StyleModule(modSpec) : null;
         this.themeType = options.themeType;

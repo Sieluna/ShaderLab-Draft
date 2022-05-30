@@ -51,7 +51,7 @@ export class DOMObserver {
     parentCheck = -1
 
     constructor(private view: EditorView,
-                private onChange: (from: number, to: number, typeOver: boolean) => void,
+                private onChange: (from: number, to: number, typeOver: boolean) => boolean,
                 private onScrollChanged: (event: Event) => void) {
         this.dom = view.contentDOM
         this.observer = new MutationObserver(mutations => {
@@ -67,7 +67,7 @@ export class DOMObserver {
             // breaking composition.
             if ((browser.ie && browser.ie_version <= 11 || browser.ios && view.composing) &&
                 mutations.some(m => m.type == "childList" && m.removedNodes.length ||
-                    m.type == "characterData" && m.oldValue!.length > m.target.nodeValue!.length))
+                                    m.type == "characterData" && m.oldValue!.length > m.target.nodeValue!.length))
                 this.flushSoon()
             else
                 this.flush()
@@ -182,6 +182,10 @@ export class DOMObserver {
         this.selectionChanged = false
     }
 
+    clearSelectionRange() {
+        this.selectionRange.set(null, 0, null, 0)
+    }
+
     listenForScroll() {
         this.parentCheck = -1
         let i = 0, changed: HTMLElement[] | null = null
@@ -238,23 +242,23 @@ export class DOMObserver {
         this.selectionChanged = false
     }
 
-    // Chrome Android, especially in combination with GBoard, not only
-    // doesn't reliably fire regular key events, but also often
-    // surrounds the effect of enter or backspace with a bunch of
-    // composition events that, when interrupted, cause text duplication
-    // or other kinds of corruption. This hack makes the editor back off
-    // from handling DOM changes for a moment when such a key is
-    // detected (via beforeinput or keydown), and then dispatches the
-    // key event, throwing away the DOM changes if it gets handled.
+    /**
+     * Chrome Android, especially in combination with GBoard, not only doesn't reliably fire regular
+     * key events, but also often surrounds the effect of enter or backspace with a bunch of composition
+     * events that, when interrupted, cause text duplication or other kinds of corruption. This hack
+     * makes the editor back off from handling DOM changes for a moment when such a key is detected
+     * (via beforeinput or keydown), and then tries to flush them or, if that has no effect, dispatches
+     * the given key.
+     * @param key
+     * @param keyCode
+     */
     delayAndroidKey(key: string, keyCode: number) {
         if (!this.delayedAndroidKey) requestAnimationFrame(() => {
             let key = this.delayedAndroidKey!
             this.delayedAndroidKey = null
-            let startState = this.view.state
-            this.readSelectionRange()
-            if (dispatchKey(this.view.contentDOM, key.key, key.keyCode)) this.processRecords()
-            else this.flush()
-            if (this.view.state == startState) this.view.update([])
+            this.delayedFlush = -1
+            if (!this.flush())
+                dispatchKey(this.view.contentDOM, key.key, key.keyCode)
         })
         // Since backspace beforeinput is sometimes signalled spuriously,
         // Enter always takes precedence.
@@ -310,10 +314,10 @@ export class DOMObserver {
 
         this.selectionChanged = false
         let startState = this.view.state
-        this.onChange(from, to, typeOver)
-
+        let handled = this.onChange(from, to, typeOver)
         // The view wasn't updated
         if (this.view.state == startState) this.view.update([])
+        return handled
     }
 
     readMutation(rec: MutationRecord): {from: number, to: number, typeOver: boolean} | null {

@@ -7,7 +7,11 @@ const sequelize = require("./handle/model.js");
 const { styles, colors } = require("./config/style.js");
 const engine = require("./config/engine.js");
 
-sequelize.sync({ force: true }).then(() => console.log(`> ${styles.bold(colors.yellow("[Info]"))} Database is synchronized`));
+sequelize.sync({ force: true }).then(() => {
+    console.log(`> ${styles.bold(colors.yellow("[Info]"))} Database is synchronized`);
+    require("./config/inject.js")(500, true).then();
+    console.log(`> ${styles.bold(colors.yellow("[Info]"))} Data injected`);
+});
 
 const devMode = process.env.NODE_ENV != "production";
 
@@ -38,7 +42,5 @@ app.use((err, req, res, next) => {
         res.status(401).send("Invalid token.");
     } else next(err);
 });
-
-setTimeout(() => require("./config/inject.js")(500, true).then(), 2500);
 
 module.exports = app;

@@ -261,8 +261,7 @@ export class Stack {
         return result
     }
 
-    // Force a reduce, if possible. Return false if that can't
-    // be done.
+    // Force a reduce, if possible. Return false if that can't be done.
     // @internal
     forceReduce() {
         let reduce = this.p.parser.stateSlot(this.state, ParseState.ForcedReduce)
@@ -275,6 +274,7 @@ export class Stack {
             this.storeNode(Term.Err, this.reducePos, this.reducePos, 4, true)
             this.score -= Recover.Reduce
         }
+        this.reducePos = this.pos
         this.reduce(reduce)
         return true
     }

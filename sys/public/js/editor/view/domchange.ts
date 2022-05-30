@@ -6,12 +6,12 @@ import {DOMReader, DOMPoint, LineBreakPlaceholder} from "./domreader"
 import {compositionSurroundingNode} from "./docview"
 import {EditorSelection, Text} from "../state/index"
 
-export function applyDOMChange(view: EditorView, start: number, end: number, typeOver: boolean) {
+export function applyDOMChange(view: EditorView, start: number, end: number, typeOver: boolean): boolean {
     let change: undefined | {from: number, to: number, insert: Text}, newSel
     let sel = view.state.selection.main
     if (start > -1) {
         let bounds = view.docView.domBoundsAround(start, end, 0)
-        if (!bounds || view.state.readOnly) return
+        if (!bounds || view.state.readOnly) return false
         let {from, to} = bounds
         let selPoints = view.docView.impreciseHead || view.docView.impreciseAnchor ? [] : selectionPoints(view)
         let reader = new DOMReader(selPoints, view.state)
@@ -46,7 +46,7 @@ export function applyDOMChange(view: EditorView, start: number, end: number, typ
             newSel = EditorSelection.single(anchor, head)
     }
 
-    if (!change && !newSel) return
+    if (!change && !newSel) return false
 
     // Heuristic to notice typing over a selected character
     if (!change && typeOver && !sel.empty && newSel && newSel.main.empty)
@@ -59,10 +59,14 @@ export function applyDOMChange(view: EditorView, start: number, end: number, typ
             from: sel.from, to: sel.to,
             insert: view.state.doc.slice(sel.from, change.from).append(change.insert).append(view.state.doc.slice(change.to, sel.to))
         }
+    // Detect insert-period-on-double-space Mac behavior, and transform it into a regular space insert.
+    else if ((browser.mac || browser.android) && change && change.from == change.to && change.from == sel.head - 1 && change.insert.toString() == ".")
+        change = {from: sel.from, to: sel.to, insert: Text.of([" "])}
+
 
     if (change) {
         let startState = view.state
-        if (browser.ios && view.inputState.flushIOSKey(view)) return
+        if (browser.ios && view.inputState.flushIOSKey(view)) return true
         // Android browsers don't fire reasonable key events for enter,
         // backspace, or delete. So this detects changes that look like
         // they're caused by those keys, and reinterprets them as key
@@ -76,11 +80,11 @@ export function applyDOMChange(view: EditorView, start: number, end: number, typ
                     dispatchKey(view.contentDOM, "Backspace", 8)) ||
                 (change.from == sel.from && change.to == sel.to + 1 && change.insert.length == 0 &&
                     dispatchKey(view.contentDOM, "Delete", 46))))
-            return
+            return true
 
         let text = change.insert.toString()
         if (view.state.facet(inputHandler).some(h => h(view, change!.from, change!.to, text)))
-            return
+            return true
 
         if (view.inputState.composing >= 0) view.inputState.composing++
         let tr
@@ -134,6 +138,7 @@ export function applyDOMChange(view: EditorView, start: number, end: number, typ
             }
         }
         view.dispatch(tr, {scrollIntoView: true, userEvent})
+        return true
     } else if (newSel && !newSel.main.eq(sel)) {
         let scrollIntoView = false, userEvent = "select"
         if (view.inputState.lastSelectionTime > Date.now() - 50) {
@@ -141,6 +146,9 @@ export function applyDOMChange(view: EditorView, start: number, end: number, typ
             userEvent = view.inputState.lastSelectionOrigin!
         }
         view.dispatch({selection: newSel, scrollIntoView, userEvent})
+        return true
+    } else {
+        return false
     }
 }
 

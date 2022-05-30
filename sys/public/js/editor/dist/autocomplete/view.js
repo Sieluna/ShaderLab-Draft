@@ -178,6 +178,11 @@ export const completionPlugin = ViewPlugin.fromClass(class {
     }
 }, {
     eventHandlers: {
+        blur() {
+            let state = this.view.state.field(completionState, false);
+            if (state && state.tooltip && this.view.state.facet(completionConfig).closeOnBlur)
+                this.view.dispatch({ effects: closeCompletionEffect.of(null) });
+        },
         compositionstart() {
             this.composing = 1 /* Started */;
         },

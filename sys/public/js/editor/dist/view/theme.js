@@ -117,7 +117,7 @@ export const baseTheme = buildTheme("." + baseThemeID, {
         zIndex: 200
     },
     "&light .cm-gutters": {
-        backgroundColor: "#fcfcfc",
+        backgroundColor: "#f5f5f5",
         color: "#6c6c6c",
         borderRight: "1px solid #ddd"
     },

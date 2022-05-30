@@ -6,6 +6,8 @@ export interface CompletionConfig {
     activateOnTyping?: boolean
     /** Override the completion sources used. */
     override?: readonly CompletionSource[] | null,
+    /** Determines whether the completion tooltip is closed when the editor loses focus. Defaults to true. */
+    closeOnBlur?: boolean,
     /** The maximum number of options to render to the DOM. */
     maxRenderedOptions?: number,
     /** Set this to false to disable the [default completion keymap]{@link completionKeymap}.  */
@@ -25,6 +27,7 @@ export const completionConfig = Facet.define<CompletionConfig, Required<Completi
         return combineConfig(configs, {
             activateOnTyping: true,
             override: null,
+            closeOnBlur: true,
             maxRenderedOptions: 100,
             defaultKeymap: true,
             optionClass: () => "",
@@ -33,6 +36,7 @@ export const completionConfig = Facet.define<CompletionConfig, Required<Completi
             addToOptions: []
         }, {
             defaultKeymap: (a, b) => a && b,
+            closeOnBlur: (a, b) => a && b,
             icons: (a, b) => a && b,
             optionClass: (a, b) => c => joinClass(a(c), b(c)),
             addToOptions: (a, b) => a.concat(b)

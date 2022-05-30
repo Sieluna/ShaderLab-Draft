@@ -125,7 +125,7 @@ function textCoords(text, pos, side) {
                 from--;
                 flatten = 1;
             } // FIXME this is wrong in RTL text
-            else {
+            else if (to < length) {
                 to++;
                 flatten = -1;
             }
@@ -134,7 +134,7 @@ function textCoords(text, pos, side) {
     else {
         if (side < 0)
             from--;
-        else
+        else if (to < length)
             to++;
     }
     let rects = textRange(text, from, to).getClientRects();

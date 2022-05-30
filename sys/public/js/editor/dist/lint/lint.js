@@ -15,7 +15,12 @@ class LintState {
         this.selected = selected;
     }
     static init(diagnostics, panel, state) {
-        let ranges = Decoration.set(diagnostics.map((d) => {
+        // Filter the list of diagnostics for which to create markers
+        let markedDiagnostics = diagnostics;
+        let diagnosticFilter = state.facet(lintConfig).markerFilter;
+        if (diagnosticFilter)
+            markedDiagnostics = diagnosticFilter(markedDiagnostics);
+        let ranges = Decoration.set(markedDiagnostics.map((d) => {
             // For zero-length ranges or ranges covering only a line break, create a widget
             return d.from == d.to || (d.from == d.to - 1 && state.doc.lineAt(d.from).to == d.from)
                 ? Decoration.widget({
@@ -115,6 +120,9 @@ function lintTooltip(view, pos, side) {
             stackEnd = Math.max(to, stackEnd);
         }
     });
+    let diagnosticFilter = view.state.facet(lintConfig).tooltipFilter;
+    if (diagnosticFilter)
+        found = diagnosticFilter(found);
     if (!found.length)
         return null;
     return {
@@ -176,7 +184,7 @@ const lintPlugin = ViewPlugin.fromClass(class {
         this.view = view;
         this.timeout = -1;
         this.set = true;
-        let { delay } = view.state.facet(lintSource);
+        let { delay } = view.state.facet(lintConfig);
         this.lintTime = Date.now() + delay;
         this.run = this.run.bind(this);
         this.timeout = setTimeout(this.run, delay);
@@ -188,7 +196,7 @@ const lintPlugin = ViewPlugin.fromClass(class {
         }
         else {
             this.set = false;
-            let { state } = this.view, { sources } = state.facet(lintSource);
+            let { state } = this.view, { sources } = state.facet(lintConfig);
             Promise.all(sources.map(source => Promise.resolve(source(this.view)))).then(annotations => {
                 let all = annotations.reduce((a, b) => a.concat(b));
                 if (this.view.state.doc == state.doc)
@@ -197,12 +205,12 @@ const lintPlugin = ViewPlugin.fromClass(class {
         }
     }
     update(update) {
-        let source = update.state.facet(lintSource);
-        if (update.docChanged || source != update.startState.facet(lintSource)) {
-            this.lintTime = Date.now() + source.delay;
+        let config = update.state.facet(lintConfig);
+        if (update.docChanged || config != update.startState.facet(lintConfig)) {
+            this.lintTime = Date.now() + config.delay;
             if (!this.set) {
                 this.set = true;
-                this.timeout = setTimeout(this.run, source.delay);
+                this.timeout = setTimeout(this.run, config.delay);
             }
         }
     }
@@ -216,9 +224,13 @@ const lintPlugin = ViewPlugin.fromClass(class {
         clearTimeout(this.timeout);
     }
 });
-const lintSource = Facet.define({
+const lintConfig = Facet.define({
     combine(input) {
-        return { sources: input.map(i => i.source), delay: input.length ? Math.max(...input.map(i => i.delay)) : 750 };
+        return Object.assign({ sources: input.map(i => i.source) }, combineConfig(input.map(i => i.config), {
+            delay: 750,
+            markerFilter: null,
+            tooltipFilter: null
+        }));
     },
     enables: lintPlugin
 });
@@ -228,8 +240,7 @@ const lintSource = Facet.define({
  *  editor is idle (after its content changed).
  */
 export function linter(source, config = {}) {
-    var _a;
-    return lintSource.of({ source, delay: (_a = config.delay) !== null && _a !== void 0 ? _a : 750 });
+    return lintConfig.of({ source, config });
 }
 /** Forces any linters [configured]{@link linter} to run when the editor is idle to run right away. */
 export function forceLinting(view) {
@@ -255,7 +266,7 @@ function assignKeys(actions) {
 function renderDiagnostic(view, diagnostic, inPanel) {
     var _a;
     let keys = inPanel ? assignKeys(diagnostic.actions) : [];
-    return elt("li", { class: "cm-diagnostic cm-diagnostic-" + diagnostic.severity }, elt("span", { class: "cm-diagnosticText" }, diagnostic.message), (_a = diagnostic.actions) === null || _a === void 0 ? void 0 : _a.map((action, i) => {
+    return elt("li", { class: "cm-diagnostic cm-diagnostic-" + diagnostic.severity }, elt("span", { class: "cm-diagnosticText" }, diagnostic.renderMessage ? diagnostic.renderMessage() : diagnostic.message), (_a = diagnostic.actions) === null || _a === void 0 ? void 0 : _a.map((action, i) => {
         let click = (e) => {
             e.preventDefault();
             let found = findDiagnostic(view.state.field(lintState).diagnostics, diagnostic);
@@ -564,7 +575,12 @@ class LintGutterMarker extends GutterMarker {
     toDOM(view) {
         let elt = document.createElement("div");
         elt.className = "cm-lint-marker cm-lint-marker-" + this.severity;
-        elt.onmouseover = () => gutterMarkerMouseOver(view, elt, this.diagnostics);
+        let diagnostics = this.diagnostics;
+        let diagnosticsFilter = view.state.facet(lintGutterConfig).tooltipFilter;
+        if (diagnosticsFilter)
+            diagnostics = diagnosticsFilter(diagnostics);
+        if (diagnostics.length)
+            elt.onmouseover = () => gutterMarkerMouseOver(view, elt, diagnostics);
         return elt;
     }
 }
@@ -636,10 +652,15 @@ const lintGutterMarkers = StateField.define({
     },
     update(markers, tr) {
         markers = markers.map(tr.changes);
-        for (let effect of tr.effects)
+        let diagnosticFilter = tr.state.facet(lintGutterConfig).markerFilter;
+        for (let effect of tr.effects) {
             if (effect.is(setDiagnosticsEffect)) {
-                markers = markersForDiagnostics(tr.state.doc, effect.value);
+                let diagnostics = effect.value;
+                if (diagnosticFilter)
+                    diagnostics = diagnosticFilter(diagnostics || []);
+                markers = markersForDiagnostics(tr.state.doc, diagnostics.slice(0));
             }
+        }
         return markers;
     }
 });
@@ -678,6 +699,8 @@ const lintGutterConfig = Facet.define({
     combine(configs) {
         return combineConfig(configs, {
             hoverTime: 300 /* Time */,
+            markerFilter: null,
+            tooltipFilter: null
         });
     }
 });

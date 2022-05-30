@@ -10,6 +10,7 @@ export class InputState {
     constructor(view) {
         this.lastKeyCode = 0;
         this.lastKeyTime = 0;
+        this.chromeScrollHack = -1;
         // On iOS, some keys need to have their default behavior happen (after which we retroactively
         // handle them and reset the DOM) to avoid messing up the virtual keyboard state.
         this.pendingIOSKey = undefined;
@@ -51,6 +52,20 @@ export class InputState {
             });
             this.registeredEvents.push(type);
         }
+        if (browser.chrome && browser.chrome_version >= 102) {
+            // On Chrome 102, viewport updates somehow stop wheel-based scrolling.
+            // Turning off pointer events during the scroll seems to avoid the issue.
+            view.scrollDOM.addEventListener("wheel", () => {
+                if (this.chromeScrollHack < 0)
+                    view.contentDOM.style.pointerEvents = "none";
+                else
+                    window.clearTimeout(this.chromeScrollHack);
+                this.chromeScrollHack = setTimeout(() => {
+                    this.chromeScrollHack = -1;
+                    view.contentDOM.style.pointerEvents = "";
+                }, 100);
+            }, { passive: true });
+        }
         this.notifiedFocused = view.hasFocus;
         if (browser.safari)
             view.contentDOM.addEventListener("input", () => null);
@@ -62,6 +77,7 @@ export class InputState {
     ensureHandlers(view, plugins) {
         var _a;
         let handlers;
+        this.customHandlers = [];
         for (let plugin of plugins)
             if (handlers = (_a = plugin.update(view).spec) === null || _a === void 0 ? void 0 : _a.domEventHandlers) {
                 this.customHandlers.push({ plugin: plugin.value, handlers });
@@ -564,11 +580,16 @@ handlers.copy = handlers.cut = (view, event) => {
             userEvent: "delete.cut"
         });
 };
-handlers.focus = handlers.blur = view => {
+function updateForFocusChange(view) {
     setTimeout(() => {
         if (view.hasFocus != view.inputState.notifiedFocused)
             view.update([]);
     }, 10);
+}
+handlers.focus = updateForFocusChange;
+handlers.blur = view => {
+    view.observer.clearSelectionRange();
+    updateForFocusChange(view);
 };
 function forceClearComposition(view, rapid) {
     if (view.docView.compositionDeco.size) {

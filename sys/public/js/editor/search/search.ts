@@ -65,7 +65,8 @@ export class SearchQuery {
      * Create a query object.
      * @param config.search The search string.
      * @param [config.cassSensitive] Controls whether the search should be case-sensitive.
-     * @param [config.literal] When true, interpret the search string as a literal sequence of characters.
+     * @param [config.literal] By default, string search will replace `\n`, `\r`, and `\t` in the query with newline,
+     *                         return, and tab characters. When this is set to true, that behavior is disabled.
      * @param [config.regexp] When true, interpret the search string as a regular expression.
      * @param [config.replace] The replace text.
      */
@@ -413,8 +414,8 @@ export const openSearchPanel: Command = view => {
     if (state && state.panel) {
         let panel = getPanel(view, createSearchPanel)
         if (!panel) return false
-        let searchInput = panel.dom.querySelector("[name=search]") as HTMLInputElement
-        if (searchInput != view.root.activeElement) {
+        let searchInput = panel.dom.querySelector("[main-field]") as HTMLInputElement| null
+        if (searchInput && searchInput != view.root.activeElement) {
             let query = defaultQuery(view.state, state.query.spec)
             if (query.valid) view.dispatch({effects: setSearchQuery.of(query)})
             searchInput.focus()
@@ -476,6 +477,7 @@ class SearchPanel implements Panel {
             "aria-label": phrase(view, "Find"),
             class: "cm-textfield",
             name: "search",
+            "main-field": "true",
             onchange: this.commit,
             onkeyup: this.commit
         }) as HTMLInputElement

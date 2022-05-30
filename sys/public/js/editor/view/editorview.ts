@@ -179,7 +179,7 @@ export class EditorView {
         this.plugins = this.state.facet(viewPlugin).map(spec => new PluginInstance(spec))
         for (let plugin of this.plugins) plugin.update(this)
         this.observer = new DOMObserver(this, (from, to, typeOver) => {
-            applyDOMChange(this, from, to, typeOver)
+            return applyDOMChange(this, from, to, typeOver)
         }, event => {
             this.inputState.runScrollHandlers(this, event)
             if (this.observer.intersecting) this.measure()
@@ -232,6 +232,7 @@ export class EditorView {
             return
         }
 
+        this.observer.clear()
         // When the phrases change, redraw the editor
         if (state.facet(EditorState.phrases) != this.state.facet(EditorState.phrases))
             return this.setState(state)

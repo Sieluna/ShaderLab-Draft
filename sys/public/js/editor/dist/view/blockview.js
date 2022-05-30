@@ -50,6 +50,7 @@ export class LineView extends ContentView {
     transferDOM(other) {
         if (!this.dom)
             return;
+        this.markDirty();
         other.setDOM(this.dom);
         other.prevAttrs = this.prevAttrs === undefined ? this.attrs : this.prevAttrs;
         this.prevAttrs = undefined;

@@ -5,7 +5,7 @@ import { completionConfig } from "./config.js";
 import { completionPlugin, moveCompletionSelection, acceptCompletion, startCompletion, closeCompletion } from "./view.js";
 import { baseTheme } from "./theme.js";
 export { snippet, snippetCompletion, nextSnippetField, prevSnippetField, clearSnippet, snippetKeymap } from "./snippet.js";
-export { CompletionContext, pickedCompletion, completeFromList, ifIn, ifNotIn } from "./completion.js";
+export { CompletionContext, pickedCompletion, completeFromList, ifIn, ifNotIn, insertCompletionText } from "./completion.js";
 export { startCompletion, closeCompletion, acceptCompletion, moveCompletionSelection } from "./view.js";
 export { completeAnyWord } from "./word.js";
 export { closeBrackets, closeBracketsKeymap, deleteBracketPair, insertBracket } from "./closebrackets.js";

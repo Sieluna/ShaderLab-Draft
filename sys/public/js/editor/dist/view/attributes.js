@@ -24,12 +24,14 @@ export function attrsEq(a, b) {
     return true;
 }
 export function updateAttrs(dom, prev, attrs) {
+    let changed = null;
     if (prev)
         for (let name in prev)
             if (!(attrs && name in attrs))
-                dom.removeAttribute(name);
+                dom.removeAttribute(changed = name);
     if (attrs)
         for (let name in attrs)
             if (!(prev && prev[name] == attrs[name]))
-                dom.setAttribute(name, attrs[name]);
+                dom.setAttribute(changed = name, attrs[name]);
+    return !!changed;
 }

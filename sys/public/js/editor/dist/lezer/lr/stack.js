@@ -267,8 +267,7 @@ export class Stack {
         }
         return result;
     }
-    // Force a reduce, if possible. Return false if that can't
-    // be done.
+    // Force a reduce, if possible. Return false if that can't be done.
     // @internal
     forceReduce() {
         let reduce = this.p.parser.stateSlot(this.state, 5 /* ForcedReduce */);
@@ -283,6 +282,7 @@ export class Stack {
             this.storeNode(0 /* Err */, this.reducePos, this.reducePos, 4, true);
             this.score -= 100 /* Reduce */;
         }
+        this.reducePos = this.pos;
         this.reduce(reduce);
         return true;
     }

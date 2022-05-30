@@ -149,20 +149,23 @@ export const pickedCompletion = Annotation.define<Completion>()
  * @param to
  */
 export function insertCompletionText(state: EditorState, text: string, from: number, to: number): TransactionSpec {
-    return state.changeByRange(range => {
-        if (range == state.selection.main) return {
-            changes: {from: from, to: to, insert: text},
-            range: EditorSelection.cursor(from + text.length)
-        }
-        let len = to - from
-        if (!range.empty ||
-            len && state.sliceDoc(range.from - len, range.from) != state.sliceDoc(from, to))
-            return {range}
-        return {
-            changes: {from: range.from - len, to: range.from, insert: text},
-            range: EditorSelection.cursor(range.from - len + text.length)
-        }
-    })
+    return {
+        ...state.changeByRange(range => {
+            if (range == state.selection.main) return {
+                changes: {from: from, to: to, insert: text},
+                range: EditorSelection.cursor(from + text.length)
+            }
+            let len = to - from
+            if (!range.empty ||
+                len && state.sliceDoc(range.from - len, range.from) != state.sliceDoc(from, to))
+                return {range}
+            return {
+                changes: {from: range.from - len, to: range.from, insert: text},
+                range: EditorSelection.cursor(range.from - len + text.length)
+            }
+        }),
+        userEvent: "input.complete"
+    }
 }
 
 export function applyCompletion(view: EditorView, option: Option) {

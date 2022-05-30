@@ -12,6 +12,7 @@ import {getSelection, focusPreventScroll, Rect, dispatchKey} from "./dom"
 export class InputState {
     lastKeyCode: number = 0
     lastKeyTime: number = 0
+    chromeScrollHack = -1
 
     // On iOS, some keys need to have their default behavior happen (after which we retroactively
     // handle them and reset the DOM) to avoid messing up the virtual keyboard state.
@@ -65,12 +66,25 @@ export class InputState {
             })
             this.registeredEvents.push(type)
         }
+        if (browser.chrome && browser.chrome_version >= 102) {
+            // On Chrome 102, viewport updates somehow stop wheel-based scrolling.
+            // Turning off pointer events during the scroll seems to avoid the issue.
+            view.scrollDOM.addEventListener("wheel", () => {
+                if (this.chromeScrollHack < 0) view.contentDOM.style.pointerEvents = "none"
+                else window.clearTimeout(this.chromeScrollHack)
+                this.chromeScrollHack = setTimeout(() => {
+                    this.chromeScrollHack = -1
+                    view.contentDOM.style.pointerEvents = ""
+                }, 100)
+            }, {passive: true})
+        }
         this.notifiedFocused = view.hasFocus
         if (browser.safari) view.contentDOM.addEventListener("input", () => null)
     }
 
     ensureHandlers(view: EditorView, plugins: readonly PluginInstance[]) {
         let handlers
+        this.customHandlers = []
         for (let plugin of plugins) if (handlers = plugin.update(view).spec?.domEventHandlers) {
             this.customHandlers.push({plugin: plugin.value!, handlers})
             for (let type in handlers) if (this.registeredEvents.indexOf(type) < 0 && type != "scroll") {
@@ -592,10 +606,17 @@ handlers.copy = handlers.cut = (view, event: ClipboardEvent) => {
         })
 }
 
-handlers.focus = handlers.blur = view => {
+function updateForFocusChange(view: EditorView) {
     setTimeout(() => {
         if (view.hasFocus != view.inputState.notifiedFocused) view.update([])
     }, 10)
+}
+
+handlers.focus = updateForFocusChange
+
+handlers.blur = view => {
+    view.observer.clearSelectionRange()
+    updateForFocusChange(view)
 }
 
 function forceClearComposition(view: EditorView, rapid: boolean) {

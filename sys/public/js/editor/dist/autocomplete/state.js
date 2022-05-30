@@ -6,16 +6,21 @@ import { completionTooltip } from "./tooltip.js";
 import { completionConfig } from "./config.js";
 // Used to pick a preferred option when two options with the same label occur in the result.
 function score(option) {
-    return (option.boost || 0) * 100 + (option.apply ? 10 : 0) + (option.info ? 5 : 0) +
-        (option.type ? 1 : 0);
+    return (option.boost || 0) * 100 + (option.apply ? 10 : 0) + (option.info ? 5 : 0) + (option.type ? 1 : 0);
 }
 function sortOptions(active, state) {
     let options = [], i = 0;
     for (let a of active)
         if (a.hasResult()) {
             if (a.result.filter === false) {
-                for (let option of a.result.options)
-                    options.push(new Option(option, a, [1e9 - i++]));
+                let getMatch = a.result.getMatch;
+                for (let option of a.result.options) {
+                    let match = [1e9 - i++];
+                    if (getMatch)
+                        for (let n of getMatch(option))
+                            match.push(n);
+                    options.push(new Option(option, a, match));
+                }
             }
             else {
                 let matcher = new FuzzyMatcher(state.sliceDoc(a.from, a.to)), match;

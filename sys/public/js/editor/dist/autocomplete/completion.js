@@ -91,33 +91,40 @@ export function ensureAnchor(expr, start) {
         return expr;
     return new RegExp(`${addStart ? "^" : ""}(?:${source})${addEnd ? "$" : ""}`, (_a = expr.flags) !== null && _a !== void 0 ? _a : (expr.ignoreCase ? "i" : ""));
 }
+/** This annotation is added to transactions that are produced by picking a completion. */
 export const pickedCompletion = Annotation.define();
+/**
+ * Helper function that returns a transaction spec which inserts a completion's text in the main selection
+ * range, and any other selection range that has the same text in front of it.
+ * @param state
+ * @param text
+ * @param from
+ * @param to
+ */
+export function insertCompletionText(state, text, from, to) {
+    return Object.assign(Object.assign({}, state.changeByRange(range => {
+        if (range == state.selection.main)
+            return {
+                changes: { from: from, to: to, insert: text },
+                range: EditorSelection.cursor(from + text.length)
+            };
+        let len = to - from;
+        if (!range.empty ||
+            len && state.sliceDoc(range.from - len, range.from) != state.sliceDoc(from, to))
+            return { range };
+        return {
+            changes: { from: range.from - len, to: range.from, insert: text },
+            range: EditorSelection.cursor(range.from - len + text.length)
+        };
+    })), { userEvent: "input.complete" });
+}
 export function applyCompletion(view, option) {
     const apply = option.completion.apply || option.completion.label;
     let result = option.source;
-    if (typeof apply == "string") {
-        view.dispatch(view.state.changeByRange(range => {
-            if (range == view.state.selection.main)
-                return {
-                    changes: { from: result.from, to: result.to, insert: apply },
-                    range: EditorSelection.cursor(result.from + apply.length)
-                };
-            let len = result.to - result.from;
-            if (!range.empty ||
-                len && view.state.sliceDoc(range.from - len, range.from) != view.state.sliceDoc(result.from, result.to))
-                return { range };
-            return {
-                changes: { from: range.from - len, to: range.from, insert: apply },
-                range: EditorSelection.cursor(range.from - len + apply.length)
-            };
-        }), {
-            userEvent: "input.complete",
-            annotations: pickedCompletion.of(option.completion)
-        });
-    }
-    else {
+    if (typeof apply == "string")
+        view.dispatch(insertCompletionText(view.state, apply, result.from, result.to));
+    else
         apply(view, option.completion, result.from, result.to);
-    }
 }
 const SourceCache = new WeakMap();
 export function asSource(source) {

@@ -268,6 +268,7 @@ class GutterElement {
         this.above = 0;
         this.markers = [];
         this.dom = document.createElement("div");
+        this.dom.className = "cm-gutterElement";
         this.update(view, height, above, markers);
     }
     update(view, height, above, markers) {

@@ -2,6 +2,15 @@ const fs = require("fs");
 
 let storage = {}
 
+/**
+ * Grammar:
+ * {{for array item index?}} {{/for}}
+ * {{for object value key? index?}} {{/for}}
+ * {{if bool}} yes {{else}} no {{/if}}
+ * {{content}}
+ * {{#html}}
+ */
+
 class Compiler {
     constructor(content, data) {
         this.leftTag = "<!-- {{|{{";
@@ -34,7 +43,6 @@ class Compiler {
 
     get generate() {
         if (!this.cache) {
-            console.log(this.parse)
             this.cache = (new Function("_data_", this.parse)).call({
                 global: new Function("return this")(),
                 each: function (list, fn) {
@@ -76,7 +84,6 @@ class Compiler {
             variables += `let ${item} = "${item}" in _data_ ? _data_.${item} : this.global.${item};`;
             map[item] = true;
         }
-        console.log(code, map, variables)
         return variables;
     }
 }
@@ -101,3 +108,5 @@ module.exports = async (path, options, callback) => {
         return callback ? callback(null, storage[path].generate) : storage[path].generate;
     } catch (err) { return callback ? callback(err) : err; }
 }
+
+module.exports.Compiler = Compiler;

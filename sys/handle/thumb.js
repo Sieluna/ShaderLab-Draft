@@ -35,6 +35,9 @@ const handle = {
         let userId = await normalizeId(user, userHandle.getUserByName);
         if (userId == null || !isNumber(post)) return state.NotExist;
         return await thumb.findOrCreate({ where: { userId: userId, postId: post } });
+    },
+    remove: async (user, post) => {
+
     }
 }
 

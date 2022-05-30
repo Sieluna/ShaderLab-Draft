@@ -1,8 +1,7 @@
 #!/usr/bin/env node
-
+const { styles, colors } = require("../config/style.js");
 const app = require("../app.js");
 const http = require("http");
-const debug = require("debug")("shaderlab:server");
 
 /** Get port from environment and store in Express. */
 let port = normalizePort(process.env.PORT || "3000");
@@ -45,5 +44,5 @@ function onError(error) {
 function onListening() {
     let addr = server.address();
     let bind = typeof addr == "string" ? "pipe " + addr : "port " + addr.port;
-    debug("Listening on " + bind);
+    console.log(`> ${styles.bold(colors.yellow("[Info]"))} Listening on ${bind}`);
 }

@@ -62,6 +62,3 @@ const look = (url, target) => {
 
 /** Babylon cache */
 look("https://cdn.jsdelivr.net/npm/@babylonjs/core/", "./babylon/core/");
-
-/** Sweet alert min file cache */
-cache("https://cdn.jsdelivr.net/npm/sweetalert2/dist/", "sweetalert2.all.min.js", "./sweetalert");

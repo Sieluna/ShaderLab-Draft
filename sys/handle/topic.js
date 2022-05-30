@@ -51,7 +51,7 @@ const handle = {
         }
     },
     /**
-     * Create a topic.
+     * Create a topic
      * @param {number|string} name
      * @param {string} image
      * @param {string} description
@@ -62,6 +62,17 @@ const handle = {
         if (isNumber(name)) return state.NotCorrect;
         if (name.length > 32 || description.length > 250) return state.OverSize;
         return await topic.create({ name: name, image: image, description: description });
+    },
+    /**
+     * Create multi topics
+     * @param {{name:string,image:string,description:string}[]} topicList
+     * @return {Promise<topic[]>}
+     */
+    createAll: async (topicList) => {
+        if (!Array.isArray(topicList)) return state.NotCorrect;
+        for (let i = 0; i < topicList.length; i++)
+            topicList[i] = { name: topicList[i].name ?? "default", image: topicList[i].image ?? "", description: topicList[i].description ?? ""};
+        return await topic.bulkCreate(topicList);
     },
     /**
      * Create a topic by name

@@ -5,7 +5,7 @@ const registerElement = document.querySelector(".sl-panel .panel-login .register
 const loginElement = document.querySelector(".sl-panel .panel-login .login");
 const loginInputElement = document.querySelector(".sl-panel #panel-input .password input");
 
-const submitInfo = (target = "") => {
+const submitInfo = (redirect, target = "") => {
     fetchFeature(`/api/user${target}`, {
         method: "POST",
         body: new URLSearchParams(new FormData(document.getElementById("panel-input"))),
@@ -18,21 +18,23 @@ const submitInfo = (target = "") => {
             icon: "success",
             title: "Success",
             text: "Login Success!"
-        }).then(() => window.location.href = "home.html");
+        }).then(() => {
+            redirect(true);
+        });
     });
 }
 
-export const userFeature = () => {
+export const userFeature = (redirect) => {
     registerElement.addEventListener("click", () => {
-        submitInfo();
+        submitInfo(redirect);
+    });
+    loginElement.addEventListener("click", () => {
+        submitInfo(redirect, "/login");
     });
     loginInputElement.addEventListener("keypress", event => {
         if (event.key === "Enter") {
             event.preventDefault();
             loginElement.click();
         }
-    });
-    loginElement.addEventListener("click", () => {
-        submitInfo("/login");
     });
 }

@@ -1,3 +1,5 @@
+// Fork Reason: Fix path issue when latest html webpack plugin is used. Issue: path.normalize with error //
+
 const fs = require("fs");
 const path = require("path");
 const { sources } = require("webpack");

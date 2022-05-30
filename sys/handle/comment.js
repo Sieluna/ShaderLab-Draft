@@ -24,9 +24,9 @@ const handle = {
     create: async (user, post, content) => {
         if (isEmpty(content)) return state.Empty;
         if (content.length < 5) return state.TooShort;
-        let userId = normalizeId(user, userHandle.getUserByName);
-        if (await userId == null || !isNumber(post)) return state.NotExist;
-        return await comment.findOrCreate({ where: { userId: await userId, postId: post }, defaults: { content: content } });
+        let userId = await normalizeId(user, userHandle.getUserByName);
+        if (userId == null || !isNumber(post)) return state.NotExist;
+        return await comment.findOrCreate({ where: { userId: userId, postId: post }, defaults: { content: content } });
     }
 }
 

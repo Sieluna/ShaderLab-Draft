@@ -17,7 +17,7 @@ const handleResponse = response => {
             icon: "error",
             title: "Oops...",
             text: `Check ${contentType}`,
-        });
+        }).then();
     }
 };
 
@@ -34,7 +34,7 @@ const handleTextResponse = response => response.text().then(text => {
             icon: "error",
             title: "Oops...",
             text: text,
-        });
+        }).then();
         return null;
     }
 });

@@ -109,7 +109,7 @@ const handle = {
     /**
      * Get number of thumbs by id
      * @param {number|string} id
-     * @return {Promise<post|state>}
+     * @return {Promise<number>}
      */
     getPostThumbsById: async id => {
         return thumbHandle.getThumbsByPost(id);
@@ -131,8 +131,8 @@ const handle = {
     },
     /**
      * View a post (unsafe)
-     * @param {number|string} id
-     * @return {Promise<post|state>}
+     * @param {number} id
+     * @return {Promise<[post,1]>}
      */
     viewPost: async id => {
         return await post.increment({ views: 1 }, { where: { id: id } });
@@ -193,12 +193,11 @@ const handle = {
     /**
      * Restore post by id
      * @param {number|string} id
-     * @return {Promise<number|state>} number of rows effected
+     * @return {Promise<void|state>}
      */
     restoreById: async id => {
         if (!isNumber(id)) return state.Empty;
-        const result = await post.restore({ where: { id: id }});
-        return Number(result) > 0 ? result : state.NotExist;
+        await post.restore({ where: { id: id }});
     }
 }
 

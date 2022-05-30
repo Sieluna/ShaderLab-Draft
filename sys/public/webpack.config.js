@@ -1,3 +1,5 @@
+const fs = require("fs");
+const { styles, colors } = require("../config/style.js");
 const path = require("path");
 const { ProgressPlugin } = require("webpack");
 const CopyPlugin = require("copy-webpack-plugin");
@@ -11,11 +13,13 @@ const HtmlInlineScriptPlugin = require("html-inline-script-webpack-plugin");
 const commonTemplate = (inject = null) => `
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <title>{{title}}</title>
-    </head>
-    <body>${inject ?? ""}</body>
+<head>
+    <meta charset="utf-8">
+    <title>{{title}}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5.0, minimum-scale=1.0">
+    <meta name="description" content="Shader Lab Login">
+</head>
+<body>${inject ?? ""}</body>
 </html>
 `;
 
@@ -42,7 +46,7 @@ module.exports = env => {
         },
     };
 
-    console.log("[Build] Webpack Build Mode:", env.NODE_ENV ?? "production", '\n');
+    console.log(`> ${styles.bold(colors.yellow("[Build]"))} Webpack Build Mode: ${env.NODE_ENV ?? "production"}`, '\n');
 
     return {
         mode: devMode ? "development" : "production",
@@ -87,72 +91,40 @@ module.exports = env => {
         plugins: [
             new ProgressPlugin(),
             new CopyPlugin({
-                patterns: [
-                    {
-                        from: path.resolve(__dirname, "img"),
-                        to({ absoluteFilename }) {
-                            return path.posix.join(
-                                path.resolve(__dirname, "../static/img").replace(/\\/g, "/"),
-                                path.relative(path.resolve(__dirname, "public"), absoluteFilename).replace(/\\/g, "/")
-                            );
-                        },
-                        globOptions: {
-                            ignore: [
-                                path.resolve(__dirname, "img/*.png").replace(/\\/g, "/"), /* ignore favicon */
-                            ]
-                        }
+                patterns: [{
+                    from: path.resolve(__dirname, "img"),
+                    to({ absoluteFilename }) {
+                        return path.posix.join(path.resolve(__dirname, "../static/img").replace(/\\/g, "/"),
+                                               path.relative(path.resolve(__dirname, "public"), absoluteFilename).replace(/\\/g, "/"));
                     },
-                ]
+                    globOptions: {
+                        ignore: [ path.resolve(__dirname, "img/*.png").replace(/\\/g, "/"), /* ignore favicon */ ]
+                    }
+                }]
             }),
             new MiniCssExtractPlugin({
                 filename: "css/[name].css"
             }),
             new HtmlWebpackPlugin({
-                chunks: ["login"],
-                meta: {
-                    viewport: "width=device-width, initial-scale=1, maximum-scale=5.0, minimum-scale=1.0",
-                    description: "Shader Lab Login"
-                },
-                templateContent: commonTemplate(`
-                    <div class="sl-background" data-large="{{image.large}}">
-                        <img express-src="{{image.small}}" class="small" alt="Background">
-                    </div>
-                    <div class="sl-nav"><a class="nav-label" href="{{page.home}}">ShaderLab</a></div>
-                    <main class="sl-panel">
-                        <div class="panel-title">ShaderLab</div>
-                        <form id="panel-input">
-                            <div class="account"><span>Account</span><input type="text" name="account" placeholder="E-mail address / ShaderLab ID" autocomplete="off" maxlength="16" spellcheck="false"></div>
-                            <div class="password"><div class="left"><span>Password</span><input type="password" name="password" placeholder="password" autocomplete="off" maxlength="45" spellcheck="false"></div><span class="forget">fogot?</span></div>
-                        </form>
-                        <div class="panel-login"><div class="register">Register</div><div class="login">Login</div></div>
-                        <div class="panel-third">
-                            <div class="title">Third-party</div>
-                            <div class="sns"><span class="github">Github</span><span class="google">Google</span></div>
-                        </div>
-                    </main>
-                `),
                 filename: "login.html",
-                minify: false
+                templateContent: commonTemplate(fs.readFileSync(path.resolve(__dirname, "login.part.html"))),
+                meta: { description: "Shader Lab Login" },
+                minify: false,
+                chunks: ["login"]
             }),
             new HtmlWebpackPlugin({
-                chunks: ["home"],
-                meta: {
-                    viewport: "width=device-width, initial-scale=1, maximum-scale=5.0, minimum-scale=1.0",
-                    description: "Shader Lab"
-                },
-                templateContent: commonTemplate(),
                 filename: "home.html",
-                minify: false
+                templateContent: commonTemplate(),
+                meta: { description: "Shader Lab" },
+                minify: false,
+                chunks: ["home"]
             }),
             new HtmlWebpackPlugin({
-                chunks: ["editor"],
-                meta: {
-                    viewport: "width=device-width, initial-scale=1, maximum-scale=5.0, minimum-scale=1.0",
-                    description: "Shader Lab Editor"
-                },
-                templateContent: commonTemplate(),
                 filename: "editor.html",
-                minify: false
+                templateContent: commonTemplate(),
+                meta: { description: "Shader Lab Editor" },
+                minify: false,
+                chunks: ["editor"],
             }),
             new HtmlInlineScriptPlugin({
                 scriptMatchPattern: [/login.js$/],

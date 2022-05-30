@@ -4,7 +4,6 @@
     "private": true,
     "dependencies": {
         "express": "latest",
-        "express-es6-template-engine": "latest",
         "jsonwebtoken": "latest",
         "compression": "latest",
         "morgan": "latest",
@@ -15,6 +14,7 @@
     "devDependencies": {
         "cross-env": "latest",
         "favicons": "latest",
+        "open": "latest",
         "mocha": "latest",
         "chai": "latest",
         "chai-http": "latest",
@@ -30,10 +30,10 @@
         "html-inline-script-webpack-plugin": "latest"
     },
     "scripts": {
-        "server.dev": "cross-env NODE_ENV=development DEBUG=shaderlab:* node ./sys/bin/www",
-        "server.prod": "cross-env NODE_ENV=production DEBUG=shaderlab:* node ./sys/bin/www",
-        "build.dev": "webpack --env NODE_ENV=development --config ./sys/public/webpack.config.js && node ./sys/bin/copy.js",
-        "build.prod": "webpack --env NODE_ENV=production --config ./sys/public/webpack.config.js && node ./sys/bin/copy.js",
-        "test": "mocha --recursive './sys/test/*.js' --reporter list"
+        "server.dev": "cross-env NODE_ENV=development DEBUG=shaderlab:* node sys/bin/www",
+        "server.prod": "cross-env NODE_ENV=production DEBUG=shaderlab:* node sys/bin/www",
+        "build.dev": "webpack --env NODE_ENV=development --config sys/public/webpack.config.js && node sys/bin/copy.js",
+        "build.prod": "webpack --env NODE_ENV=production --config sys/public/webpack.config.js && node sys/bin/copy.js",
+        "test": "mocha --recursive sys/test/*.js"
     }
 }

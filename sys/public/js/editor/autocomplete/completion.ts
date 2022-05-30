@@ -1,19 +1,19 @@
 import {EditorView} from "../view/index"
-import {EditorState, Annotation, EditorSelection} from "../state/index"
+import {EditorState, Annotation, EditorSelection, TransactionSpec} from "../state/index"
 import {syntaxTree} from "../language/index"
 import {SyntaxNode} from "../lezer/common/index"
 import {ActiveResult} from "./state"
 
 export interface Completion {
-    label: string,
+    label: string
     /** Detail information of the completion under label */
-    detail?: string,
+    detail?: string
     /** show when the completion is selected */
-    info?: string | ((completion: Completion) => (Node | null | Promise<Node | null>)),
+    info?: string | ((completion: Completion) => (Node | null | Promise<Node | null>))
     /** The detail procedure of completion, such as for loop, function */
-    apply?: string | ((view: EditorView, completion: Completion, from: number, to: number) => void),
+    apply?: string | ((view: EditorView, completion: Completion, from: number, to: number) => void)
     /** The type of completion, select icon such as 🔑 'keyword'*/
-    type?: string,
+    type?: string
     /** From -99 to 99 that adjusts how this completion is ranked, positive high, negative down */
     boost?: number
 }
@@ -100,11 +100,23 @@ export function ifNotIn(nodes: readonly string[], source: CompletionSource): Com
 export type CompletionSource = (context: CompletionContext) => CompletionResult | null | Promise<CompletionResult | null>
 
 export interface CompletionResult {
-    from: number,
-    to?: number,
-    options: readonly Completion[],
-    validFor?: RegExp | ((text: string, from: number, to: number, state: EditorState) => boolean),
-    filter?: boolean,
+    from: number
+    to?: number
+    options: readonly Completion[]
+    /**
+     * When given, further typing or deletion that causes the part of the document between ([mapped]{@link mapPos})
+     * `from` and `to` to match this regular expression or predicate function will not query the completion source
+     * again, but continue with this list of options. This can help a lot with responsiveness, since it allows the
+     * completion list to be updated synchronously.
+     */
+    validFor?: RegExp | ((text: string, from: number, to: number, state: EditorState) => boolean)
+    filter?: boolean
+    /**
+     * When {@link filter} is set to `false`, this may be provided to compute the ranges on the label that match
+     * the input. Should return an array of numbers where each pair of adjacent numbers provide the start and end
+     * of a range.
+     */
+    getMatch?: (completion: Completion) => readonly number[]
     update?: (current: CompletionResult, from: number, to: number, context: CompletionContext) => CompletionResult | null
 }
 
@@ -125,32 +137,41 @@ export function ensureAnchor(expr: RegExp, start: boolean) {
         expr.flags ?? (expr.ignoreCase ? "i" : ""))
 }
 
+/** This annotation is added to transactions that are produced by picking a completion. */
 export const pickedCompletion = Annotation.define<Completion>()
+
+/**
+ * Helper function that returns a transaction spec which inserts a completion's text in the main selection
+ * range, and any other selection range that has the same text in front of it.
+ * @param state
+ * @param text
+ * @param from
+ * @param to
+ */
+export function insertCompletionText(state: EditorState, text: string, from: number, to: number): TransactionSpec {
+    return state.changeByRange(range => {
+        if (range == state.selection.main) return {
+            changes: {from: from, to: to, insert: text},
+            range: EditorSelection.cursor(from + text.length)
+        }
+        let len = to - from
+        if (!range.empty ||
+            len && state.sliceDoc(range.from - len, range.from) != state.sliceDoc(from, to))
+            return {range}
+        return {
+            changes: {from: range.from - len, to: range.from, insert: text},
+            range: EditorSelection.cursor(range.from - len + text.length)
+        }
+    })
+}
 
 export function applyCompletion(view: EditorView, option: Option) {
     const apply = option.completion.apply || option.completion.label
     let result = option.source
-    if (typeof apply == "string") {
-        view.dispatch(view.state.changeByRange(range => {
-            if (range == view.state.selection.main) return {
-                changes: {from: result.from, to: result.to, insert: apply },
-                range: EditorSelection.cursor(result.from + apply.length)
-            }
-            let len = result.to - result.from
-            if (!range.empty ||
-                len && view.state.sliceDoc(range.from - len, range.from) != view.state.sliceDoc(result.from, result.to))
-                return {range}
-            return {
-                changes: {from: range.from - len, to: range.from, insert: apply},
-                range: EditorSelection.cursor(range.from - len + apply.length)
-            }
-        }), {
-            userEvent: "input.complete",
-            annotations: pickedCompletion.of(option.completion)
-        })
-    } else {
+    if (typeof apply == "string")
+        view.dispatch(insertCompletionText(view.state, apply, result.from, result.to))
+    else
         apply(view, option.completion, result.from, result.to)
-    }
 }
 
 const SourceCache = new WeakMap<readonly (string | Completion)[], CompletionSource>()

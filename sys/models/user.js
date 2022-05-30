@@ -42,7 +42,13 @@ module.exports = sequelize => {
         hooks: {
             beforeCreate: (instance, options) => {
                 instance.setDataValue("password", crypto.createHash("md5").
-                update(instance.dataValues.name + instance.dataValues.password).digest("hex"));
+                update(instance.name + instance.password).digest("hex"));
+            },
+            beforeBulkCreate(instances, options) {
+                for (const instance of instances) {
+                    instance.setDataValue("password", crypto.createHash("md5").
+                    update(instance.name + instance.password).digest("hex"));
+                }
             },
             beforeUpdate: (instance, options) => {
                 if (instance.changed("name") || instance.changed("password")) {

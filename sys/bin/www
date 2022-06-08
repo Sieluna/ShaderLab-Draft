@@ -14,11 +14,18 @@ const devMode = process.env.NODE_ENV != "production";
 
 if (devMode) {
     const debug = require("debug")("shaderlab:server");
+    const sequelize = require("../handle/model.js");
     const http = require("node:http");
+
+    sequelize.sync({ force: true }).then(() => {
+        debug("database is synchronized");
+        require("../config/inject.js")({ max: 500, root: true });
+    });
+
 
     const app = require("../app.js");
 
-    let port = normalizePort(process.env.PORT || "3000");
+    const port = normalizePort(process.env.PORT || "3000");
     app.set("port", port);
 
     // Create HTTP server.
@@ -67,18 +74,9 @@ if (devMode) {
     function onListening() {
         let addr = server.address();
         let bind = typeof addr == "string" ? "pipe " + addr : "port " + addr.port;
-        debug("Listening on %d", bind);
+        debug("Listening on %s", bind);
     }
 
 } else {
-
-    const sequelize = require("../handle/model.js");
-    const debug = require("debug")("shaderlab:server");
-
-    sequelize.sync({ force: true }).then(() => {
-        debug("database is synchronized");
-        require("../config/inject.js")({ max: 500, root: true });
-    });
-
     require("../app.js");
 }

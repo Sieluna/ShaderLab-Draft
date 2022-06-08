@@ -1,6 +1,6 @@
 const express = require("express");
-const path = require("path");
-const fs = require("fs");
+const path = require("node:path");
+const fs = require("node:fs");
 const multer = require("multer");
 
 const upload = multer({
@@ -35,7 +35,7 @@ router.get("/", async (req, res) => {
     res.status(200).json(topic);
 });
 
-router.get("/:topic", tokenHandle.verify, async (req, res) => {
+router.get("/:topic", tokenHandle.verify(), async (req, res) => {
     const topic = await topicHandle.getTopic(req.params.topic);
     switch (topic) {
         case state.NotExist:
@@ -50,7 +50,7 @@ router.get("/:topic", tokenHandle.verify, async (req, res) => {
     }
 });
 
-router.post("/", tokenHandle.verify, upload.single("icon"), async (req, res) => {
+router.post("/", tokenHandle.verify(), upload.single("icon"), async (req, res) => {
     let { name, description } = req.body, topic;
     if (description !== undefined) {
         const url = path.relative(path.resolve(__dirname, "../"), req.file.path).replaceAll("\\", "/");
@@ -73,7 +73,7 @@ router.post("/", tokenHandle.verify, upload.single("icon"), async (req, res) => 
     }
 });
 
-router.put("/image/:id", tokenHandle.verify, upload.single("icon"), async (req, res) => {
+router.put("/image/:id", tokenHandle.verify(), upload.single("icon"), async (req, res) => {
     const url = path.relative(path.resolve(__dirname, "../"), req.file.path).replaceAll("\\", "/");
     const topic = await topicHandle.updateImageById(req.params.id, url);
     switch (topic) {
@@ -86,7 +86,7 @@ router.put("/image/:id", tokenHandle.verify, upload.single("icon"), async (req, 
     }
 });
 
-router.put("/description/:id", tokenHandle.verify, async (req, res) => {
+router.put("/description/:id", tokenHandle.verify(), async (req, res) => {
     const topic = await topicHandle.updateDescriptionById(req.params.id, req.body.description);
     switch (topic) {
         case state.Empty:

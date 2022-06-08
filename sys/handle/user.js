@@ -130,7 +130,7 @@ const handle = {
     updateById: async (id, data) => {
         if (!isNumber(id)) return state.Empty;
         let rebuild = {}; Object.keys(data).forEach(property => {
-            if (property !== "id" && safeProperty.includes(property))
+            if (property != "id" && safeProperty.includes(property))
                 rebuild[property] = data[property];
         });
         return await user.update(rebuild, { where: { id: id }, individualHooks: true});

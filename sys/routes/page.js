@@ -4,13 +4,15 @@ const router = express.Router();
 
 router.get("/", (req, res) => {
     res.render("home", {
-        title: "Shader Lab"
+        title: "Shader Lab",
+        theme: "#ffe5e5"
     });
 });
 
 router.get("/login", (req, res) => {
     res.render("login", {
         title: "Shader Lab",
+        theme: "#e5fffc",
         page: {
             home: "/"
         },
@@ -23,7 +25,8 @@ router.get("/login", (req, res) => {
 
 router.get("/editor", (req, res) => {
     res.render("editor", {
-        title: "Shader Lab"
+        title: "Shader Lab",
+        theme: "#f2ffe5"
     });
 });
 

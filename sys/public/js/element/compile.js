@@ -1,10 +1,11 @@
-export class Compiler {
+const compilerCache = new WeakMap();
+
+window.compiler = class {
     constructor(content, data) {
         this.leftTag = "<!-- {{|{{";
         this.rightTag = "}} -->|}}";
         this.variables = this.resolve(content);
         this.params = data;
-        this.cache = null;
         this.parse = `
             ${this.variables}
             let _html_ = "";
@@ -23,33 +24,33 @@ export class Compiler {
             .replace(/(^|\f)([\s\S]*?)(\f|$)/g, ($and, $1, $2, $3) => `
                     ;_html_ += "${$2.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r?\n/g, '\\n')}"
                 `)
-            }
+        }
             return _html_;
         `;
     }
 
     get generate() {
-        if (!this.cache) {
-            this.cache = (new Function("_data_", this.parse)).call({
-                global: new Function("return this")(),
-                each: function (list, fn) {
-                    if (list instanceof Array) {
-                        for (let i = 0; i < list.length; i++)
-                            fn.call(this, list[i], i, i)
-                    } else {
-                        let i = 0;
-                        for (let key in list) {
-                            if (list.hasOwnProperty(key))
-                                fn.call(this, list[key], key, i++);
-                        }
+        if (compilerCache.has(this)) return compilerCache.get(this);
+        const result = (new Function("_data_", this.parse)).call({
+            global: new Function("return this")(),
+            each: function (list, fn) {
+                if (list instanceof Array) {
+                    for (let i = 0; i < list.length; i++)
+                        fn.call(this, list[i], i, i)
+                } else {
+                    let i = 0;
+                    for (let key in list) {
+                        if (list.hasOwnProperty(key))
+                            fn.call(this, list[key], key, i++);
                     }
-                },
-                escape: function (value) {
-                    return String(value).replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 }
-            }, this.params);
-        }
-        return this.cache;
+            },
+            escape: function (value) {
+                return String(value).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+        }, this.params);
+        compilerCache.set(this, result);
+        return result;
     }
 
     tagRegexp(reg) {

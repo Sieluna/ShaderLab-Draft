@@ -1,6 +1,6 @@
 const engine = require("../config/engine.js");
 const expect = require("chai").expect;
-const path = require("path");
+const path = require("node:path");
 const open = require("open");
 
 const join = (base, others) => typeof others === "string" ? path.posix.join(base, others) :
@@ -34,9 +34,17 @@ describe("App test", () => {
                 expect(Object.values(data).length).to.be.equal(3);
             })
         });
+        describe("Get data from object", () => {
+           const data = {};
+           const { a, b } = data;
+           it("should not get a and b", () => {
+               expect(a).to.be.undefined;
+               expect(b).to.be.undefined;
+           });
+        });
     });
     describe("App engine test", () => {
-        before(() => open(path.resolve(__dirname, "app.engine.html")));
+        before(async () => open(path.resolve(__dirname, "./benchmark/app.engine.html")));
         it("should compile file with build in function", () => {
             let compiled = new engine.Compiler("{{ JSON.stringify(obj) }}", { obj: { a: 1, b: 2, c: 3, d: 4 } });
             expect(compiled.generate).to.be.equal('{"a":1,"b":2,"c":3,"d":4}');

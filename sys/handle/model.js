@@ -1,11 +1,26 @@
+const debug = require("debug")("shaderlab:query");
 const { Sequelize } = require("sequelize");
+const { keywordsMap, regexMap, extractKeywords } = require("../debug/keywords.js");
 const config = require("../config/sql.js");
-const debug = require("../config/debug.js");
+const { colors } = require("../debug/style.js");
+
+const normalizeSql = sql => {
+    if (process.env.NODE_ENV != "production") {
+        sql = sql.slice(sql.indexOf(":") + 2);
+        const presentKeywords = extractKeywords(sql);
+        sql = sql.replaceAll(";", colors.yellow(";"));
+        sql = sql.replace(/(['`].*?['`])/g, colors.green("$1"));
+        sql = sql.replace(/(\w*?)\(/g, colors.red("$1") + "(");
+        sql = sql.replace(/([()])/g, colors.yellow("$1"));
+        presentKeywords.forEach(keyword => sql = sql.replace(regexMap[keyword], colors.magenta(keywordsMap[keyword] ?? keyword)));
+        debug(sql);
+    }
+};
 
 const sequelize = new Sequelize(config.database, config.user, config.password, {
     host: config.host,
     dialect: config.dialect,
-    logging: debug.log.italic.grey,
+    logging: debug.enabled ? sql => normalizeSql(sql) : false,
     pool: {
         max: config.pool.max,
         min: config.pool.min,
@@ -13,6 +28,8 @@ const sequelize = new Sequelize(config.database, config.user, config.password, {
         idle: config.pool.idle
     }
 });
+
+const session = require("../models/session.js")(sequelize);
 
 const usersTable = require("../models/user.js")(sequelize);
 const topicsTable = require("../models/topic.js")(sequelize);

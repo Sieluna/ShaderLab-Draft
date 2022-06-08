@@ -1,46 +1,58 @@
-const express = require("express");
-const path = require("path");
-const logger = require("morgan");
-const compression = require("compression");
-
-const sequelize = require("./handle/model.js");
-const { styles, colors } = require("./config/style.js");
-const engine = require("./config/engine.js");
-
-sequelize.sync({ force: true }).then(() => {
-    console.log(`> ${styles.bold(colors.yellow("[Info]"))} Database is synchronized`);
-    require("./config/inject.js")(500, true).then();
-    console.log(`> ${styles.bold(colors.yellow("[Info]"))} Data injected`);
-});
-
 const devMode = process.env.NODE_ENV != "production";
 
-console.log(`> ${styles.bold(colors.yellow("[Info]"))} Mode ${devMode ? "development" : "production"}`);
+if (devMode) {
+    const app = require("./base.js");
 
-const app = express();
+    require("./page.js")(app);
+    require("./api.js")(app);
 
-app.engine("html", engine);
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "html");
+    module.exports = app;
+} else {
+    const thread = require("./thread.js")(__filename);
+    const cluster = require("node:cluster");
 
-app.use(logger("dev"));
-app.use(compression());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, devMode ? "public" : "static")));
+    if (cluster.isMain) {
 
-if (!devMode) app.use("/", require("./routes/page.js"));
+        const debug = require("debug")("shaderlab:server");
+        const sequelize = require("./handle/model.js");
 
-app.use("/api/user", require("./routes/user.js"));
-app.use("/api/topic", require("./routes/topic.js"));
-app.use("/api/tag", require("./routes/tag.js"));
-app.use("/api/post", require("./routes/post.js"));
-app.use("/api/search", require("./routes/search.js"));
+        sequelize.sync({ force: true }).then(() => {
+            debug("database is synchronized");
+            require("./config/inject.js")({ max: 500, root: true });
+        });
 
-app.use((err, req, res, next) => {
-    if (err.name === "UnauthorizedError") {
-        res.status(401).send("Invalid token.");
-    } else next(err);
-});
+        cluster.onEvent(thread.EV_READY, () => {
+            console.log("master: ready event received");
+        });
+        cluster.onEvent(thread.EV_ERROR, (ev, error) => {
+            console.log("master: error event received");
+            console.log(error);
+            process.exit();
+        });
+        cluster.onEvent(thread.EV_SPAWNED, (ev, data) => {
+            console.log("master: spawned event received");
+        });
+    }
 
-module.exports = app;
+    if (cluster.isSpawn) {
+
+        cluster.onEvent(thread.EV_SPAWNED, () => {
+            console.log(`spawn: spawned event received (${cluster.cid})`);
+        });
+        cluster.onEvent(thread.EV_FORKED,() => {
+            console.log(`spawn: fork event received (${cluster.cid})`);
+        });
+
+    }
+
+    thread.start({
+        page: {
+            maxForks: "2",
+            params: [8080]
+        },
+        api: {
+            maxForks: "2",
+            params: [8000]
+        },
+    });
+}

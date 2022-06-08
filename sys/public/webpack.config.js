@@ -1,9 +1,10 @@
-const fs = require("fs");
-const { styles, colors } = require("../config/style.js");
-const path = require("path");
+const { stdout } = require("node:process");
+const path = require("node:path");
+const fs = require("node:fs");
+const { styles, colors } = require("../debug/style.js");
 const { ProgressPlugin } = require("webpack");
 const CopyPlugin = require("copy-webpack-plugin");
-const FaviconsPlugin = require("../bin/favicons.js");
+const FaviconsPlugin = require("./webpack.favicons.js");
 const TerserPlugin = require("terser-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
@@ -18,6 +19,7 @@ const commonTemplate = (inject = null) => `
     <title>{{title}}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5.0, minimum-scale=1.0">
     <meta name="description" content="Shader Lab Login">
+    <meta name="theme-color" content="{{theme}}">
 </head>
 <body>${inject ?? ""}</body>
 </html>
@@ -46,7 +48,7 @@ module.exports = env => {
         },
     };
 
-    console.log(`> ${styles.bold(colors.yellow("[Build]"))} Webpack Build Mode: ${env.NODE_ENV ?? "production"}`, '\n');
+    stdout.write(`> ${styles.bold(colors.yellow("[Build]"))} Webpack Build Mode: ${env.NODE_ENV ?? "production"} \n\n`);
 
     return {
         mode: devMode ? "development" : "production",
@@ -144,7 +146,12 @@ module.exports = env => {
                 appName: "shaderlab",
                 appDescription: "Shader Lab",
                 background: "#ddd",
-                theme_color: "#333"
+                theme_color: "#333",
+                manifestMaskable: true,
+                icons: {
+                    favicons: true,
+                    appleIcon: true
+                }
             })
         ],
         optimization: {

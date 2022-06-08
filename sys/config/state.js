@@ -8,4 +8,12 @@ var state = (function(state) {
     return state; }
 )(state || (state = {}));
 
-module.exports = state;
+class State {
+    constructor(message) {
+
+    }
+}
+
+Object.assign(State, state);
+
+module.exports = State;

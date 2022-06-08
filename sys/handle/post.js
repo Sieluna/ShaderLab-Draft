@@ -197,7 +197,8 @@ const handle = {
      */
     restoreById: async id => {
         if (!isNumber(id)) return state.Empty;
-        await post.restore({ where: { id: id }});
+        const result = await post.restore({ where: { id: id }});
+        return Number(result) > 0 ? result : state.NotExist;
     }
 }
 

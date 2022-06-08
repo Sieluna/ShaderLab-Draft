@@ -1,6 +1,6 @@
 const express = require("express");
-const path = require("path");
-const fs = require("fs");
+const path = require("node:path");
+const fs = require("node:fs");
 const multer = require("multer");
 
 const upload = multer({
@@ -40,7 +40,7 @@ router.get("/recommend", async (req, res) => {
     res.status(200).json(posts);
 });
 
-router.get("/rank", tokenHandle.verify, async (req, res) => {
+router.get("/rank", tokenHandle.verify(), async (req, res) => {
     const posts = await postHandle.getAllPostsByRank(50, req.body.order);
     switch (posts) {
         case state.NotExist:
@@ -55,7 +55,7 @@ router.get("/rank", tokenHandle.verify, async (req, res) => {
     }
 });
 
-router.get("/:id", tokenHandle.verify, async (req, res) => {
+router.get("/:id", tokenHandle.verify(), async (req, res) => {
     const post = await postHandle.getViewPostById(req.params.id);
     switch (post) {
         case state.NotExist:
@@ -70,7 +70,7 @@ router.get("/:id", tokenHandle.verify, async (req, res) => {
     }
 });
 
-router.post("/", tokenHandle.verify, upload.single("preview"), async (req, res) => {
+router.post("/", tokenHandle.verify(), upload.single("preview"), async (req, res) => {
     const url = path.relative(path.resolve(__dirname, "../"), req.file.path).replaceAll("\\", "/");
     const post = await postHandle.create(req.auth.id, req.body.topic, { name: req.body.name, preview: url, content: req.body.content });
     switch (post) {

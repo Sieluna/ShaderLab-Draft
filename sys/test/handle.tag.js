@@ -1,48 +1,49 @@
 const tagHandle = require("../handle/tag.js");
 const state = require("../config/state.js");
-const debug = require("../config/debug.js");
 const sequelize = require("../handle/model.js");
 const expect = require("chai").expect;
 
 describe("Tag handle test", () => {
-    let code = true, tagCache;
-    before("Database create", () => sequelize.sync({force: true}).then(() => sequelize.authenticate().catch(error => code = error)));
-    after("Database clean", async () => await sequelize.drop());
-    it("should return no error", () => expect(code).to.be.true);
-    before(async () => await (require("../config/inject.js"))());
+    before("Database create", async () => sequelize.sync({ force: true }));
+    after("Database clean", async () => sequelize.drop());
+    before(async () => (require("../config/inject.js"))());
+    describe("Create with name test", () => {
+        it("should return the tags data", async () => {
+            const tag = await tagHandle.create("TagTest", 1);
+            expect(tag[0]).to.have.property("postId").to.be.equal(1);
+            expect(tag[0]).to.have.property("name").to.be.equal("TagTest");
+        });
+        it("should return oversize", async () => {
+            const code = await tagHandle.create("abcdabcdabcdabcdabcdabcdabcdabcdabcd", 1);
+            expect(code).to.be.equal(state.OverSize);
+        });
+    });
     describe("Get all tags test", () => {
         it("should return all the tags data", async () => {
-            tagCache = await tagHandle.getAllTags();
-            debug.log(tagCache);
-            expect(tagCache.length).to.be.equal(10);
+            const tags = await tagHandle.getAllTags();
+            expect(tags).to.be.lengthOf(11);
         });
         it("should return 1 tag data", async () => {
-            tagCache = await tagHandle.getAllTags(1);
-            debug.log(tagCache);
-            expect(tagCache.length).to.be.equal(1);
+            const tags = await tagHandle.getAllTags(1);
+            expect(tags).to.be.lengthOf(1);
         });
     });
     describe("Get group tags test", () => {
         it("should return the group tags", async () => {
             let temp = {};
-            tagCache = await tagHandle.getGroupTags();
-            for (const tag of tagCache) {
+            const tags = await tagHandle.getGroupTags();
+            for (const tag of tags) {
                 temp[tag.name] = !temp[tag.name];
                 expect(temp[tag.name]).to.be.true;
             }
         });
-    });
-    describe("Create with name test", () => {
-        it("should return the tags data", async () => {
-            tagCache = await tagHandle.create("TagTest", 1);
-            debug.log(tagCache);
-            expect(tagCache[0]).to.have.property("postId").to.be.equal(1);
-            expect(tagCache[0]).to.have.property("name").to.be.equal("TagTest");
-        });
-        it("should return oversize", async () => {
-            tagCache = await tagHandle.create("abcdabcdabcdabcdabcdabcdabcdabcdabcd", 1);
-            debug.log(tagCache);
-            expect(tagCache).to.be.equal(state.OverSize);
+        it("should return 1 group tags", async () => {
+            let temp = {};
+            const tags = await tagHandle.getGroupTags(1);
+            for (const tag of tags) {
+                temp[tag.name] = !temp[tag.name];
+                expect(temp[tag.name]).to.be.true;
+            }
         });
     });
 });

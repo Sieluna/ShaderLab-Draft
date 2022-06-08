@@ -1,6 +1,8 @@
+const async = require("async");
 const express = require("express");
-const path = require("path");
-const fs = require("fs");
+const session = require("express-session");
+const path = require("node:path");
+const fs = require("node:fs");
 const multer = require("multer");
 
 const upload = multer({
@@ -23,12 +25,16 @@ const upload = multer({
 });
 
 const state = require("../config/state.js");
+const { sessionOption } = require("../config/session.js");
 const userHandle = require("../handle/user.js");
 const tokenHandle = require("../handle/token.js");
+const sessionHandle = require("../handle/session.js");
+
+sessionOption.store = new sessionHandle();
 
 const router = express.Router();
 
-router.get("/", tokenHandle.verify, async (req, res) => {
+router.get("/", tokenHandle.verify(), async (req, res) => {
     const users = await userHandle.getAllUsers(50);
     switch (users) {
         case state.Empty:
@@ -40,7 +46,7 @@ router.get("/", tokenHandle.verify, async (req, res) => {
     }
 });
 
-router.get("/:id", tokenHandle.verify, async (req, res) => {
+router.get("/:id", tokenHandle.verify(), async (req, res) => {
     const user = await userHandle.getUser(req.params.id);
     switch (user) {
         case state.NotExist:
@@ -55,7 +61,7 @@ router.get("/:id", tokenHandle.verify, async (req, res) => {
     }
 });
 
-router.post("/login", async (req, res) => {
+router.post("/signin", session(sessionOption), async (req, res) => {
     const user = await userHandle.login(req.body.account, req.body.password);
     switch (user) {
         case state.OverSize:
@@ -71,12 +77,13 @@ router.post("/login", async (req, res) => {
             res.status(400).send("Account or password can not be empty.");
             break;
         default:
-            res.status(200).json({ data: user, accessToken: tokenHandle.sign(user.id, user.permission), refreshToken: tokenHandle.sign(user.id, user.permission, "", 3600 * 24 * 30) });
+            const [accessToken, refreshToken] = await Promise.all([ tokenHandle.sign({ id: user.id, auth: user.permission }), tokenHandle.sign({ id: user.id, auth: user.permission }, 3600 * 24 * 30) ]);
+            res.status(200).json({ data: user, accessToken: accessToken, refreshToken: refreshToken });
             break;
     }
 });
 
-router.post("/", async (req, res) => {
+router.post("/signup", session(sessionOption), async (req, res) => {
     const user = await userHandle.register(req.body.account, req.body.password);
     switch (user) {
         case state.Duplicate:
@@ -89,13 +96,15 @@ router.post("/", async (req, res) => {
             res.status(400).send("Account or password can not be empty.");
             break;
         default:
-            res.status(200).json({ data: await userHandle.getUserById(user.id), accessToken: tokenHandle.sign(user.id, user.permission), refreshToken: tokenHandle.sign(user.id, user.permission, "", 3600 * 24 * 30) });
+            const [accessToken, refreshToken] = await Promise.all([ tokenHandle.sign({ id: user.id, auth: user.permission }), tokenHandle.sign({ id: user.id, auth: user.permission }, 3600 * 24 * 30) ]);
+            res.status(200).json({ data: user, accessToken: accessToken, refreshToken: refreshToken });
             break;
     }
 });
 
-router.put("/", tokenHandle.verify, async (req, res) => {
+router.put("/", session(sessionOption), tokenHandle.verify(), async (req, res) => {
     const result = await userHandle.valid(req.auth.id, req.body.password);
+    if (!result.flag) res.status(400).send("Not valid token");
     switch (result) {
         case state.OverSize:
             res.status(400).send("Not valid token");
@@ -107,12 +116,12 @@ router.put("/", tokenHandle.verify, async (req, res) => {
             res.status(404).send("Invalid token");
             break;
         default:
-            if (result.flag) res.status(200).json({ accessToken: tokenHandle.sign(result.data.id, result.data.permission) });
+            res.status(200).json({ accessToken: await tokenHandle.sign({ id: result.data.id, auth: result.data.permission })});
             break;
     }
 });
 
-//router.put("/", tokenHandle.verify, async (req, res) => {
+//router.put("/", tokenHandle.verify(), async (req, res) => {
 //    if (req.auth.id == req.body.id) {
 //        const user = await userHandle.updateById(id, req.body);
 //        switch (user) {
@@ -128,7 +137,7 @@ router.put("/", tokenHandle.verify, async (req, res) => {
 //    }
 //});
 
-router.put("/name", tokenHandle.verify, async (req, res) => {
+router.put("/name", tokenHandle.verify(), async (req, res) => {
     const user = await userHandle.updateNameById(req.body.id, req.body.name, req.body.password);
     switch (user) {
         case state.Empty:
@@ -140,7 +149,7 @@ router.put("/name", tokenHandle.verify, async (req, res) => {
     }
 });
 
-router.put("/avatar", tokenHandle.verify, upload.single("avatar"), async (req, res) => {
+router.put("/avatar", tokenHandle.verify(), upload.single("avatar"), async (req, res) => {
     const user = await userHandle.updateAvatarById(req.body.id, path.relative(path.resolve(__dirname, "../"), req.file.path).replaceAll("\\", "/"));
     switch (user) {
         case state.Empty:
@@ -152,7 +161,7 @@ router.put("/avatar", tokenHandle.verify, upload.single("avatar"), async (req, r
     }
 });
 
-router.put("/email", tokenHandle.verify, async (req, res) => {
+router.put("/email", tokenHandle.verify(), async (req, res) => {
     const user = await userHandle.updateEmailById(req.body.id, req.body.email);
     switch (user) {
         case state.Empty:
@@ -164,7 +173,7 @@ router.put("/email", tokenHandle.verify, async (req, res) => {
     }
 });
 
-router.put("/password", tokenHandle.verify, async (req, res) => {
+router.put("/password", tokenHandle.verify(), async (req, res) => {
     const user = await userHandle.updatePasswordById(req.body.id, req.body.password);
     switch (user) {
         case state.Empty:
@@ -176,7 +185,7 @@ router.put("/password", tokenHandle.verify, async (req, res) => {
     }
 });
 
-router.put("/introduction", tokenHandle.verify, async (req, res) => {
+router.put("/introduction", tokenHandle.verify(), async (req, res) => {
     const user = await userHandle.updateIntroductionById(req.body.id, req.body.introduction);
     switch (user) {
         case state.Empty:
@@ -188,7 +197,11 @@ router.put("/introduction", tokenHandle.verify, async (req, res) => {
     }
 });
 
-router.delete("/abort/:id", tokenHandle.verify, async (req, res) => {
+router.delete("/", session(sessionOption), tokenHandle.verify(), async (req, res) => {
+    req.session.destroy();
+});
+
+router.delete("/abort/:id", tokenHandle.verify(), async (req, res) => {
     const effect = await userHandle.deprecateById(req.params.id);
     switch (effect) {
         case state.NotExist:
@@ -203,7 +216,7 @@ router.delete("/abort/:id", tokenHandle.verify, async (req, res) => {
     }
 });
 
-router.get("/restore/:id", tokenHandle.verify, async (req, res) => {
+router.get("/restore/:id", tokenHandle.verify(), async (req, res) => {
     const effect = await userHandle.restoreById(req.params.id);
     switch (effect) {
         case state.NotExist:

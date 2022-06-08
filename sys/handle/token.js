@@ -1,68 +1,41 @@
 const jwt = require("jsonwebtoken");
 const config = require("../config/token.js");
+const Error = require("./fallback/authorize.js")("Token");
 
 module.exports = {
     /**
-     * @param {object|number} id object or userid
-     * @param {number} auth permission level
+     * Generate token
+     * @param {string} name token name
+     * @param {object} data object
      * @param {number} expire expire time
-     * @param {string} opts addition json
-     * @return {*}
+     * @return {Promise<array>}
      */
-    sign: (id, auth, opts = "", expire = 86400) => {
-        return jwt.sign(typeof id == "object" ? id : {
-            id: id,
-            auth: auth,
-            opts: opts
-        }, config.secret, {
+    sign: (data, expire = 43200) => {
+        return Promise.resolve(jwt.sign(data, config.secret, {
             algorithm: config.algorithm,
             expiresIn: expire,
-        });
+        }));
     },
     /**
-     * Vertify token
-     * @param req
-     * @param res
-     * @param next
+     * Verify token
+     * @param {object} options
      */
-    verify: (req, res, next) => {
-        let token, decodedToken;
-        try {
-            if (req.method === "OPTIONS" && "access-control-request-headers" in req.headers) {
-                const hasAuthInAccessControl = req.headers["access-control-request-headers"].split(",").map(header => header.trim().toLowerCase()).includes("authorization");
-                if (hasAuthInAccessControl) return next();
-            }
+    verify: (options = {}) => {
+        options = { ...config, ...options };
+        return async (req, res, next) => {
+            if (req.method == "OPTIONS" && "access-control-request-headers" in req.headers)
+                if (req.headers["access-control-request-headers"].split(",").map(header => header.trim().toLowerCase()).includes("authorization"))
+                    return next();
 
-            const authorizationHeader = req.headers && "Authorization" in req.headers ? "Authorization" : "authorization";
-            if (req.headers && req.headers[authorizationHeader]) {
-                const parts = (req.headers[authorizationHeader]).split(" ");
-                if (parts.length === 2) {
-                    const scheme = parts[0], credentials = parts[1];
-                    if (/^Bearer$/i.test(scheme)) token = credentials;
-                    else return next({ code: "CREDENTIALS_BAD_SCHEME", status: 401, message: "Format is Authorization: Bearer [token]" });
-                } else return next({ code: "CREDENTIALS_BAD_FORMAT", status: 401, message: "Format is Authorization: Bearer [token]" });
-            }
+            let token = options.resolveToken(req);
 
-            if (!token)
-                return next({ code: "CREDENTIALS_REQUIRED", status: 401, message: "No authorization token was found" });
+            if (!token) return next(new Error("No authorization token was found"));
 
-            try {
-                decodedToken = jwt.decode(token, { complete: true });
-            } catch (err) {
-                return next({ code: "INVALID_TOKEN", status: 401, message: err.message, inner: err });
-            }
-
-            const getVerificationKey = typeof config.secret == "function" ? config.secret : () => config.secret;
-            try {
-                jwt.verify(token, getVerificationKey(req, decodedToken), config);
-            } catch (err) {
-                return next({ code: "INVALID_TOKEN", status: 401, message: err.message, inner: err });
-            }
-
-            req["auth"] = decodedToken.payload;
-            next();
-        } catch (err) {
-            return next(err);
+            jwt.verify(token, options.secret, options, (err, decode) => {
+                if (err) return next(new Error(`Invalid Token ${err.message}`));
+                req[options.requestProperty] = decode;
+                next();
+            });
         }
     }
 };

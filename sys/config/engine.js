@@ -1,8 +1,6 @@
-const fs = require("fs");
+const fs = require("node:fs");
 
-let storage = {}
-
-/**
+/*
  * Grammar:
  * {{for array item index?}} {{/for}}
  * {{for object value key? index?}} {{/for}}
@@ -10,14 +8,12 @@ let storage = {}
  * {{content}}
  * {{#html}}
  */
-
 class Compiler {
     constructor(content, data) {
         this.leftTag = "<!-- {{|{{";
         this.rightTag = "}} -->|}}";
         this.variables = this.resolve(content);
         this.params = data;
-        this.cache = null;
         this.parse = `
             ${this.variables}
             let _html_ = "";
@@ -42,27 +38,24 @@ class Compiler {
     }
 
     get generate() {
-        if (!this.cache) {
-            this.cache = (new Function("_data_", this.parse)).call({
-                global: new Function("return this")(),
-                each: function (list, fn) {
-                    if (list instanceof Array) {
-                        for (let i = 0; i < list.length; i++)
-                            fn.call(this, list[i], i, i)
-                    } else {
-                        let i = 0;
-                        for (let key in list) {
-                            if (list.hasOwnProperty(key))
-                                fn.call(this, list[key], key, i++);
-                        }
+        return (new Function("_data_", this.parse)).call({
+            global: new Function("return this")(),
+            each: function (list, fn) {
+                if (list instanceof Array) {
+                    for (let i = 0; i < list.length; i++)
+                        fn.call(this, list[i], i, i)
+                } else {
+                    let i = 0;
+                    for (let key in list) {
+                        if (list.hasOwnProperty(key))
+                            fn.call(this, list[key], key, i++);
                     }
-                },
-                escape: function (value) {
-                    return String(value).replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 }
-            }, this.params);
-        }
-        return this.cache;
+            },
+            escape: function (value) {
+                return String(value).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+        }, this.params);
     }
 
     tagRegexp(reg) {
@@ -99,13 +92,15 @@ class Compiler {
 //    return (new Function(key, code +  ";return $;")).apply(data, key.map(i => data[i]));
 //}
 
+let local = {};
+
 module.exports = async (path, options, callback) => {
     const { settings, _locals, cache, ...replaceMap } = options;
     try {
-        if (storage[path]) return callback ? callback(null, storage[path].generate) : storage[path].generate;
+        if (local[path]) return callback ? callback(null, local[path]) : local[path];
         const content = await fs.readFileSync(path, "utf-8");
-        storage[path] = new Compiler(content, replaceMap);
-        return callback ? callback(null, storage[path].generate) : storage[path].generate;
+        local[path] = new Compiler(content, replaceMap).generate;
+        return callback ? callback(null, local[path]) : local[path];
     } catch (err) { return callback ? callback(err) : err; }
 }
 

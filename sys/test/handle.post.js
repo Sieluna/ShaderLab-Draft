@@ -1,24 +1,13 @@
 const postHandle = require("../handle/post.js");
-const userHandle = require("../handle/user.js");
+const tagHandle = require("../handle/tag.js");
 const state = require("../config/state.js");
-const debug = require("../config/debug.js");
-const sequelize = require("../handle/model");
+const sequelize = require("../handle/model.js");
 const expect = require("chai").expect;
 
 describe("Post handle test", () => {
-    let code = true, postCache;
-    before("Database create", async () => await sequelize.sync({ force: true }));
-    after("Database clean", async () => await sequelize.drop());
-    it("should return no error", async () => {
-        let code = true;
-        try {
-            await sequelize.authenticate();
-        } catch (err) {
-            code = err;
-        }
-        expect(code).to.be.true;
-    });
-    before(async () => await require("../config/inject.js")());
+    before("Database create", async () => sequelize.sync({ force: true }));
+    after("Database clean", async () => sequelize.drop());
+    before(async () => require("../config/inject.js")());
     describe("Create post test", () => {
         it("should return the creation result", async () => {
             const assets = [ 1, 2, { name: "Creation Test", preview: "http://sssss/sdssda", content: "Creation test text" } ];
@@ -98,7 +87,7 @@ describe("Post handle test", () => {
         });
         it ("should return posts with name Creation Test", async () => {
             const posts = await postHandle.getPostsByName("Creation Test");
-            expect(posts.length).to.be.equal(4);
+            expect(posts).which.is.a("array").to.be.lengthOf(4);
         });
     });
     describe("View post test", () => {
@@ -117,8 +106,8 @@ describe("Post handle test", () => {
     });
     describe("Get post views test", async () => {
         it("should return post views with id 2", async () => {
-            postCache = await postHandle.getPostViewsById(2);
-            expect(postCache).to.be.equal(100);
+            const post = await postHandle.getPostViewsById(2);
+            expect(post).to.be.equal(100);
         });
     });
     describe("Thumb post test", () => {
@@ -157,6 +146,12 @@ describe("Post handle test", () => {
             expect(result).to.be.equal(state.Empty);
         });
     });
+    describe("Get post comments test", async () => {
+        it("should return post comments with id 1", async () => {
+            const comments = await postHandle.getPostCommentsById(1);
+            expect(comments).to.be.equal(4);
+        });
+    });
     describe("Tag post test", () => {
         it("should tag the post", async () => {
             let taskList = [
@@ -165,73 +160,60 @@ describe("Post handle test", () => {
                 postHandle.tagPost("yda", 1), postHandle.tagPost("yad", 1),
             ];
             await Promise.all(taskList);
-            const result = await sequelize.models.tag.findAll();
-            debug.log(result);
-        });
-    });
-    describe("Get post comments test", async () => {
-        it("should return post comments with id 1", async () => {
-            postCache = await postHandle.getPostCommentsById(1);
-            debug.log(postCache);
+            const result = await tagHandle.getAllTags();
+            expect(result).to.be.lengthOf(10 + 6);
         });
     });
     describe("Get post rank by id", async () => {
         it("should return the rank number", async () => {
-            postCache = await postHandle.getPostRankById(2);
-            expect(postCache).to.be.equal(10);
+            const post = await postHandle.getPostRankById(2);
+            expect(post).to.be.equal(10);
         });
     });
     describe("Get last id test", () => {
-        before(async () => code = await userHandle.getLastId());
         it("should return a integer", async () => {
             let id = await postHandle.getLastId();
-            debug.log(id);
-            expect(id).which.is.a("number").not.below(0);
+            expect(id).which.is.a("number").to.be.equal(10 + 4);
         });
         it("should return a integer with 1 offset", async () => {
             let id = await postHandle.getLastId(1);
-            debug.log(id);
-            expect(id).which.is.a("number").not.below(1);
+            expect(id).which.is.a("number").to.be.equal(10 + 4 + 1);
         });
     });
     describe("Get all post test", () => {
         it("should return some user instance > 1", async () => {
-            postCache = await postHandle.getAllPosts()
-            expect(postCache.length).to.be.above(1);
+            const posts = await postHandle.getAllPosts();
+            expect(posts).which.is.a("array").to.be.lengthOf(10 + 4);
         });
         it("should return a user instance", async () => {
-            postCache = await postHandle.getAllPosts(1);
-            expect(postCache.length).to.be.equal(1);
+            const posts = await postHandle.getAllPosts(1);
+            expect(posts).which.is.a("array").to.be.lengthOf(1);
         });
         it("should return error empty", async () => {
-            postCache = await postHandle.getAllPosts("string");
-            expect(postCache).to.be.equal(state.Empty);
+            const posts = await postHandle.getAllPosts("string");
+            expect(posts).to.be.equal(state.Empty);
         });
     });
     describe("Get all post with rank test", () => {
         it("should return some post instance with rank desc", async () => {
             const posts = await postHandle.getAllPostsByRank();
-            expect(posts).to.be.an("array");
-            expect(posts).to.have.lengthOf(14);
+            expect(posts).which.is.a("array").to.have.lengthOf(14);
             expect(posts[0]).to.have.property("id").to.be.equal(1);
             expect(posts[1]).to.have.property("id").to.be.equal(2);
         });
         it("should return 1 post instance with rank desc", async () => {
             const posts = await postHandle.getAllPostsByRank(1);
-            expect(posts).to.be.an("array");
-            expect(posts).to.have.lengthOf(1);
+            expect(posts).which.is.a("array").to.have.lengthOf(1);
             expect(posts[0]).to.have.property("id").to.be.equal(1);
         });
         it("should return 2 instance with rank desc", async () => {
             await postHandle.viewPost(2);
-            postCache = await postHandle.getAllPostsByRank(2);
-            debug.log(postCache);
-            expect(postCache.length).to.be.equal(2);
+            const posts = await postHandle.getAllPostsByRank(2);
+            expect(posts).which.is.a("array").to.be.lengthOf(2);
         });
         it("should return 2 instance with rank asc", async () => {
-            postCache = await postHandle.getAllPostsByRank(2, "ASC");
-            debug.log(postCache);
-            expect(postCache.length).to.be.equal(2);
+            const posts = await postHandle.getAllPostsByRank(2, "ASC");
+            expect(posts).which.is.a("array").to.be.lengthOf(2);
         });
     });
     describe("Count post", () => {
@@ -242,18 +224,29 @@ describe("Post handle test", () => {
         });
     });
     describe("Deprecate post test", () => {
-        beforeEach(async () => code = await postHandle.countPost());
         it("should lower down 1 index", async () => {
+            const before = await postHandle.countPost();
             const effect = await postHandle.deprecateById(1);
             expect(effect).to.be.equal(1);
-            expect(await postHandle.countPost()).to.be.equal(code - 1);
+            expect(await postHandle.countPost()).to.be.equal(before - 1);
         });
     });
     describe("Restore post test", () => {
-        beforeEach(async () => code = await postHandle.countPost());
         it("should increase 1 index", async () => {
-            await postHandle.restoreById(1);
-            expect(await postHandle.countPost()).to.be.equal(code + 1);
+            const before =  await postHandle.countPost();
+            const result = await postHandle.restoreById(1);
+            expect(result).to.be.equal(1);
+            expect(await postHandle.countPost()).to.be.equal(before + 1);
+        });
+        it("should return empty with none number params", async () => {
+            const code = await postHandle.restoreById("string");
+            expect(code).to.be.equal(state.Empty);
+        });
+        it("should return not exist with 9999 params", async () => {
+            const before =  await postHandle.countPost();
+            const result = await postHandle.restoreById(9999);
+            expect(result).to.be.equal(state.NotExist);
+            expect(await postHandle.countPost()).to.be.equal(before);
         });
     });
-})
+});

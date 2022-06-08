@@ -3,9 +3,15 @@
     "version": "0.0.0",
     "private": true,
     "dependencies": {
+        "async": "latest",
+        "minimist": "latest",
         "express": "latest",
+        "express-session": "latest",
+        "json-socket": "latest",
         "jsonwebtoken": "latest",
         "compression": "latest",
+        "validator": "latest",
+        "debug": "latest",
         "morgan": "latest",
         "multer": "latest",
         "mysql2": "latest",
@@ -30,10 +36,10 @@
         "html-inline-script-webpack-plugin": "latest"
     },
     "scripts": {
-        "server.dev": "cross-env NODE_ENV=development DEBUG=shaderlab:* node sys/bin/www",
-        "server.prod": "cross-env NODE_ENV=production DEBUG=shaderlab:* node sys/bin/www",
+        "server": "cross-env NODE_ENV=production DEBUG=shaderlab:* node sys/bin/www",
+        "front": "cross-env NODE_ENV=development DEBUG=shaderlab:* node sys/bin/www",
         "build.dev": "webpack --env NODE_ENV=development --config sys/public/webpack.config.js && node sys/bin/copy.js",
         "build.prod": "webpack --env NODE_ENV=production --config sys/public/webpack.config.js && node sys/bin/copy.js",
-        "test": "mocha --recursive sys/test/*.js"
+        "test": "cross-env NODE_ENV=development mocha --jobs 1 --recursive sys/test/*.js"
     }
 }

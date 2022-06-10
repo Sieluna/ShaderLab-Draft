@@ -5,9 +5,10 @@
     "dependencies": {
         "async": "latest",
         "minimist": "latest",
+        "json-socket": "latest",
+        "http-proxy": "latest",
         "express": "latest",
         "express-session": "latest",
-        "json-socket": "latest",
         "jsonwebtoken": "latest",
         "compression": "latest",
         "validator": "latest",

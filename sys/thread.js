@@ -167,7 +167,7 @@ class Thread extends EventEmitter {
             worker.spawnCount = 1;
         }
 
-        debug("spawnWorker %s: binPath=%s, spawnOptions=%o", workerId, this.config.binPath, this.config.spawnOptions);
+        debug("spawnWorker %s: binPath=%s, spawnOptions=%o", workerId, this.config.binPath, { windowsHide: this.config.spawnOptions.windowsHide });
         worker.spawn = spawn(this.config.binPath, args, this.config.spawnOptions);
 
         worker.spawn.stdout.pipe(process.stdout);
@@ -355,7 +355,7 @@ class Thread extends EventEmitter {
     }
 
     sendCrossEvent(eventName, data) {
-        debug("Send cross region event %s", eventName, data ?? "");
+        debug("send cross region event %s", eventName, data ?? "");
         this.events[cluster.isMain ? "server" : "client"].send(eventName, data);
     }
 

@@ -61,7 +61,7 @@ markdown_extensions:
 
 # Page tree
 nav:
-  - Home: ShaderLab.md
+  - Home: index.md
   - Page Design:
       - ShaderLabPage.md
       - Login Page: ShaderLabPageLogin.md

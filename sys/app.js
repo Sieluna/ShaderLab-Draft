@@ -1,25 +1,20 @@
 const devMode = process.env.NODE_ENV != "production";
 
 if (devMode) {
+
     const app = require("./base.js");
 
     require("./page.js")(app);
     require("./api.js")(app);
 
     module.exports = app;
+
 } else {
+
     const thread = require("./thread.js")(__filename);
     const cluster = require("node:cluster");
 
     if (cluster.isMain) {
-
-        const debug = require("debug")("shaderlab:server");
-        const sequelize = require("./handle/model.js");
-
-        sequelize.sync({ force: true }).then(() => {
-            debug("database is synchronized");
-            require("./config/inject.js")({ max: 500, root: true });
-        });
 
         cluster.onEvent(thread.EV_READY, () => {
             console.log("master: ready event received");
@@ -55,4 +50,5 @@ if (devMode) {
             params: [8000]
         },
     });
+
 }

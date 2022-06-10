@@ -48,9 +48,9 @@ const copy = (filePath, callback = () => {}) => {
     if (checkExt(filePath, param.ext)) {
         const file = path.join(param.dst, path.basename(filePath));
         const readStream = fs.createReadStream(path.resolve(filePath));
-        const writeStream = fs.createWriteStream(path.resolve(file))
+        const writeStream = fs.createWriteStream(path.resolve(file));
         readStream.pipe(writeStream);
-        writeStream.on("close", callback)
+        writeStream.on("close", callback);
         stdout.write(`> ${styles.bold(colors.cyan("[Copy]"))} ${filePath} -> ${file}\n`);
     }
 }
@@ -62,7 +62,7 @@ const copy = (filePath, callback = () => {}) => {
 const remove = filePath => {
     fs.unlink(filePath, err => {
         if (err) throw err;
-        else stdout.write(`> ${styles.bold(colors.magenta("[Delete]"))} ${filePath}\n`)
+        else stdout.write(`> ${styles.bold(colors.magenta("[Delete]"))} ${filePath}\n`);
     })
 }
 
@@ -83,7 +83,7 @@ const collect = (root, callback = cut) => {
             if (err) throw err;
             files.forEach((file) => {
                 collect(path.join(root, file), callback);
-            })
+            });
         });
     });
 };

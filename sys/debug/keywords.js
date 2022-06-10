@@ -129,16 +129,21 @@ const rawWqlKeyWords = [
     "OVERLAPS"
 ];
 
+const requiredLowercase = false;
+
 const sqlKeyWords = [ ...rawWqlKeyWords ];
 
 const keywordsMap = {}, regexMap = {};
 
 for (const keyWord of rawWqlKeyWords) {
-    const lcKeyWord = keyWord.toLowerCase();
-    keywordsMap[lcKeyWord] = keyWord;
-    sqlKeyWords.push(lcKeyWord);
+    // lower case is not needed for sequelize.
+    if (requiredLowercase) {
+        const lcKeyWord = keyWord.toLowerCase();
+        keywordsMap[lcKeyWord] = keyWord;
+        sqlKeyWords.push(lcKeyWord);
+        regexMap[lcKeyWord] = new RegExp("\\b" + lcKeyWord + "\\b", "g");
+    }
     regexMap[keyWord] = new RegExp("\\b" + keyWord + "\\b", "g");
-    regexMap[lcKeyWord] = new RegExp("\\b" + lcKeyWord + "\\b", "g");
 }
 
 const extractingRegex = new RegExp("\\b(" + sqlKeyWords.join("|") + ")\\b", "gm");

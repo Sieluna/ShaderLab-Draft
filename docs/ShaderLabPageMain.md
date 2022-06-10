@@ -1,14 +1,7 @@
-## Main Page
-
---------------------------------------
-
 ### Feature
 
-In home page we should have three key features:
-
-- search
-- user
-- preview
+The core feature of home page should have three key features: search, user, preview features. In the web page,
+should have entrance to editor page and login page (conditional). 
 
 Structure design: Navigation, Layout
 

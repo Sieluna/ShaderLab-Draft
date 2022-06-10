@@ -1,166 +1,99 @@
-const { isEmpty, isString, isEmail, isNumber } = require("../handle/validator/rules.js");
-const Validator = require("../handle/validator/shared.js");
+const { isExist, isEmpty, isString, isEmail, isNumber } = require("../handle/validator/rules.js");
+const NotExist = require("../handle/fallback/exist.js")("Test");
+const Invalid = require("../handle/fallback/invalid.js")("Test");
 const Exception = require("../handle/fallback/shared.js");
+const Validator = require("../handle/validator/shared.js");
 const expect = require("chai").expect;
 
 describe("Validator test", () => {
     let mix  = "abcde12345",
         num = 12345,
-        str = "12345",
-        email = "121e12e12e@212312.com",
-        undef = undefined,
-        empty = "",
-        none = null;
-    describe("is Empty test", () => {
-        it("undefined should return true", () => {
-            const result = isEmpty(undef);
-            expect(result).to.be.true;
-        });
-        it("null should return true", () => {
-            const result = isEmpty(empty);
-            expect(result).to.be.true;
-        });
-        it("null should return true", () => {
-            const result = isEmpty(none);
-            expect(result).to.be.true;
-        });
-        it("a string should return false", () => {
-            const result = isEmpty(mix);
-            expect(result).to.be.false;
-        });
-        it("a number should return false", () => {
-            const result = isEmpty(num);
-            expect(result).to.be.false;
-        });
-        it("a function should return false", () => {
-            const result = isEmpty(() => {});
-            expect(result).to.be.false;
-        });
-    });
-    describe("is Email test", () => {
-        // unsafe not support undefined, not string, null
-        it("empty should return false", () => {
-            const result = isEmail(empty);
-            expect(result).to.be.false;
-        });
-        it("a random should return false", () => {
-            const result = isEmail(mix);
-            expect(result).to.be.false;
-        });
-        it("a email should return true", () => {
-            const result = isEmail(email);
-            expect(result).to.be.true;
-        });
-    });
-    describe("is Number test", () => {
-        it("undefined should return false", () => {
-            const result = isNumber(undef);
-            expect(result).to.be.false;
-        });
-        it("empty should return false", () => {
-            const result = isNumber(empty);
-            expect(result).to.be.false;
-        });
-        it("null should return false", () => {
-            const result = isNumber(none);
-            expect(result).to.be.false;
-        });
-        it("a random should return false", () => {
-            const result = isNumber(mix);
-            expect(result).to.be.false;
-        });
-        it("a num should return true", () => {
-            const result = isNumber(num);
-            expect(result).to.be.true;
-        });
-        it("a num should return true", () => {
-            const result = isNumber(str);
-            expect(result).to.be.true;
-        });
-    });
-    describe("is Exist test", () => {
-        let validator = new Validator();
-        it("undefined should return false", () => {
-            const result = validator.isExist(undef);
-            expect(result).to.be.false;
-        });
-        it("null should return false", () => {
-            const result = validator.isExist(empty);
-            expect(result).to.be.false;
-        });
-        it("null should return false", () => {
-            const result = validator.isExist(none)
-            expect(result).to.be.false;
-        });
-        it("a string should return true", () => {
-            const result = validator.isExist(mix)
-            expect(result).to.be.true;
-        });
-        it("a number should return true", () => {
-            const result = validator.isExist(num)
-            expect(result).to.be.true;
-        });
-        it("a function should return true", () => {
-            const result = validator.isExist(() => {});
-            expect(result).to.be.true;
-        });
-    });
+        email = "abcde12345@mail.com",
+        undef = undefined, empty = "", none = null;
     describe("new validator", () => {
         let validator;
         it("should create a validator", () => {
-            validator = new Validator();
+            validator = new Validator({
+                func: isExist,
+                message: new NotExist("Doing Validator creation test")
+            });
             expect(validator).to.be.an.instanceof(Validator);
         });
-        it("should check exist number", () => {
+        it("should check number is exist", () => {
             const result = validator.check(num);
             expect(result).to.be.true;
         });
-        it("should check not exist", () => {
-            const result = validator.check(undef);
-            expect(result).to.be.an.instanceof(Exception);
+        it("should check undefined not exist", () => {
+            try {
+                validator.check(undef);
+            } catch (err) {
+                expect(err.message).to.be.equal("Doing Validator creation test");
+            }
         });
-        it("should add a rule", () => {
-            validator.add(isEmpty, "This is empty", false);
-            expect(validator.ruleCache).to.be.lengthOf(2);
+        it("should add a rule for second element", () => {
+            validator.add({ func: isEmpty, message: new NotExist("This is empty"), mask: false });
+            expect(validator.rulesCache).to.be.lengthOf(2);
         });
-        it("should check not empty", () => {
-            const notEmpty = validator.check(mix, num);
-            expect(notEmpty).to.be.true;
+        it("should check not empty for second element", () => {
+            const result = validator.check(mix, num);
+            expect(result).to.be.true;
         });
-        it("should check one empty", () => {
-            const oneEmpty = validator.check(mix, num, undef);
-            expect(oneEmpty).to.be.an.instanceof(Exception);
-        });
-        it("should add multi rules", () => {
-            validator.add(isNumber, "This is not a number", true);
-            expect(validator.ruleCache).to.be.lengthOf(3);
-        });
-        it("should check not empty and number", () => {
-            const notEmptyNumber = validator.check(num);
-            expect(notEmptyNumber).to.be.true;
-        });
-        it("should check numbers", () => {
-            const notNumber = validator.check(num, mix);
-            expect(notNumber).to.be.equal("This is not a number");
-        });
-        it("should check one empty", () => {
-            const oneEmpty = validator.check(num, undef);
-            expect(oneEmpty).to.be.an.instanceof(Exception);
+        it("should check one empty for second element", () => {
+            try {
+                validator.check(mix, undef);
+            } catch (err) {
+                expect(err.message).to.be.equal("This is empty");
+            }
         });
         it("should create a validator with multi rules", () => {
-            validator = new Validator({
-                func: isString,
-                message: new Exception("Balabala"),
-                reverse: true
+            validator = new Validator([{
+                func: isExist,
+                message: new NotExist("Balabala")
             }, {
                 func: isEmail,
-                message: new Exception("HalaHala"),
-                reverse: true
-            });
+                message: new Invalid("HalaHala")
+            }]);
         });
-        it("should check email", () => {
+        it("should check email is valid", () => {
             const result = validator.check(email);
             expect(result).to.be.true;
-        })
+        });
+        it("should check element is exist", () => {
+            try {
+                validator.check(empty);
+            } catch (err) {
+                expect(err.message).to.be.equal("Balabala")
+            }
+        });
+        it("should check mix with not valid", () => {
+            try {
+                validator.check(mix);
+            } catch (err) {
+                expect(err.message).to.be.equal("HalaHala")
+            }
+        });
+        it("should create validator with functional message", () => {
+            validator = new Validator({
+                func: isExist,
+                message: data => new NotExist(data)
+            }, {
+                func: isNumber,
+                message: data => new Exception(data)
+            });
+        });
+        it("should check exist for first element", () => {
+            try {
+                validator.check(none);
+            } catch (err) {
+                expect(err.message).to.be.equal(none);
+            }
+        });
+        it("should check number for first element", () => {
+            try {
+                validator.check(mix);
+            } catch (err) {
+                expect(err.message).to.be.equal(mix);
+            }
+        });
     });
 });

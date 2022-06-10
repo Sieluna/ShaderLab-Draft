@@ -22,16 +22,19 @@ To avoid anonymity visit on a heavy api, such as two table select by union or jo
 sequenceDiagram
     participant client
     participant server
-    client-->>server: Request /api/* (delined)
-    client->>server: /api/user/login {account, password}
-    server->>server: generate token by jwt
-    server->>client: response with token
-    client->>server: add token under Authorization header
-    server->>server: vertify
-    server-->>client: appropriate response if token is valid
-    client->>server: send refresh token request
-    server->>server: vertify
-    server->>client: resfresh {state, new token}
+    participant session
+    client ->> server: Request /api/* (delined)
+    client ->> server: /api/user/singin {account, password}
+    server ->> server: generate token by jwt
+    Note right of client: singup
+    server -->> client: response with token
+    client ->> server: add token under Authorization header
+    server ->> server: vertify
+    server ->> session: add refresh token
+    session -->> server: response with refresh token or error
+    server-->> client: appropriate response if token is valid
+    server-->> client: resfresh {state, new token}
+    server-->> client: logout
 ```
 
 **user permission**
@@ -61,13 +64,13 @@ sequenceDiagram
     participant handle
     participant middle
     participant routes
-    routes-->>middle: no token (delined)
-    routes->>middle: vertify or login
-    routes->>handle: request to valid data 
-    handle->>model: query from model
-    model->>handle: error or json
-    handle-->>middle: update token?
-    middle->routes: error handle and resoponse
+    routes -->> middle: no token (delined)
+    routes ->> middle: vertify or login
+    middle ->> handle: request to valid data 
+    handle ->> model: query from model
+    model -->> handle: error or json
+    handle -->> routes: update token?
+    handle -->> routes: error handle and resoponse
 ```
 
 ```mermaid
@@ -87,9 +90,23 @@ graph TD;
 
 ```mermaid
 graph TD;
-    UserAPI --> UserHandle
-    PostAPI --> PostHandle
-    TagAPI --> TagHandle
-    TopicAPI --> TopicHandle
-    SearchAPI --> SearchHandle
+    UserAPI --> UserValidator --> UserHandle
+    PostAPI --> PostValidator --> PostHandle
+    TagAPI --> TagValidator --> TagHandle
+    TopicAPI --> TopicValidator --> TopicHandle
+    SearchAPI --> SearchValidator --> SearchHandle
+```
+
+```mermaid
+sequenceDiagram
+    participant req
+    participant validator
+    participant handle
+    participant res
+    req ->> validator: params is valid
+    validator -->> res: throw and catch error
+    validator ->> handle: deal with the safe data
+    handle -->> validator: check the data type safe
+    handle ->> res: return back the same data
+    validator -->> res: throw and catch erro
 ```

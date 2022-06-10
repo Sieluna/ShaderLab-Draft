@@ -1,7 +1,3 @@
-## Editor Page
-
---------------------------------------
-
 Navigation Bar:
 
 Elements under navigation bar has two stage:

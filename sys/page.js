@@ -12,6 +12,7 @@ const bindResource = app => {
 }
 
 module.exports = devMode ? bindResource : port => {
+
     const cluster = require("node:cluster");
 
     if (cluster.isSpawn) {

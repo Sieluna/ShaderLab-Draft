@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 const { styles } = require("../debug/style.js");
 const { stdout } = require("node:process");
-const sequelize = require("../handle/model");
 stdout.write(styles.bold("             _                                                             _                \n" +
                             "           /' `\\     /'                      /'                          /~_)             /'\n" +
                             "         /'   ._)  /'                      /'                        ~-/'-~             /'  \n" +
@@ -12,16 +11,16 @@ stdout.write(styles.bold("             _                                        
 
 const devMode = process.env.NODE_ENV != "production";
 
+const debug = require("debug")("shaderlab:server");
+const sequelize = require("../handle/model.js");
+const http = require("node:http");
+
+sequelize.sync({ force: true }).then(() => {
+    debug("database is synchronized");
+    require("../config/inject.js")({ max: 500, root: true });
+});
+
 if (devMode) {
-    const debug = require("debug")("shaderlab:server");
-    const sequelize = require("../handle/model.js");
-    const http = require("node:http");
-
-    sequelize.sync({ force: true }).then(() => {
-        debug("database is synchronized");
-        require("../config/inject.js")({ max: 500, root: true });
-    });
-
 
     const app = require("../app.js");
 
@@ -34,49 +33,89 @@ if (devMode) {
     // Listen on provided port, on all network interfaces.
     server.listen(port);
     server.on("error", onError);
-    server.on("listening", onListening);
-
-    /**
-     * Normalize a port into a number, string, or false.
-     * @param {string|number} val
-     * @return {number}
-     */
-    function normalizePort(val) {
-        let port = parseInt(val, 10);
-        return isNaN(port) ? val : port >= 0 ? port : false;
-    }
-
-    /**
-     * Event listener for HTTP server "error" event.
-     * @param {Error} error
-     */
-    function onError(error) {
-        if (error.syscall !== "listen") throw error;
-        let bind = typeof port == "string" ? "Pipe " + port : "Port " + port;
-        // handle specific listen errors with friendly messages
-        switch (error.code) {
-            case "EACCES":
-                console.error(bind + " requires elevated privileges");
-                process.exit(1);
-                break;
-            case "EADDRINUSE":
-                console.error(bind + " is already in use");
-                process.exit(1);
-                break;
-            default:
-                throw error;
-        }
-    }
-
-    /**
-     * Event listener for HTTP server "listening" event.
-     */
-    function onListening() {
-        let addr = server.address();
-        let bind = typeof addr == "string" ? "pipe " + addr : "port " + addr.port;
-        debug("Listening on %s", bind);
-    }
+    server.on("listening", onListening(server));
 
 } else {
-    require("../app.js");
+
+    const app = require("../app.js");
+
+    const port = normalizePort(process.env.PORT || "3000");
+    /**
+     * TODO: proxy balancer
+     * @example
+     * "/example": "http://xxx",
+     * "/example": "http://xxx/a",
+     * "/example/([0-9]+)/id/([0-9]+)": "http://xxx/a/$1/b/$2"
+     */
+    const rules = {
+        "/api": "http://127.0.0.1:8000/api"
+    };
+
+    // Create HTTP server.
+    const proxy = require("http-proxy").createProxyServer();
+    const server = http.createServer((req, res) => {
+        let path = req.url, target = "http://127.0.0.1:8080";
+        for (const pathPrefix in rules) {
+            const pathEndSlash = pathPrefix[pathPrefix.length - 1]  === "/";
+            const pathPrefixRegexp = new RegExp(pathEndSlash ? pathPrefix : `(${pathPrefix})(?:\\W|$)`);
+            const testPrefixMatch = pathPrefixRegexp.exec(path);
+            if (testPrefixMatch && testPrefixMatch.index === 0) {
+                const urlPrefix = testPrefixMatch[pathEndSlash ? 0 : 1];
+                req.url = path.replace(urlPrefix, "");
+                target = rules[pathPrefix];
+                for (let i = 0; i < testPrefixMatch; i++)
+                    target = target.replace("$" + i, testPrefixMatch[i + (pathEndSlash ? 0 : 1)])
+                break;
+            }
+        }
+        proxy.web(req, res, { target: target });
+    });
+
+    // Listen on provided port, on all network interfaces.
+    server.listen(port);
+    server.on("error", onError);
+    server.on("listening", onListening(server));
+
+}
+
+/**
+ * Normalize a port into a number, string, or false.
+ * @param {string|number} val
+ * @return {number}
+ */
+function normalizePort(val) {
+    let port = parseInt(val, 10);
+    return isNaN(port) ? val : port >= 0 ? port : false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ * @param {Error} error
+ */
+function onError(error) {
+    if (error.syscall !== "listen") throw error;
+    let bind = typeof port == "string" ? "Pipe " + port : "Port " + port;
+    // handle specific listen errors with friendly messages
+    switch (error.code) {
+        case "EACCES":
+            console.error(bind + " requires elevated privileges");
+            process.exit(1);
+            break;
+        case "EADDRINUSE":
+            console.error(bind + " is already in use");
+            process.exit(1);
+            break;
+        default:
+            throw error;
+    }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ * @param server
+ */
+function onListening(server) {
+    let addr = server.address(),
+        bind = typeof addr == "string" ? "pipe " + addr : "port " + addr.port;
+    return () => debug("listening on %s", bind);
 }

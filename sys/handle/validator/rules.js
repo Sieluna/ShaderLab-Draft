@@ -33,9 +33,9 @@ const rules = {
                 return data.trim().length === 0;
             case "number":
                 return false;
-            case "boolean":
-                return false;
             case "function":
+                return false;
+            case "boolean":
                 return false;
             default:
                 return data !== null ?  Object.keys(data).length === 0: true;

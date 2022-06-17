@@ -4,7 +4,13 @@ const { styles, colors } = require("./style.js");
  * The levels of logs
  * @type {{log:number,info:number,warn:number,noLog:number}}
  */
-const levels = { log: 3, info: 2, warn: 1, noLog: 0 };
+var levels = (function(levels) {
+    levels[levels["log"] = 3] = "log";
+    levels[levels["info"] = 2] = "info";
+    levels[levels["warn"] = 1] = "warn";
+    levels[levels["noLog"] = 0] = "noLog";
+    return levels;
+})(levels || (levels = {}));
 
 let level = process.env.DEBUG_LEVEL || process.env.NODE_ENV != "production" ? levels.log : levels.info;
 
@@ -80,7 +86,8 @@ const debug = {
      */
     set level(logLevel) {
         level = logLevel;
-    }
+    },
+    levels
 };
 
 Object.entries(styles).forEach(([style, callback]) => {

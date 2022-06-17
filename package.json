@@ -11,21 +11,20 @@
         "express-session": "latest",
         "jsonwebtoken": "latest",
         "compression": "latest",
-        "validator": "latest",
         "debug": "latest",
         "morgan": "latest",
         "multer": "latest",
-        "mysql2": "latest",
-        "sequelize": "latest"
+        "mysql2": "^2.3.0",
+        "sequelize": "^6.20.0"
     },
     "devDependencies": {
         "cross-env": "latest",
         "favicons": "latest",
         "open": "latest",
-        "mocha": "latest",
-        "chai": "latest",
-        "chai-http": "latest",
-        "form-data": "latest",
+        "nyc": "latest",
+        "mocha": "^10.0.0",
+        "chai": "^4.0.0",
+        "chai-http": "^4.0.0",
         "webpack": "latest",
         "webpack-cli": "latest",
         "css-loader": "latest",
@@ -34,13 +33,14 @@
         "terser-webpack-plugin": "latest",
         "mini-css-extract-plugin": "latest",
         "css-minimizer-webpack-plugin": "latest",
-        "html-inline-script-webpack-plugin": "latest"
+        "html-inline-script-webpack-plugin": "^3.0.0"
     },
     "scripts": {
         "server": "cross-env NODE_ENV=production DEBUG=shaderlab:* node sys/bin/www",
         "front": "cross-env NODE_ENV=development DEBUG=shaderlab:* node sys/bin/www",
         "build.dev": "webpack --env NODE_ENV=development --config sys/public/webpack.config.js && node sys/bin/copy.js",
         "build.prod": "webpack --env NODE_ENV=production --config sys/public/webpack.config.js && node sys/bin/copy.js",
-        "test": "cross-env NODE_ENV=development mocha --jobs 1 --recursive sys/test/*.js"
+        "test": "cross-env NODE_ENV=development mocha --jobs 1 --recursive sys/test/*.js",
+        "coverage": "nyc npm run test"
     }
 }

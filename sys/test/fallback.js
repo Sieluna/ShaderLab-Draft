@@ -12,7 +12,16 @@ describe("Fallback exception test", () => {
             const name = instance.exceptionName;
             expect(name).to.be.equal("TEST_EXCEPTION");
         });
+        it("Create new instance with multi namespace", () => {
+            instance = new Exception("testA", "testB", "testC");
+            expect(instance).to.be.an.instanceOf(Exception);
+        });
+        it("Get exception Name with multi namespace", () => {
+            const name = instance.exceptionName;
+            expect(name).to.be.equal("TESTA_TESTB_TESTC_EXCEPTION");
+        });
     });
+
     describe("exist exception test", () => {
         let required, instance;
         before(() => required = require("../handle/fallback/exist.js")("test"));

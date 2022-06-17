@@ -26,10 +26,10 @@ const submitInfo = (redirect, target = "") => {
 
 export const userFeature = (redirect) => {
     registerElement.addEventListener("click", () => {
-        submitInfo(redirect);
+        submitInfo(redirect, "/signup");
     });
     loginElement.addEventListener("click", () => {
-        submitInfo(redirect, "/login");
+        submitInfo(redirect, "/signin");
     });
     loginInputElement.addEventListener("keypress", event => {
         if (event.key === "Enter") {

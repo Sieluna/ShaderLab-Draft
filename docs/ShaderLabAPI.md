@@ -1,14 +1,8 @@
-# Backend designing document and procedure
+# Backend design
 
---------------------------------------
+## Basic set up
 
-version: 0.0.1
-
-## Base set up
-
---------------------------------------
-
-**token design**
+### token design
  
 To avoid anonymity visit on a heavy api, such as two table select by union or join and update something. would be quite dangerous.
 
@@ -37,7 +31,7 @@ sequenceDiagram
     server-->> client: logout
 ```
 
-**user permission**
+### user permission
 
 |          | Admin | User | Visitor |
 |:---------|:-----:|:----:|:-------:|
@@ -52,11 +46,11 @@ sequenceDiagram
 3 level design would be good enough to.
 
 ```mermaid
-graph TD;
+graph LR;
     Visitor --> User --> Admin
 ```
 
-**Structure design**
+### Structure design
 
 ```mermaid
 sequenceDiagram

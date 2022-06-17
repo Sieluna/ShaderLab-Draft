@@ -1,3 +1,10 @@
+## Feature
+
+The core feature of editor page should have two key features: editor, comment. In the web page,
+should have entrance to home page and login page (conditional).
+
+## Analyze
+
 Navigation Bar:
 
 Elements under navigation bar has two stage:

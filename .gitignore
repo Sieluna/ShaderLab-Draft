@@ -7,5 +7,7 @@ doc/SoftwareDesignDocument.pdf
 
 # Server ignore
 node_modules/*
+
 # test
-mochawesome-report/*
+.nyc_output/*
+coverage/*

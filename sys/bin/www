@@ -32,7 +32,7 @@ if (devMode) {
 
     // Listen on provided port, on all network interfaces.
     server.listen(port);
-    server.on("error", onError);
+    server.on("error", onError(port));
     server.on("listening", onListening(server));
 
 } else {
@@ -73,7 +73,7 @@ if (devMode) {
 
     // Listen on provided port, on all network interfaces.
     server.listen(port);
-    server.on("error", onError);
+    server.on("error", onError(port));
     server.on("listening", onListening(server));
 
 }
@@ -90,23 +90,26 @@ function normalizePort(val) {
 
 /**
  * Event listener for HTTP server "error" event.
- * @param {Error} error
+ * @param {number} port
+ * @return {function}
  */
-function onError(error) {
-    if (error.syscall !== "listen") throw error;
+function onError(port) {
     let bind = typeof port == "string" ? "Pipe " + port : "Port " + port;
-    // handle specific listen errors with friendly messages
-    switch (error.code) {
-        case "EACCES":
-            console.error(bind + " requires elevated privileges");
-            process.exit(1);
-            break;
-        case "EADDRINUSE":
-            console.error(bind + " is already in use");
-            process.exit(1);
-            break;
-        default:
-            throw error;
+    return error => {
+        if (error.syscall !== "listen") throw error;
+        // handle specific listen errors with friendly messages
+        switch (error.code) {
+            case "EACCES":
+                debug.error("%s requires elevated privileges", bind);
+                process.exit(1);
+                break;
+            case "EADDRINUSE":
+                debug("%s is already in use", bind);
+                process.exit(1);
+                break;
+            default:
+                throw error;
+        }
     }
 }
 

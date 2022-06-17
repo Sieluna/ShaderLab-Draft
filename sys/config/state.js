@@ -5,8 +5,8 @@ var state = (function(state) {
     state[state["NotCorrect"] = 3500] = "NotCorrect";
     state[state["NotExist"] = 3600] = "NotExist";
     state[state["Empty"] = 3700] = "Empty";
-    return state; }
-)(state || (state = {}));
+    return state;
+})(state || (state = {}));
 
 class State {
     constructor(message) {

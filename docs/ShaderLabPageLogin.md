@@ -1,14 +1,14 @@
-### Feature
+## Feature
 
 The core feature of login page should be **register** and **login** feature. In the web page, should
 have entrance to main page, Consider to use navigate title. Register could use two different
 type of account input, email or pure string and password consider have a limit 64 length.
 
-#### Structure design
+### Structure design
 
 Background, Navigation Bar, Main Panel.
 
-#### Source map
+### Source map
 
 |                |    CSS    |    Naming     | Interop | Mobeile | Desktop |
 |----------------|:---------:|:-------------:|:-------:|:-------:|:-------:|
@@ -16,7 +16,7 @@ Background, Navigation Bar, Main Panel.
 | Navigation bar |  nav.css  |    sl-nav     |  True   | Disable | Enable  |
 | Main Panel     | panel.css |   sl-panel    |  True   | Enable  | Enable  |
 
-#### Interop requirement
+### Interop requirement
 
 |        Name        |   Selector   |
 |:------------------:|:------------:|
@@ -25,12 +25,18 @@ Background, Navigation Bar, Main Panel.
 |  Register Button   |  .register   |
 |    Login Button    |    .login    |
 
-### Analyze
+## Analyze
 
 Consider use regular rendering because the page only contain few simple DOM tree. So, it could draw all
-the component once page loaded. 
+the component once page loaded.
 
-#### Loading step
+Drawing level consideration:
+
+```mermaid
+
+```
+
+### Loading step
 
 If user already registered, this page should directly redirect to main page.
 When build consider direction inline the script under header.
@@ -49,7 +55,7 @@ flowchart TD
     
 ```
 
-#### API interop
+### API interop
 
 | Feature      |                   Request                    |  Response   |
 |:-------------|:--------------------------------------------:|:-----------:|

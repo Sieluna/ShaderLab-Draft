@@ -1,4 +1,4 @@
-### Feature
+## Feature
 
 The core feature of home page should have three key features: search, user, preview features. In the web page,
 should have entrance to editor page and login page (conditional). 
@@ -12,7 +12,7 @@ Navigation: search, filter and user control.
 | Navigation  |  nav.css   |  sl-nav   |  True   | Enable  | Enable  |
 | Main Layout | layout.css | sl-layout |  True   | Enable  | Enable  |
 
-### Analyze
+## Analyze
 
 This page should contain 50% functions of the application, including search, user, info.
 
